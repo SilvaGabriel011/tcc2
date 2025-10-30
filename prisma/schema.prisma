@@ -1,0 +1,174 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      String   @default("USER") // USER or ADMIN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  projects        Project[]
+  auditLogs       AuditLog[]
+  savedReferences SavedReference[]
+
+  @@map("users")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  owner               User                    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  uploadPresets       ProjectUploadPreset[]
+  datasets            Dataset[]
+  validationSettings  ValidationSetting[]
+  projectSettings     ProjectSetting[]
+
+  @@map("projects")
+}
+
+model ProjectUploadPreset {
+  id                    String   @id @default(cuid())
+  projectId             String
+  intervals             String   // Store bovine intervals as JSON string
+  defaultFieldMappings  String   // Store field mappings as JSON string
+  reviewRequired        Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("project_upload_presets")
+}
+
+model Dataset {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  filename    String
+  status      String   @default("UPLOADED") // UPLOADED, PROCESSING, VALIDATED, APPROVED, REJECTED
+  data        String   // Store processed data as JSON string
+  metadata    String?  // Store metadata about the dataset as JSON string
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  validations   DataValidation[]
+  mappings      DataMapping[]
+
+  @@map("datasets")
+}
+
+model DataMapping {
+  id          String   @id @default(cuid())
+  datasetId   String
+  sourceField String
+  targetField String
+  unitFrom    String?
+  unitTo      String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  dataset Dataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@map("data_mappings")
+}
+
+model DataValidation {
+  id          String   @id @default(cuid())
+  datasetId   String
+  field       String
+  rule        String   // REQUIRED, MIN_VALUE, MAX_VALUE, RANGE, PATTERN, CUSTOM
+  value       String?
+  status      String   @default("PENDING") // PENDING, PASSED, FAILED, REVIEWED
+  message     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  dataset Dataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+
+  @@map("data_validations")
+}
+
+model ValidationSetting {
+  id        String   @id @default(cuid())
+  projectId String
+  field     String
+  rule      String   // REQUIRED, MIN_VALUE, MAX_VALUE, RANGE, PATTERN, CUSTOM
+  value     String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("validation_settings")
+}
+
+model ProjectSetting {
+  id        String   @id @default(cuid())
+  projectId String
+  key       String
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, key])
+  @@map("project_settings")
+}
+
+model SavedReference {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  url         String?
+  content     String?
+  tags        String   // Comma-separated tags
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("saved_references")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String   // CREATE, UPDATE, DELETE, APPROVE, REJECT
+  resource  String   // e.g., "project_upload_presets"
+  resourceId String
+  changes   String?  // Store the changes made as JSON string
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}

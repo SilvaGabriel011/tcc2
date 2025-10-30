@@ -1,0 +1,123 @@
+import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  console.log('🌱 Seeding database...')
+
+  // Create admin user
+  const adminPassword = await bcrypt.hash('admin123', 12)
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@agroinsight.com' },
+    update: {},
+    create: {
+      email: 'admin@agroinsight.com',
+      name: 'Admin User',
+      password: adminPassword,
+      role: 'ADMIN',
+    },
+  })
+
+  // Create regular user
+  const userPassword = await bcrypt.hash('user123', 12)
+  const user = await prisma.user.upsert({
+    where: { email: 'researcher@agroinsight.com' },
+    update: {},
+    create: {
+      email: 'researcher@agroinsight.com',
+      name: 'Research User',
+      password: userPassword,
+      role: 'USER',
+    },
+  })
+
+  // Create sample project
+  const project = await prisma.project.upsert({
+    where: { id: 'sample-project-1' },
+    update: {},
+    create: {
+      id: 'sample-project-1',
+      name: 'Bovine Weight Analysis',
+      description: 'Analysis of bovine weight data with automated validation',
+      ownerId: user.id,
+    },
+  })
+
+  // Create upload presets for the project
+  const uploadPreset = await prisma.projectUploadPreset.upsert({
+    where: { id: 'preset-1' },
+    update: {},
+    create: {
+      id: 'preset-1',
+      projectId: project.id,
+      reviewRequired: true,
+      intervals: JSON.stringify({
+        "Peso_nascimento_kg": { min: 1, max: 60 },
+        "Peso_desmame_kg": { min: 80, max: 300 },
+        "Peso_sobreano_kg": { min: 200, max: 600 }
+      }),
+      defaultFieldMappings: JSON.stringify({
+        "weight_birth": "Peso_nascimento_kg",
+        "weight_weaning": "Peso_desmame_kg",
+        "weight_yearling": "Peso_sobreano_kg"
+      })
+    },
+  })
+
+  // Create validation settings
+  await prisma.validationSetting.createMany({
+    data: [
+      {
+        projectId: project.id,
+        field: 'Peso_nascimento_kg',
+        rule: 'RANGE',
+        value: '1-60',
+        enabled: true,
+      },
+      {
+        projectId: project.id,
+        field: 'Peso_desmame_kg',
+        rule: 'RANGE',
+        value: '80-300',
+        enabled: true,
+      },
+      {
+        projectId: project.id,
+        field: 'Peso_sobreano_kg',
+        rule: 'RANGE',
+        value: '200-600',
+        enabled: true,
+      },
+    ],
+  })
+
+  // Create project settings
+  await prisma.projectSetting.createMany({
+    data: [
+      {
+        projectId: project.id,
+        key: 'mandatory_review',
+        value: 'true',
+      },
+      {
+        projectId: project.id,
+        key: 'auto_normalize_units',
+        value: 'true',
+      },
+    ],
+  })
+
+  console.log('✅ Database seeded successfully!')
+  console.log(`👤 Admin: admin@agroinsight.com / admin123`)
+  console.log(`👤 User: researcher@agroinsight.com / user123`)
+}
+
+main()
+  .catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
