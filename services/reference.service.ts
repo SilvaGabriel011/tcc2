@@ -92,7 +92,35 @@ export class ReferenceService {
   }
 
   /**
-   * Salvar artigo na biblioteca
+   * Save an article to the user's reference library
+   * 
+   * Stores a scientific article in the database with the user's reference collection.
+   * Handles data transformation from API format to database schema.
+   * 
+   * Process:
+   * 1. Transform Article object to database schema
+   * 2. Serialize array fields (authors, keywords) to JSON
+   * 3. Create reference record with user association
+   * 4. Return the new reference ID
+   * 
+   * @param userId - The user's unique identifier
+   * @param article - The article object to save
+   * @returns ServiceResponse containing the new reference ID or error
+   * 
+   * @example
+   * ```ts
+   * const article: Article = {
+   *   title: "Study on cattle nutrition",
+   *   authors: ["John Doe", "Jane Smith"],
+   *   year: 2024,
+   *   // ... other fields
+   * }
+   * 
+   * const result = await referenceService.saveReference('user-123', article)
+   * if (result.success) {
+   *   console.log(`Article saved with ID: ${result.data}`)
+   * }
+   * ```
    */
   async saveReference(
     userId: string,

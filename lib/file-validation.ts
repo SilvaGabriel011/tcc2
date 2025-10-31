@@ -1,17 +1,58 @@
+/**
+ * File Validation Utilities for AgroInsight
+ * 
+ * This module provides comprehensive file validation functionality for the agricultural
+ * data platform. It ensures security and data integrity by validating:
+ * - File size limits to prevent storage abuse
+ * - MIME types to ensure only allowed formats are processed
+ * - File extensions as additional security layer
+ * - Human-readable formatting of file sizes
+ * 
+ * Security considerations:
+ * - Both MIME type and extension validation (defense in depth)
+ * - Strict size limits per file type
+ * - Detailed error messages for debugging
+ * - Logging of validation failures
+ * 
+ * Usage:
+ * ```ts
+ * import { validateFileSize, FILE_SIZE_LIMITS } from '@/lib/file-validation'
+ * 
+ * const result = validateFileSize(file.size, FILE_SIZE_LIMITS.CSV)
+ * if (!result.valid) {
+ *   console.error(result.error)
+ * }
+ * ```
+ */
+
 import { logger } from '@/lib/logger'
 
 /**
- * Limites de tamanho de arquivo por tipo
+ * File size limits in bytes for different file types
+ * These limits prevent storage abuse and ensure reasonable upload sizes
+ * 
+ * Limits:
+ * - CSV: 50MB - Large datasets for agricultural research
+ * - PDF: 10MB - Scientific papers and reports
+ * - IMAGE: 5MB - Charts, graphs, and photos
+ * - GENERAL: 100MB - Catch-all for other file types
  */
 export const FILE_SIZE_LIMITS = {
-  CSV: 50 * 1024 * 1024, // 50 MB
-  PDF: 10 * 1024 * 1024, // 10 MB
-  IMAGE: 5 * 1024 * 1024, // 5 MB
-  GENERAL: 100 * 1024 * 1024, // 100 MB
+  CSV: 50 * 1024 * 1024, // 50 MB - Large agricultural datasets
+  PDF: 10 * 1024 * 1024, // 10 MB - Scientific papers and reports
+  IMAGE: 5 * 1024 * 1024, // 5 MB - Charts, graphs, and photos
+  GENERAL: 100 * 1024 * 1024, // 100 MB - General purpose limit
 } as const
 
 /**
- * Tipos MIME permitidos por categoria
+ * Allowed MIME types by file category
+ * MIME types are validated first as they're harder to spoof than extensions
+ * 
+ * Categories:
+ * - CSV: Data files with multiple MIME type variations
+ * - PDF: Standard PDF format
+ * - IMAGE: Common image formats for charts and photos
+ * - DOCUMENT: Document formats for reports
  */
 export const ALLOWED_MIME_TYPES = {
   CSV: ['text/csv', 'application/csv', 'text/plain'],
@@ -25,7 +66,9 @@ export const ALLOWED_MIME_TYPES = {
 } as const
 
 /**
- * Extensões permitidas por categoria
+ * Allowed file extensions by category
+ * Extensions provide a second layer of validation
+ * More user-friendly for error messages
  */
 export const ALLOWED_EXTENSIONS = {
   CSV: ['.csv', '.txt'],
@@ -35,16 +78,17 @@ export const ALLOWED_EXTENSIONS = {
 } as const
 
 /**
- * Interface de resultado de validação
+ * Standard result interface for all validation functions
+ * Provides consistent structure for success/failure states
  */
 export interface FileValidationResult {
-  valid: boolean
-  error?: string
+  valid: boolean  // Whether validation passed
+  error?: string  // Human-readable error message if validation failed
   details?: {
-    size: number
-    maxSize: number
-    type: string
-    extension: string
+    size: number      // Actual file size in bytes
+    maxSize: number   // Maximum allowed size in bytes
+    type: string      // Actual MIME type
+    extension: string // Actual file extension
   }
 }
 

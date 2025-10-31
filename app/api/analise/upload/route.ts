@@ -1,3 +1,34 @@
+/**
+ * CSV Upload API Route for Data Analysis
+ * 
+ * Endpoint: POST /api/analise/upload
+ * 
+ * This route handles CSV file uploads for agricultural data analysis:
+ * - Validates user authentication
+ * - Processes uploaded CSV files using Papa Parse
+ * - Analyzes data for zootechnical variables
+ * - Stores analysis results in database
+ * - Invalidates relevant cache entries
+ * 
+ * Request format:
+ * - Content-Type: multipart/form-data
+ * - Body: FormData with 'file' field containing CSV
+ * 
+ * Success response (201):
+ * ```json
+ * {
+ *   success: true,
+ *   analysis: { id, name, data, metadata, ... },
+ *   message: "Análise criada com sucesso"
+ * }
+ * ```
+ * 
+ * Error responses:
+ * - 401: Unauthorized
+ * - 400: Invalid file format or parsing error
+ * - 500: Server error during processing
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -6,6 +37,21 @@ import Papa from 'papaparse'
 import { analyzeDataset } from '@/lib/dataAnalysis'
 import { invalidateCache } from '@/lib/cache'
 
+/**
+ * POST handler for CSV file upload and analysis
+ * 
+ * Process:
+ * 1. Authenticate user session
+ * 2. Validate uploaded file is CSV
+ * 3. Parse CSV content with Papa Parse
+ * 4. Analyze data for zootechnical variables
+ * 5. Ensure user has a project (create default if needed)
+ * 6. Store analysis in database
+ * 7. Invalidate cache entries
+ * 
+ * @param request - Next.js request containing FormData with CSV file
+ * @returns JSON response with analysis results or error
+ */
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)

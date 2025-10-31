@@ -1,11 +1,39 @@
+/**
+ * Home Page - Landing Page for AgroInsight
+ * 
+ * This is the main landing page (route: /) that visitors see when they first arrive.
+ * It serves as the marketing and entry point to the application.
+ * 
+ * Structure:
+ * 1. Navigation bar - Logo, theme toggle, sign in/sign up links
+ * 2. Hero section - Main headline and call-to-action buttons
+ * 3. Features section - Key features displayed in a grid
+ * 4. Footer - Branding and copyright
+ * 
+ * Features highlighted:
+ * - Data validation for zootechnical research
+ * - Unit normalization and conversion
+ * - Collaborative review workflows
+ * - Project management for research
+ * 
+ * Call-to-actions:
+ * - "Iniciar Pesquisa" - Leads to sign up
+ * - "Ver Demonstração" - Leads to demo page
+ * - "Entrar" - Leads to sign in
+ */
+
 import Link from 'next/link'
 import { Sprout, BarChart3, Users, Shield } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 
+/**
+ * HomePage component - Public landing page
+ * Accessible to all visitors (not protected by authentication)
+ */
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
+      {/* Navigation Bar */}
       <nav className="bg-card shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">

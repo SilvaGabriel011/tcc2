@@ -1,67 +1,118 @@
-// Sistema de códigos de erro seriados para AgroInsight
+/**
+ * Standardized Error Handling System for AgroInsight
+ * 
+ * This module provides a consistent error handling approach across the application with:
+ * - Categorized error codes (AUTH, DB, UPLOAD, API, PERM, VAL)
+ * - Dual messages: technical (for logs) and user-friendly (for UI)
+ * - Automatic HTTP status mapping
+ * - Structured error creation and logging
+ * 
+ * Benefits:
+ * - Consistent error reporting across the app
+ * - Easy debugging with unique error codes
+ * - Better user experience with friendly messages
+ * - Simplified error tracking and monitoring
+ * 
+ * Usage:
+ * ```ts
+ * // Create and throw an error
+ * const error = ErrorHandler.createError(
+ *   ErrorCodes.AUTH_002,
+ *   { email: 'user@example.com' },
+ *   'authorize'
+ * )
+ * ErrorHandler.logError(error)
+ * throw new Error(error.code)
+ * ```
+ */
+
+/**
+ * Enumeration of all application error codes
+ * Organized by category with sequential numbering for easy identification
+ */
 export enum ErrorCodes {
-  // Erros de Autenticação (AUTH-001 a AUTH-099)
-  AUTH_001 = 'AUTH-001', // Credenciais inválidas
-  AUTH_002 = 'AUTH-002', // Usuário não encontrado
-  AUTH_003 = 'AUTH-003', // Senha incorreta
-  AUTH_004 = 'AUTH-004', // Sessão expirada
-  AUTH_005 = 'AUTH-005', // Token inválido
-  AUTH_006 = 'AUTH-006', // Usuário já existe
-  AUTH_007 = 'AUTH-007', // Email inválido
-  AUTH_008 = 'AUTH-008', // Senha muito fraca
-  AUTH_009 = 'AUTH-009', // Erro ao criar usuário
-  AUTH_010 = 'AUTH-010', // Erro de redirecionamento
-  AUTH_011 = 'AUTH-011', // Token de reset inválido
-  AUTH_012 = 'AUTH-012', // Token de reset expirado
-  AUTH_013 = 'AUTH-013', // Erro ao enviar email de reset
+  // Authentication Errors (AUTH-001 to AUTH-099)
+  // Used for sign-in, sign-up, password reset, and session management
+  AUTH_001 = 'AUTH-001', // Invalid credentials provided
+  AUTH_002 = 'AUTH-002', // User not found in database
+  AUTH_003 = 'AUTH-003', // Password verification failed
+  AUTH_004 = 'AUTH-004', // Session expired
+  AUTH_005 = 'AUTH-005', // Authentication token invalid
+  AUTH_006 = 'AUTH-006', // User with email already exists
+  AUTH_007 = 'AUTH-007', // Email format invalid
+  AUTH_008 = 'AUTH-008', // Password too weak
+  AUTH_009 = 'AUTH-009', // User creation failed
+  AUTH_010 = 'AUTH-010', // Redirect error after login
+  AUTH_011 = 'AUTH-011', // Password reset token invalid
+  AUTH_012 = 'AUTH-012', // Password reset token expired
+  AUTH_013 = 'AUTH-013', // Failed to send reset email
 
-  // Erros de Banco de Dados (DB-001 a DB-099)
-  DB_001 = 'DB-001', // Conexão com banco falhou
-  DB_002 = 'DB-002', // Erro na query
-  DB_003 = 'DB-003', // Registro não encontrado
-  DB_004 = 'DB-004', // Violação de constraint
-  DB_005 = 'DB-005', // Timeout na operação
+  // Database Errors (DB-001 to DB-099)
+  // Used for Prisma/database operation failures
+  DB_001 = 'DB-001', // Database connection failed
+  DB_002 = 'DB-002', // Query execution error
+  DB_003 = 'DB-003', // Record not found
+  DB_004 = 'DB-004', // Constraint violation (unique, foreign key, etc.)
+  DB_005 = 'DB-005', // Operation timeout
 
-  // Erros de Upload/Análise (UPLOAD-001 a UPLOAD-099)
-  UPLOAD_001 = 'UPLOAD-001', // Arquivo não enviado
-  UPLOAD_002 = 'UPLOAD-002', // Formato de arquivo inválido
-  UPLOAD_003 = 'UPLOAD-003', // Arquivo muito grande
-  UPLOAD_004 = 'UPLOAD-004', // Erro ao processar CSV
-  UPLOAD_005 = 'UPLOAD-005', // Dados insuficientes
-  UPLOAD_006 = 'UPLOAD-006', // Colunas não identificadas
+  // Upload/Analysis Errors (UPLOAD-001 to UPLOAD-099)
+  // Used for file upload and CSV processing
+  UPLOAD_001 = 'UPLOAD-001', // No file uploaded
+  UPLOAD_002 = 'UPLOAD-002', // Invalid file format
+  UPLOAD_003 = 'UPLOAD-003', // File size exceeds limit
+  UPLOAD_004 = 'UPLOAD-004', // CSV parsing failed
+  UPLOAD_005 = 'UPLOAD-005', // Insufficient data for analysis
+  UPLOAD_006 = 'UPLOAD-006', // Required columns not identified
 
-  // Erros de API (API-001 a API-099)
-  API_001 = 'API-001', // Método não permitido
-  API_002 = 'API-002', // Dados de entrada inválidos
-  API_003 = 'API-003', // Parâmetros obrigatórios ausentes
-  API_004 = 'API-004', // Rate limit excedido
-  API_005 = 'API-005', // Erro interno do servidor
+  // API Errors (API-001 to API-099)
+  // Used for general API request/response issues
+  API_001 = 'API-001', // HTTP method not allowed
+  API_002 = 'API-002', // Invalid input data
+  API_003 = 'API-003', // Required parameters missing
+  API_004 = 'API-004', // Rate limit exceeded
+  API_005 = 'API-005', // Internal server error
 
-  // Erros de Permissão (PERM-001 a PERM-099)
-  PERM_001 = 'PERM-001', // Acesso negado
-  PERM_002 = 'PERM-002', // Permissão insuficiente
-  PERM_003 = 'PERM-003', // Recurso não encontrado
-  PERM_004 = 'PERM-004', // Operação não permitida
+  // Permission Errors (PERM-001 to PERM-099)
+  // Used for authorization and access control
+  PERM_001 = 'PERM-001', // Access denied
+  PERM_002 = 'PERM-002', // Insufficient permissions
+  PERM_003 = 'PERM-003', // Resource not found or no access
+  PERM_004 = 'PERM-004', // Operation not allowed
 
-  // Erros de Validação (VAL-001 a VAL-099)
-  VAL_001 = 'VAL-001', // Dados obrigatórios ausentes
-  VAL_002 = 'VAL-002', // Formato de dados inválido
-  VAL_003 = 'VAL-003', // Valor fora do intervalo permitido
-  VAL_004 = 'VAL-004', // Tipo de dados incorreto
+  // Validation Errors (VAL-001 to VAL-099)
+  // Used for input validation failures
+  VAL_001 = 'VAL-001', // Required fields missing
+  VAL_002 = 'VAL-002', // Invalid data format
+  VAL_003 = 'VAL-003', // Value out of range
+  VAL_004 = 'VAL-004', // Incorrect data type
 }
 
+/**
+ * Standard error object structure
+ * Provides consistent error information across the application
+ */
 export interface AppError {
-  code: ErrorCodes
-  message: string
-  userMessage: string
-  details?: any
-  timestamp: string
-  context?: string
+  code: ErrorCodes          // Unique error code for identification
+  message: string           // Technical message for developers/logs
+  userMessage: string       // User-friendly message for UI display
+  details?: any             // Additional context-specific details
+  timestamp: string         // ISO timestamp when error occurred
+  context?: string          // Where the error occurred (function name, etc.)
 }
 
+/**
+ * Central error handling class
+ * Provides static methods for creating, logging, and managing errors
+ */
 export class ErrorHandler {
+  /**
+   * Map of error codes to their messages
+   * Each error has two messages:
+   * - message: Technical description for logs and developers
+   * - userMessage: User-friendly description for UI display
+   */
   private static errorMessages: Record<ErrorCodes, { message: string; userMessage: string }> = {
-    // Erros de Autenticação
+    // Authentication Errors
     [ErrorCodes.AUTH_001]: {
       message: 'Invalid credentials provided',
       userMessage: 'Email ou senha incorretos. Verifique suas credenciais.'
@@ -222,23 +273,54 @@ export class ErrorHandler {
     },
   }
 
+  /**
+   * Create a structured error object
+   * 
+   * @param code - The error code from ErrorCodes enum
+   * @param details - Optional additional context about the error
+   * @param context - Optional location where error occurred (function name, etc.)
+   * @returns Structured AppError object
+   * 
+   * @example
+   * ```ts
+   * const error = ErrorHandler.createError(
+   *   ErrorCodes.AUTH_002,
+   *   { email: 'user@example.com' },
+   *   'authorize'
+   * )
+   * ```
+   */
   static createError(
     code: ErrorCodes,
     details?: any,
     context?: string
   ): AppError {
+    // Look up the predefined messages for this error code
     const errorInfo = this.errorMessages[code]
     
+    // Return structured error object
     return {
       code,
-      message: errorInfo.message,
-      userMessage: errorInfo.userMessage,
-      details,
-      timestamp: new Date().toISOString(),
-      context
+      message: errorInfo.message,           // Technical message
+      userMessage: errorInfo.userMessage,   // User-friendly message
+      details,                              // Additional context
+      timestamp: new Date().toISOString(),  // When it happened
+      context                               // Where it happened
     }
   }
 
+  /**
+   * Log an error to the console with structured format
+   * Useful for debugging and monitoring
+   * 
+   * @param error - The AppError object to log
+   * 
+   * @example
+   * ```ts
+   * ErrorHandler.logError(error)
+   * // Output: [AUTH-002] User not found in database { timestamp: ..., context: ..., details: ... }
+   * ```
+   */
   static logError(error: AppError): void {
     console.error(`[${error.code}] ${error.message}`, {
       timestamp: error.timestamp,
@@ -247,17 +329,39 @@ export class ErrorHandler {
     })
   }
 
+  /**
+   * Get appropriate HTTP status code for an error
+   * Maps error code prefixes to HTTP status codes
+   * 
+   * @param code - The error code
+   * @returns HTTP status code (401, 403, 400, 500, etc.)
+   * 
+   * @example
+   * ```ts
+   * const status = ErrorHandler.getHttpStatus(ErrorCodes.AUTH_002)
+   * // Returns: 401
+   * 
+   * return NextResponse.json(
+   *   { error: error.userMessage },
+   *   { status: ErrorHandler.getHttpStatus(error.code) }
+   * )
+   * ```
+   */
   static getHttpStatus(code: ErrorCodes): number {
+    // Map error code prefixes to HTTP status codes
     const statusMap: Record<string, number> = {
-      'AUTH': 401,
-      'PERM': 403,
-      'DB': 500,
-      'UPLOAD': 400,
-      'API': 400,
-      'VAL': 400
+      'AUTH': 401,    // Unauthorized
+      'PERM': 403,    // Forbidden
+      'DB': 500,      // Internal Server Error
+      'UPLOAD': 400,  // Bad Request
+      'API': 400,     // Bad Request
+      'VAL': 400      // Bad Request (validation failed)
     }
 
+    // Extract prefix from error code (e.g., 'AUTH' from 'AUTH-001')
     const prefix = code.split('-')[0]
+    
+    // Return mapped status or default to 500
     return statusMap[prefix] || 500
   }
 }

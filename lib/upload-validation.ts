@@ -1,10 +1,44 @@
 /**
- * Configuração e validação de uploads de arquivos
+ * Upload Validation for AgroInsight CSV Files
+ * 
+ * This module provides specialized validation for CSV file uploads in the agricultural
+ * data platform. It extends general file validation with CSV-specific checks:
+ * - Row count limits to prevent performance issues
+ * - Content validation after parsing
+ * - Security scanning for malicious content
+ * - Warning system for large files
+ * 
+ * Key features:
+ * - Pre-upload validation (file metadata)
+ * - Post-upload validation (parsed content)
+ * - Security threat detection
+ * - Performance optimization warnings
+ * 
+ * Usage:
+ * ```ts
+ * import { validateFile, validateCSVContent } from '@/lib/upload-validation'
+ * 
+ * // Before upload
+ * const fileValidation = validateFile(file)
+ * if (!fileValidation.valid) {
+ *   return fileValidation.error
+ * }
+ * 
+ * // After parsing
+ * const contentValidation = validateCSVContent(parsedData)
+ * if (!contentValidation.valid) {
+ *   return contentValidation.error
+ * }
+ * ```
  */
 
+/**
+ * Configuration for CSV file uploads
+ * Optimized for agricultural research datasets
+ */
 export const uploadConfig = {
-  maxFileSize: 50 * 1024 * 1024, // 50MB
-  maxRows: 100000, // 100k linhas
+  maxFileSize: 50 * 1024 * 1024, // 50MB - Large enough for research datasets
+  maxRows: 100000, // 100k rows - Prevents performance issues with huge datasets
   allowedTypes: [
     'text/csv',
     'application/vnd.ms-excel',
@@ -17,10 +51,14 @@ export const uploadConfig = {
   allowedExtensions: ['.csv']
 }
 
+/**
+ * Validation result interface with support for warnings
+ * Extends basic validation with warning system for non-critical issues
+ */
 export interface ValidationResult {
-  valid: boolean
-  error?: string
-  warnings?: string[]
+  valid: boolean      // Whether validation passed
+  error?: string      // Error message if validation failed
+  warnings?: string[] // Non-critical warnings that don't block upload
 }
 
 /**

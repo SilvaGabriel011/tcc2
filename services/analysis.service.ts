@@ -1,3 +1,29 @@
+/**
+ * Analysis Service - Business Logic for Data Analysis
+ * 
+ * This service handles all business logic related to dataset analysis in AgroInsight.
+ * It acts as the intermediary between API routes and the database, providing:
+ * - CRUD operations for analyses
+ * - Data processing and statistical analysis
+ * - Diagnostic generation for agricultural datasets
+ * - User-specific data access control
+ * 
+ * Key responsibilities:
+ * - Fetch user's analyses with proper authorization
+ * - Process uploaded CSV files for zootechnical data
+ * - Generate statistical summaries and diagnostics
+ * - Manage analysis lifecycle (creation, validation, deletion)
+ * 
+ * Usage pattern:
+ * ```ts
+ * const analysisService = new AnalysisService()
+ * const result = await analysisService.getUserAnalyses(userId)
+ * if (result.success) {
+ *   console.log(result.data) // Array of DatasetDTO
+ * }
+ * ```
+ */
+
 import { prisma } from '@/lib/prisma'
 import { analyzeDataset } from '@/lib/dataAnalysis'
 import { gerarDiagnosticoLocal } from '@/lib/diagnostico-local'
@@ -11,12 +37,28 @@ import type {
 } from '@/types/api'
 
 /**
- * Serviço de análise de dados
- * Contém toda a lógica de negócio relacionada a análise de datasets
+ * Analysis Service Class
+ * 
+ * Encapsulates all business logic for dataset analysis operations.
+ * Follows the service pattern to separate concerns between API routes and data processing.
  */
 export class AnalysisService {
   /**
-   * Buscar análises do usuário
+   * Get all analyses for a specific user
+   * 
+   * Fetches all validated datasets belonging to the user's projects.
+   * Includes proper authorization by checking project ownership.
+   * 
+   * @param userId - The user's unique identifier
+   * @returns ServiceResult containing array of DatasetDTO or error
+   * 
+   * @example
+   * ```ts
+   * const result = await analysisService.getUserAnalyses('user-123')
+   * if (result.success) {
+   *   console.log(`Found ${result.data.length} analyses`)
+   * }
+   * ```
    */
   async getUserAnalyses(userId: string): ServiceResult<DatasetDTO[]> {
     try {
@@ -75,7 +117,24 @@ export class AnalysisService {
   }
 
   /**
-   * Buscar análise específica por ID
+   * Get a specific analysis by ID for a user
+   * 
+   * Fetches a single dataset with authorization check to ensure
+   * the user can only access their own analyses.
+   * 
+   * @param analysisId - The dataset's unique identifier
+   * @param userId - The user's unique identifier (for authorization)
+   * @returns ServiceResult containing DatasetDTO or error
+   * 
+   * @example
+   * ```ts
+   * const result = await analysisService.getAnalysisById('analysis-123', 'user-123')
+   * if (result.success) {
+   *   console.log('Analysis data:', result.data)
+   * } else if (result.statusCode === 404) {
+   *   console.log('Analysis not found')
+   * }
+   * ```
    */
   async getAnalysisById(
     analysisId: string,
@@ -84,6 +143,7 @@ export class AnalysisService {
     try {
       logger.db.query('FIND_FIRST', 'datasets')
       
+      // Query with authorization check - ensures user owns the project containing this analysis
       const analysis = await prisma.dataset.findFirst({
         where: {
           id: analysisId,
@@ -93,6 +153,7 @@ export class AnalysisService {
         },
       })
 
+      // Return 404 if analysis doesn't exist or user doesn't have access
       if (!analysis) {
         return {
           success: false,
@@ -101,15 +162,16 @@ export class AnalysisService {
         }
       }
 
+      // Format database data to DTO structure
       const formattedAnalysis: DatasetDTO = {
         id: analysis.id,
         projectId: analysis.projectId,
         name: analysis.name,
         filename: analysis.filename,
         status: analysis.status as any,
-        data: JSON.parse(analysis.data) as DatasetData,
-        metadata: JSON.parse(analysis.metadata || '{}') as DatasetMetadata,
-        createdAt: analysis.createdAt.toISOString(),
+        data: JSON.parse(analysis.data) as DatasetData,  // Parse JSON string to object
+        metadata: JSON.parse(analysis.metadata || '{}') as DatasetMetadata,  // Parse metadata
+        createdAt: analysis.createdAt.toISOString(),  // Convert Date to ISO string
         updatedAt: analysis.updatedAt.toISOString(),
       }
 
@@ -129,7 +191,33 @@ export class AnalysisService {
   }
 
   /**
-   * Criar nova análise a partir de CSV
+   * Create a new analysis from uploaded CSV data
+   * 
+   * Processes raw CSV data, performs statistical analysis,
+   * identifies zootechnical variables, and stores in database.
+   * 
+   * Process:
+   * 1. Analyze dataset for statistics and variable types
+   * 2. Filter for zootechnical variables (weight, age, etc.)
+   * 3. Count valid rows (non-empty records)
+   * 4. Ensure user has a project (create default if needed)
+   * 5. Store analysis with all metadata
+   * 
+   * @param userId - The user's unique identifier
+   * @param fileName - Original filename of uploaded CSV
+   * @param fileSize - Size of uploaded file in bytes
+   * @param csvData - Parsed CSV data as array of records
+   * @returns ServiceResult containing created DatasetDTO or error
+   * 
+   * @example
+   * ```ts
+   * const result = await analysisService.createAnalysis(
+   *   'user-123',
+   *   'cattle-data.csv',
+   *   1024000,
+   *   parsedCsvData
+   * )
+   * ```
    */
   async createAnalysis(
     userId: string,
