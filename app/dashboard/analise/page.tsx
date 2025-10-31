@@ -95,18 +95,26 @@ export default function AnaliseDataPage() {
   })
 
   const handleGenerateTestData = () => {
-    toast.loading('Gerando dados de teste...')
+    // Criar toast com ID para poder fechar depois
+    const toastId = toast.loading('Gerando dados de teste...', {
+      duration: Infinity, // Não fechar automaticamente
+      action: {
+        label: 'Fechar',
+        onClick: () => toast.dismiss(toastId)
+      }
+    })
     
     try {
       // Gera e baixa arquivo CSV com 100 registros
       generateAndDownloadTestData(100)
       
-      toast.dismiss()
+      // Fechar o toast de loading
+      toast.dismiss(toastId)
       toast.success('Arquivo de teste gerado! Verifique seus downloads.')
       toast.info('Agora você pode fazer upload do arquivo gerado', { duration: 5000 })
     } catch (error) {
       console.error('Erro ao gerar dados:', error)
-      toast.dismiss()
+      toast.dismiss(toastId)
       toast.error('Erro ao gerar arquivo de teste')
     }
   }

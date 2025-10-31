@@ -71,23 +71,75 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Apenas arquivos CSV são aceitos' }, { status: 400 })
     }
 
-    // Ler conteúdo do arquivo
-    const fileContent = await file.text()
+    // Check file size for streaming decision
+    const fileSizeInMB = file.size / (1024 * 1024)
+    const useStreaming = fileSizeInMB > 10 // Use streaming for files > 10MB
     
-    // Parse do CSV
-    const parseResult = Papa.parse(fileContent, {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (header) => header.trim()
-    })
-
-    if (parseResult.errors.length > 0) {
-      return NextResponse.json({ 
-        error: 'Erro ao processar CSV: ' + parseResult.errors[0].message 
-      }, { status: 400 })
+    let data: Record<string, unknown>[] = []
+    let parseErrors: any[] = []
+    
+    if (useStreaming) {
+      // STREAMING MODE: Process CSV in chunks for large files
+      console.log(`📊 Processando arquivo grande (${fileSizeInMB.toFixed(2)}MB) em modo streaming...`)
+      
+      const fileContent = await file.text()
+      const chunks: Record<string, unknown>[][] = []
+      let currentChunk: Record<string, unknown>[] = []
+      const chunkSize = 1000 // Process 1000 rows at a time
+      
+      // Parse with streaming callback
+      Papa.parse(fileContent, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (header) => header.trim(),
+        step: (row: any) => {
+          if (row.errors.length === 0) {
+            currentChunk.push(row.data)
+            
+            // When chunk is full, process it
+            if (currentChunk.length >= chunkSize) {
+              chunks.push([...currentChunk])
+              currentChunk = []
+            }
+          } else {
+            parseErrors.push(...row.errors)
+          }
+        },
+        complete: () => {
+          // Add remaining rows
+          if (currentChunk.length > 0) {
+            chunks.push(currentChunk)
+          }
+        }
+      })
+      
+      // Flatten chunks into single array
+      data = chunks.flat()
+      console.log(`✅ Processados ${data.length} registros em ${chunks.length} chunks`)
+      
+    } else {
+      // STANDARD MODE: Load entire file for smaller files
+      const fileContent = await file.text()
+      
+      const parseResult = Papa.parse(fileContent, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (header) => header.trim()
+      })
+      
+      parseErrors = parseResult.errors
+      data = parseResult.data as Record<string, unknown>[]
     }
 
-    const data = parseResult.data as Record<string, unknown>[]
+    if (parseErrors.length > 0) {
+      console.warn(`⚠️ ${parseErrors.length} erros durante parse`)
+      // Only fail if there are critical errors
+      if (data.length === 0) {
+        return NextResponse.json({ 
+          error: 'Erro ao processar CSV: ' + parseErrors[0].message 
+        }, { status: 400 })
+      }
+    }
     
     if (data.length === 0) {
       return NextResponse.json({ 

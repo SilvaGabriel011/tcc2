@@ -11,6 +11,18 @@ const redis = new Redis({
 })
 
 /**
+ * Prefixes para cada tipo de rate limiter
+ */
+export const rateLimitPrefixes = {
+  analysis: 'ratelimit:analysis',
+  diagnostic: 'ratelimit:diagnostic',
+  search: 'ratelimit:search',
+  general: 'ratelimit:general',
+  upload: 'ratelimit:upload',
+  auth: 'ratelimit:auth',
+} as const
+
+/**
  * Configurações de rate limit por tipo de endpoint
  */
 export const rateLimiters = {
@@ -19,7 +31,7 @@ export const rateLimiters = {
     redis,
     limiter: Ratelimit.slidingWindow(10, '1 h'), // 10 requisições por hora
     analytics: true,
-    prefix: 'ratelimit:analysis',
+    prefix: rateLimitPrefixes.analysis,
   }),
 
   // Endpoints de diagnóstico - muito restritivo (processamento pesado)
@@ -27,7 +39,7 @@ export const rateLimiters = {
     redis,
     limiter: Ratelimit.slidingWindow(20, '1 h'), // 20 requisições por hora
     analytics: true,
-    prefix: 'ratelimit:diagnostic',
+    prefix: rateLimitPrefixes.diagnostic,
   }),
 
   // Busca de artigos - moderado
@@ -35,7 +47,7 @@ export const rateLimiters = {
     redis,
     limiter: Ratelimit.slidingWindow(100, '1 h'), // 100 requisições por hora
     analytics: true,
-    prefix: 'ratelimit:search',
+    prefix: rateLimitPrefixes.search,
   }),
 
   // Endpoints gerais - mais permissivo
@@ -43,7 +55,7 @@ export const rateLimiters = {
     redis,
     limiter: Ratelimit.slidingWindow(200, '1 h'), // 200 requisições por hora
     analytics: true,
-    prefix: 'ratelimit:general',
+    prefix: rateLimitPrefixes.general,
   }),
 
   // Upload - muito restritivo
@@ -51,7 +63,7 @@ export const rateLimiters = {
     redis,
     limiter: Ratelimit.slidingWindow(5, '1 h'), // 5 uploads por hora
     analytics: true,
-    prefix: 'ratelimit:upload',
+    prefix: rateLimitPrefixes.upload,
   }),
 
   // Auth - proteção contra brute force
@@ -59,7 +71,7 @@ export const rateLimiters = {
     redis,
     limiter: Ratelimit.slidingWindow(5, '15 m'), // 5 tentativas a cada 15 minutos
     analytics: true,
-    prefix: 'ratelimit:auth',
+    prefix: rateLimitPrefixes.auth,
   }),
 }
 
@@ -230,7 +242,7 @@ export async function getRateLimitInfo(
   type: RateLimitType = 'general'
 ): Promise<{ limit: number; remaining: number; reset: number } | null> {
   try {
-    const key = `${rateLimiters[type].prefix}:${identifier}`
+    const key = `${rateLimitPrefixes[type]}:${identifier}`
     const data = await redis.get(key)
     
     if (!data) {
