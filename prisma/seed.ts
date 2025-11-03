@@ -19,6 +19,19 @@ async function main() {
     },
   })
 
+  // Create demo user
+  const demoPassword = await bcrypt.hash('demo123', 12)
+  const demo = await prisma.user.upsert({
+    where: { email: 'demo@agroinsight.com' },
+    update: {},
+    create: {
+      email: 'demo@agroinsight.com',
+      name: 'Demo User',
+      password: demoPassword,
+      role: 'USER',
+    },
+  })
+
   // Create regular user
   const userPassword = await bcrypt.hash('user123', 12)
   const user = await prisma.user.upsert({
@@ -109,6 +122,7 @@ async function main() {
   })
 
   console.log('✅ Database seeded successfully!')
+  console.log(`👤 Demo: demo@agroinsight.com / demo123`)
   console.log(`👤 Admin: admin@agroinsight.com / admin123`)
   console.log(`👤 User: researcher@agroinsight.com / user123`)
 }
