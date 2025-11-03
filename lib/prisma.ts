@@ -24,9 +24,30 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
+// Build the database URL with connection pooling parameters for serverless
+const getDatabaseUrl = () => {
+  const baseUrl = process.env.DATABASE_URL || ''
+  
+  // In Vercel or production, add pgbouncer mode to prevent prepared statement conflicts
+  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    const url = new URL(baseUrl)
+    url.searchParams.set('pgbouncer', 'true')
+    url.searchParams.set('connection_limit', '1')
+    return url.toString()
+  }
+  
+  return baseUrl
+}
+
 // Use existing instance if available, otherwise create new one
-// The ?? operator returns right side only if left side is null/undefined
-export const prisma = globalForPrisma.prisma ?? new PrismaClient()
+// Configure with optimizations for serverless and build environments
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+  datasources: {
+    db: {
+      url: getDatabaseUrl(),
+    },
+  },
+})
 
 // In development, store instance in global to survive hot reloads
 // In production, this is skipped since there's no hot reload

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
+// Force dynamic rendering for this test route
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // Verificar se a API key existe

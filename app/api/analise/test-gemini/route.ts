@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
+// Force dynamic rendering for this test route
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // Verificar se a API key existe
@@ -16,10 +19,9 @@ export async function GET() {
     
     // Lista de modelos para tentar (em ordem de preferência)
     const modelsToTry = [
+      'gemini-pro',
+      'gemini-1.5-pro',
       'gemini-1.5-flash',
-      'models/gemini-1.5-flash',
-      'gemini-1.0-pro',
-      'models/gemini-1.0-pro',
     ]
     
     const errors: Record<string, string> = {}

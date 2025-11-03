@@ -37,6 +37,9 @@ import Papa from 'papaparse'
 import { analyzeDataset } from '@/lib/dataAnalysis'
 import { invalidateCache } from '@/lib/cache'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 /**
  * POST handler for CSV file upload and analysis
  * 

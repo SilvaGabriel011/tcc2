@@ -5,6 +5,9 @@ import { prisma } from '@/lib/prisma'
 import axios from 'axios'
 import { invalidateCache } from '@/lib/cache'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 // Detectar e extrair DOI de uma URL
 function extractDOI(url: string): string | null {
   const doiPattern = /10\.\d{4,9}\/[-._;()/:A-Z0-9]+/i
