@@ -46,16 +46,16 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <Sprout className="h-12 w-12 text-green-600" />
+            <Sprout className="h-12 w-12 text-green-600 dark:text-green-400" />
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
             Recuperar senha
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-300">
             Digite seu email para receber um link de recuperação
           </p>
         </div>
@@ -72,7 +72,7 @@ export default function ForgotPasswordPage() {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-green-400 dark:focus:border-green-400"
                 placeholder="Endereço de email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -80,7 +80,7 @@ export default function ForgotPasswordPage() {
             </div>
 
             {error && (
-              <div className="text-red-600 text-sm text-center">{error}</div>
+              <div className="text-red-600 dark:text-red-400 text-sm text-center bg-red-50 dark:bg-red-900/20 p-3 rounded-md">{error}</div>
             )}
 
             <div>
@@ -96,7 +96,7 @@ export default function ForgotPasswordPage() {
             <div className="text-center">
               <Link
                 href="/auth/signin"
-                className="font-medium text-green-600 hover:text-green-500 inline-flex items-center gap-2"
+                className="font-medium text-green-600 hover:text-green-500 dark:text-green-400 dark:hover:text-green-300 inline-flex items-center gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Voltar para o login
@@ -105,26 +105,26 @@ export default function ForgotPasswordPage() {
           </form>
         ) : (
           <div className="text-center space-y-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-green-800 font-medium">
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <p className="text-green-800 dark:text-green-300 font-medium">
                 ✓ Link de recuperação enviado!
               </p>
-              <p className="text-green-700 text-sm mt-2">
+              <p className="text-green-700 dark:text-green-400 text-sm mt-2">
                 Se o email existir em nossa base, você receberá um link para redefinir sua senha.
               </p>
             </div>
 
             {resetLink && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-yellow-800 font-medium text-sm">
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                <p className="text-yellow-800 dark:text-yellow-300 font-medium text-sm">
                   🔧 Modo Desenvolvimento
                 </p>
-                <p className="text-yellow-700 text-xs mt-2">
+                <p className="text-yellow-700 dark:text-yellow-400 text-xs mt-2">
                   Use este link para redefinir sua senha:
                 </p>
                 <a
                   href={resetLink}
-                  className="text-blue-600 hover:text-blue-800 underline text-xs break-all block mt-2"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline text-xs break-all block mt-2"
                 >
                   {resetLink}
                 </a>
@@ -134,7 +134,7 @@ export default function ForgotPasswordPage() {
             <div>
               <Link
                 href="/auth/signin"
-                className="font-medium text-green-600 hover:text-green-500 inline-flex items-center gap-2"
+                className="font-medium text-green-600 hover:text-green-500 dark:text-green-400 dark:hover:text-green-300 inline-flex items-center gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Voltar para o login
