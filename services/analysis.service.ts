@@ -60,7 +60,7 @@ export class AnalysisService {
    * }
    * ```
    */
-  async getUserAnalyses(userId: string): ServiceResult<DatasetDTO[]> {
+  async getUserAnalyses(userId: string): Promise<ServiceResult<DatasetDTO[]>> {
     try {
       logger.db.query('FIND_MANY', 'datasets')
       
@@ -139,7 +139,7 @@ export class AnalysisService {
   async getAnalysisById(
     analysisId: string,
     userId: string
-  ): ServiceResult<DatasetDTO> {
+  ): Promise<ServiceResult<DatasetDTO>> {
     try {
       logger.db.query('FIND_FIRST', 'datasets')
       
@@ -224,7 +224,7 @@ export class AnalysisService {
     fileName: string,
     fileSize: number,
     csvData: Record<string, unknown>[]
-  ): ServiceResult<DatasetDTO> {
+  ): Promise<ServiceResult<DatasetDTO>> {
     try {
       logger.info('Iniciando análise de dataset', {
         fileName,
@@ -323,7 +323,7 @@ export class AnalysisService {
   async generateDiagnostic(
     analysisId: string,
     userId: string
-  ): ServiceResult<Diagnostico> {
+  ): Promise<ServiceResult<Diagnostico>> {
     try {
       logger.info('Gerando diagnóstico', { analysisId })
 
@@ -369,7 +369,7 @@ export class AnalysisService {
   /**
    * Deletar análise
    */
-  async deleteAnalysis(analysisId: string, userId: string): ServiceResult<void> {
+  async deleteAnalysis(analysisId: string, userId: string): Promise<ServiceResult<void>> {
     try {
       // Verificar se análise pertence ao usuário
       const analysis = await prisma.dataset.findFirst({
@@ -413,12 +413,12 @@ export class AnalysisService {
   /**
    * Obter estatísticas de análises do usuário
    */
-  async getUserAnalyticsStats(userId: string): ServiceResult<{
+  async getUserAnalyticsStats(userId: string): Promise<ServiceResult<{
     totalAnalyses: number
     totalDatasets: number
     averageRowsPerDataset: number
     mostRecentAnalysis?: string
-  }> {
+  }>> {
     try {
       const analyses = await prisma.dataset.findMany({
         where: {
