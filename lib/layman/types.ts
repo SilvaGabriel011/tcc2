@@ -4,7 +4,7 @@
  */
 
 // Entity types
-export type EntityType = 'gado' | 'forragem'
+export type EntityType = 'gado' | 'forragem' | 'bovine' | 'swine' | 'poultry' | 'sheep' | 'goat' | 'fish'
 
 // Color categories
 export type ColorCategory = 'red' | 'yellow' | 'green'

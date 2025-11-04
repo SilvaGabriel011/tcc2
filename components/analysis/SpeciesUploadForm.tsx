@@ -103,7 +103,7 @@ export function SpeciesUploadForm({
           return [...base, 'peso', 'idade', 'mortalidade', 'consumo_racao']
         }
         if (subtype === 'layer') {
-          return [...base, 'producao_ovos', 'peso_ovo', 'consumo_racao']
+          return [...base, 'producao_ovos', 'peso_ovo', 'consumo_racao', 'massa_ovos', 'conversao_duzia', 'mortalidade']
         }
         return [...base, 'peso', 'idade']
         
@@ -132,6 +132,9 @@ export function SpeciesUploadForm({
       case 'aquaculture':
         return [...base, 'peso', 'conversao_alimentar', 'oxigenio_dissolvido', 'temperatura']
         
+      case 'forage':
+        return ['parcela', 'biomassa_kg_ha', 'altura_cm', 'cobertura_solo', 'proteina_bruta', 'fdn', 'fda']
+        
       default:
         return base
     }
@@ -144,9 +147,123 @@ export function SpeciesUploadForm({
       swine: 'Suínos',
       sheep: 'Ovinos',
       goat: 'Caprinos',
-      aquaculture: 'Piscicultura'
+      aquaculture: 'Piscicultura',
+      forage: 'Forragem'
     }
     return names[species] || species
+  }
+  
+  // Obter exemplos de dados baseado na espécie e subtipo
+  const getDataExamples = () => {
+    switch(species) {
+      case 'poultry':
+        if (subtype === 'layer') {
+          return {
+            title: 'Métricas de Poedeiras',
+            metrics: [
+              'producao_ovos: 85-92%',
+              'peso_ovo: 58-63g',
+              'conversao_duzia: 1.5-1.7 kg/dz',
+              'massa_ovos: 50-55 g/ave/dia',
+              'mortalidade: <1%/mês'
+            ]
+          }
+        }
+        if (subtype === 'broiler') {
+          return {
+            title: 'Métricas de Frango de Corte',
+            metrics: [
+              'peso_42d: 2600-2900g',
+              'conversao: 1.6-1.75 kg/kg',
+              'mortalidade: <3.5%',
+              'gpd: 60-70 g/dia'
+            ]
+          }
+        }
+        break
+      case 'bovine':
+        if (subtype === 'dairy') {
+          return {
+            title: 'Métricas de Bovinos Leiteiros',
+            metrics: [
+              'producao_leite: 25-35 L/dia',
+              'gordura_leite: 3.5-4.0%',
+              'proteina_leite: 3.0-3.4%',
+              'celulas_somaticas: <200.000 cel/mL'
+            ]
+          }
+        }
+        if (subtype === 'beef') {
+          return {
+            title: 'Métricas de Bovinos de Corte',
+            metrics: [
+              'gpd: 1.0-1.5 kg/dia',
+              'peso_vivo: variável',
+              'escore_corporal: 3.0-3.5',
+              'conversao: 6-8 kg/kg'
+            ]
+          }
+        }
+        break
+      case 'forage':
+        return {
+          title: 'Métricas de Forragem',
+          metrics: [
+            'biomassa_seca: 2000-7000 kg/ha',
+            'proteina_bruta: 8-16%',
+            'altura: 20-40cm',
+            'cobertura_solo: >80%'
+          ]
+        }
+      case 'swine':
+        if (subtype === 'finishing') {
+          return {
+            title: 'Métricas de Terminação',
+            metrics: [
+              'peso_final: 110-130kg',
+              'conversao: 2.5-2.8 kg/kg',
+              'espessura_toucinho: 12-16mm',
+              'gpd: 850-1000 g/dia'
+            ]
+          }
+        }
+        if (subtype === 'nursery') {
+          return {
+            title: 'Métricas de Creche',
+            metrics: [
+              'peso_desmame: 6-8kg',
+              'gpd_creche: 400-500 g/dia',
+              'conversao_creche: 1.4-1.6 kg/kg',
+              'mortalidade: <2%'
+            ]
+          }
+        }
+        break
+      case 'sheep':
+      case 'goat':
+        return {
+          title: `Métricas de ${species === 'sheep' ? 'Ovinos' : 'Caprinos'}`,
+          metrics: [
+            'gpd: 150-250 g/dia',
+            'escore_corporal: 3.0-3.5',
+            'peso_abate: 35-45kg',
+            'conversao: 4-6 kg/kg'
+          ]
+        }
+      case 'aquaculture':
+        return {
+          title: 'Métricas de Piscicultura',
+          metrics: [
+            'conversao_alimentar: 1.2-1.8',
+            'oxigenio_dissolvido: >5 mg/L',
+            'temperatura: 26-30°C',
+            'densidade: 5-15 peixes/m³'
+          ]
+        }
+      default:
+        return null
+    }
+    return null
   }
 
   return (
@@ -210,6 +327,25 @@ export function SpeciesUploadForm({
           </div>
         </div>
       </div>
+      
+      {/* Exemplos de Dados Dinâmicos */}
+      {getDataExamples() && (
+        <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-lg border border-green-200 dark:border-green-900">
+          <div className="flex items-start gap-2">
+            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium text-green-900 dark:text-green-300">
+                {getDataExamples()?.title} - Valores de Referência:
+              </p>
+              <ul className="text-sm text-green-800 dark:text-green-400 mt-2 space-y-1">
+                {getDataExamples()?.metrics.map((metric, idx) => (
+                  <li key={idx}>• {metric}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Preview dos Dados */}
       {preview.length > 0 && (

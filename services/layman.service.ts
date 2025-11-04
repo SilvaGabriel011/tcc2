@@ -15,7 +15,8 @@ import type {
   TechnicalViewResponse,
   FarmThresholds,
   ThresholdConfig,
-  ThresholdHistoryResponse
+  ThresholdHistoryResponse,
+  EntityType
 } from '@/lib/layman/types'
 
 export class LaymanService {
@@ -165,23 +166,38 @@ export class LaymanService {
    */
   convertAnalysisToEvaluation(
     analysisData: Record<string, unknown>,
-    entityType: 'gado' | 'forragem'
+    entityType: EntityType,
+    farmId: string = 'default_farm'
   ): EvaluationRequest {
-    // Extract metrics from analysis data
-    const metrics = analysisData.numericStats as Record<string, { mean?: number }> || {}
+    // Safely extract metrics from analysis data
+    const numericStats = analysisData.numericStats
+    const metrics = (numericStats && typeof numericStats === 'object') 
+      ? numericStats as Record<string, { mean?: number }>
+      : {}
+    
+    // Helper function to safely get mean value
+    const getMeanValue = (...keys: string[]): number | undefined => {
+      for (const key of keys) {
+        const value = metrics[key]?.mean
+        if (typeof value === 'number' && !isNaN(value)) {
+          return value
+        }
+      }
+      return undefined
+    }
     
     return {
       entity_id: `analysis_${Date.now()}`,
-      farm_id: 'default_farm', // TODO: Get from user context
+      farm_id: farmId,
       entity_type: entityType,
       metric_values: {
-        peso_kg: metrics['peso']?.mean || metrics['peso_kg']?.mean,
-        gmd_7d_kg_per_day: metrics['gmd_7d']?.mean,
-        gmd_30d_kg_per_day: metrics['gmd_30d']?.mean,
-        bcs: metrics['bcs']?.mean,
-        biomassa_kg_ha: metrics['biomassa']?.mean,
-        cobertura_pct: metrics['cobertura']?.mean,
-        indice_visual: metrics['indice']?.mean,
+        peso_kg: getMeanValue('peso', 'peso_kg'),
+        gmd_7d_kg_per_day: getMeanValue('gmd_7d'),
+        gmd_30d_kg_per_day: getMeanValue('gmd_30d'),
+        bcs: getMeanValue('bcs'),
+        biomassa_kg_ha: getMeanValue('biomassa'),
+        cobertura_pct: getMeanValue('cobertura'),
+        indice_visual: getMeanValue('indice'),
       }
     }
   }

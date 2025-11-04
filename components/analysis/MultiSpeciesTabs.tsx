@@ -51,7 +51,6 @@ interface SpeciesConfig {
   code: string
   icon: React.ReactNode
   subtypes?: AnimalSubtype[]
-  hasForage?: boolean
   description: string
   color: string
 }
@@ -95,8 +94,7 @@ export const SPECIES_CONFIGS: SpeciesConfig[] = [
       { id: 'beef', name: 'Corte', code: 'beef', description: 'Produção de carne' },
       { id: 'dual', name: 'Dupla Aptidão', code: 'dual', description: 'Leite e carne' }
     ],
-    hasForage: true,
-    description: 'Análise completa para bovinocultura com integração de dados de pastagem'
+    description: 'Análise completa para bovinocultura de leite e corte'
   },
   {
     id: 'sheep',
@@ -137,6 +135,20 @@ export const SPECIES_CONFIGS: SpeciesConfig[] = [
       { id: 'pacu', name: 'Pacu', code: 'pacu', description: 'Produção de pacu' }
     ],
     description: 'Análise completa para piscicultura com controle de qualidade da água'
+  },
+  {
+    id: 'forage',
+    name: 'Forragem',
+    code: 'forage',
+    icon: <Wheat className="w-4 h-4" />,
+    color: 'green',
+    subtypes: [
+      { id: 'brachiaria', name: 'Brachiaria', code: 'brachiaria', description: 'Braquiária - forrageira tropical' },
+      { id: 'panicum', name: 'Panicum', code: 'panicum', description: 'Panicum maximum - Mombaça, Tanzânia' },
+      { id: 'cynodon', name: 'Cynodon', code: 'cynodon', description: 'Tifton, Coast-cross' },
+      { id: 'mixed', name: 'Misto', code: 'mixed', description: 'Consórcio de forrageiras' }
+    ],
+    description: 'Análise de produção e qualidade de pastagens e forragens para nutrição animal'
   }
 ]
 
@@ -250,18 +262,6 @@ export function MultiSpeciesTabs({
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-        )}
-
-        {/* Indicador de Integração com Forragem */}
-        {species.hasForage && (
-          <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-lg border border-green-200 dark:border-green-900">
-            <div className="flex items-center gap-2 text-green-800 dark:text-green-300">
-              <Wheat className="w-5 h-5" />
-              <p className="text-sm font-medium">
-                Esta espécie integra análise de forragem para nutrição animal
-              </p>
             </div>
           </div>
         )}

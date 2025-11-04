@@ -262,8 +262,8 @@ async function seedSheepGoatReferences(species: Record<string, any>, subtypes: R
               subtypeId: subtype.id,
               metric,
               minValue: values.min,
-              idealMinValue: values.ideal * 0.95,
-              idealMaxValue: values.ideal * 1.05,
+              idealMinValue: values.ideal ? values.ideal * 0.95 : values.min,
+              idealMaxValue: values.ideal ? values.ideal * 1.05 : values.max,
               maxValue: values.max,
               unit: values.unit,
               source: values.source
@@ -297,8 +297,8 @@ async function seedSheepGoatReferences(species: Record<string, any>, subtypes: R
               subtypeId: subtype.id,
               metric,
               minValue: values.min,
-              idealMinValue: values.ideal * 0.95,
-              idealMaxValue: values.ideal * 1.05,
+              idealMinValue: values.ideal ? values.ideal * 0.95 : values.min,
+              idealMaxValue: values.ideal ? values.ideal * 1.05 : values.max,
               maxValue: values.max,
               unit: values.unit,
               source: values.source
@@ -344,8 +344,8 @@ async function seedAquacultureReferences(species: Record<string, any>, subtypes:
             subtypeId: subtype.id,
             metric,
             minValue: values.min,
-            idealMinValue: values.ideal * 0.95,
-            idealMaxValue: values.ideal * 1.05,
+            idealMinValue: values.ideal ? values.ideal * 0.95 : values.min,
+            idealMaxValue: values.ideal ? values.ideal * 1.05 : values.max,
             maxValue: values.max,
             unit: values.unit,
             source: values.source

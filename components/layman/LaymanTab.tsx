@@ -13,13 +13,34 @@
 import { useState, useEffect } from 'react'
 import { AlertCircle, Info } from 'lucide-react'
 import { LaymanToggle } from './LaymanToggle'
-import { CattleSilhouette } from './CattleSilhouette'
+import { AnimalSilhouette } from './AnimalSilhouettes'
 import { ForagePanel } from './ForagePanel'
 import { MetricCard } from './MetricCard'
 import { ColorLegend } from './ColorLegend'
 import { laymanService } from '@/services/layman.service'
 import { toast } from 'sonner'
 import type { LaymanViewResponse, EntityType } from '@/lib/layman/types'
+
+// Helper function to map entity type to species
+function getSpeciesFromEntityType(entityType: EntityType): 'bovine' | 'swine' | 'poultry' | 'sheep' | 'goat' | 'fish' {
+  switch (entityType) {
+    case 'gado':
+    case 'bovine':
+      return 'bovine'
+    case 'swine':
+      return 'swine'
+    case 'poultry':
+      return 'poultry'
+    case 'sheep':
+      return 'sheep'
+    case 'goat':
+      return 'goat'
+    case 'fish':
+      return 'fish'
+    default:
+      return 'bovine' // Default to bovine for backward compatibility
+  }
+}
 
 interface LaymanTabProps {
   analysisData: Record<string, unknown>
@@ -128,17 +149,17 @@ export function LaymanTab({ analysisData, entityType }: LaymanTabProps) {
       <div className="grid md:grid-cols-2 gap-6">
         {/* Left: Silhouette/Image */}
         <div>
-          {entityType === 'gado' ? (
-            <CattleSilhouette
+          {entityType === 'forragem' ? (
+            <ForagePanel
               color={evaluation.final_color}
               label={evaluation.short_label}
               annotation={evaluation.annotation}
             />
           ) : (
-            <ForagePanel
+            <AnimalSilhouette
+              species={getSpeciesFromEntityType(entityType)}
               color={evaluation.final_color}
               label={evaluation.short_label}
-              annotation={evaluation.annotation}
             />
           )}
         </div>
