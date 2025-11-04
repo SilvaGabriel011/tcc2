@@ -15,9 +15,12 @@ import {
   Activity,
   Info,
   GitCompare,
-  Trash2
+  Trash2,
+  User
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { Tabs } from '@/components/tabs'
+import { LaymanTab } from '@/components/layman'
 import {
   BoxPlotChart,
   PieChartComponent,
@@ -653,8 +656,18 @@ export default function ResultadosPage() {
                       </div>
                     </div>
 
-                    {/* Diagnóstico Zootécnico com IA */}
-                    {showDiagnostico && diagnostico && (
+                    {/* Tabs: Análise Técnica vs Visualização Leiga */}
+                    <Tabs
+                      defaultTab="technical"
+                      tabs={[
+                        {
+                          id: 'technical',
+                          label: 'Análise Técnica',
+                          icon: <BarChart3 className="h-4 w-4" />,
+                          content: (
+                            <>
+                              {/* Diagnóstico Zootécnico com IA */}
+                              {showDiagnostico && diagnostico && (
                       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 shadow-lg rounded-lg p-6 border-l-4 border-blue-600">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center">
@@ -1047,6 +1060,22 @@ export default function ResultadosPage() {
                         ) : null
                       })()
                     }
+                            </>
+                          ),
+                        },
+                        {
+                          id: 'layman',
+                          label: 'Visualização Leiga',
+                          icon: <User className="h-4 w-4" />,
+                          content: (
+                            <LaymanTab 
+                              analysisData={analysisData as Record<string, unknown>}
+                              entityType="gado"
+                            />
+                          ),
+                        },
+                      ]}
+                    />
                   </div>
                 ) : (
                   <div className="bg-card shadow rounded-lg p-8 text-center">
