@@ -20,6 +20,8 @@ import { toast } from 'sonner'
 import { CSVPreview } from '@/components/csv-preview'
 import Papa from 'papaparse'
 import { generateAndDownloadTestData } from '@/lib/generate-test-data'
+import { MultiSpeciesTabs } from '@/components/analysis/MultiSpeciesTabs'
+import { SpeciesUploadForm } from '@/components/analysis/SpeciesUploadForm'
 
 export default function AnaliseDataPage() {
   const { data: session, status } = useSession()
@@ -224,9 +226,42 @@ export default function AnaliseDataPage() {
 
           {!analysisResult ? (
             <div className="space-y-8">
-              {/* Upload Area */}
+              {/* Sistema Multi-Espécie */}
               <div className="bg-card shadow rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-foreground mb-4">Upload de Arquivo</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-4">
+                  Análise Zootécnica Multi-Espécie
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                  Selecione a espécie e categoria para análise especializada com dados científicos de referência.
+                </p>
+                <MultiSpeciesTabs>
+                  {(species, subtype) => (
+                    <SpeciesUploadForm
+                      species={species}
+                      subtype={subtype}
+                      onAnalysisComplete={(result) => {
+                        if (result.analysis) {
+                          setAnalysisResult({
+                            id: result.analysis.id,
+                            name: result.analysis.name,
+                            data: JSON.stringify(result.analysis),
+                            success: true
+                          })
+                          toast.success('Análise concluída com sucesso!')
+                          router.push(`/dashboard/resultados?id=${result.analysis.id}`)
+                        }
+                      }}
+                    />
+                  )}
+                </MultiSpeciesTabs>
+              </div>
+
+              {/* Upload Padrão (Alternativa) */}
+              <details className="bg-card shadow rounded-lg">
+                <summary className="p-6 cursor-pointer font-semibold text-foreground hover:bg-muted/50 rounded-lg transition-colors">
+                  📊 Upload de Arquivo Padrão (Análise Genérica)
+                </summary>
+                <div className="p-6 pt-0">
                 
                 <div
                   {...getRootProps()}
@@ -300,7 +335,8 @@ export default function AnaliseDataPage() {
                 >
                   {isAnalyzing ? 'Analisando...' : 'Analisar Dados'}
                 </button>
-              </div>
+                </div>
+              </details>
 
               {/* Informações sobre o formato esperado */}
               <div className="bg-card shadow rounded-lg p-6">

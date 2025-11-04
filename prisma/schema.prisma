@@ -234,3 +234,86 @@ model AuditLog {
   @@index([resource, resourceId])
   @@map("audit_logs")
 }
+
+// ==================== MULTI-SPECIES MODELS ====================
+
+model AnimalSpecies {
+  id            String   @id @default(cuid())
+  code          String   @unique // 'bovine','swine','poultry','sheep','goat','forage','aquaculture'
+  name          String   // 'Bovinos','Suínos','Aves','Ovinos','Caprinos','Forragem','Piscicultura'
+  hasSubtypes   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  subtypes      AnimalSubtype[]
+  references    ReferenceData[]
+  
+  @@map("animal_species")
+}
+
+model AnimalSubtype {
+  id          String   @id @default(cuid())
+  speciesId   String
+  code        String   // 'dairy','beef','broiler','layer','nursery','finishing'
+  name        String   // 'Leite','Corte','Frango de Corte','Poedeiras','Creche','Terminação'
+  description String?  // Descrição opcional do subtipo
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  species     AnimalSpecies @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+  references  ReferenceData[]
+  
+  @@index([speciesId])
+  @@unique([speciesId, code]) // Código único por espécie
+  @@map("animal_subtypes")
+}
+
+model ReferenceData {
+  id            String   @id @default(cuid())
+  speciesId     String
+  subtypeId     String?
+  metric        String   // 'gpd','peso_nascimento','producao_leite','conversao_alimentar'
+  minValue      Float
+  idealMinValue Float?
+  idealMaxValue Float?
+  maxValue      Float
+  unit          String   // 'kg','%','g/dia','L/dia','kg/kg'
+  source        String   // 'NRC 2016','EMBRAPA 2023','Literatura'
+  description   String?  // Descrição ou observações sobre a métrica
+  validFrom     DateTime @default(now())
+  validUntil    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  species       AnimalSpecies  @relation(fields: [speciesId], references: [id], onDelete: Cascade)
+  subtype       AnimalSubtype? @relation(fields: [subtypeId], references: [id], onDelete: SetNull)
+  
+  @@index([speciesId, metric])
+  @@index([subtypeId, metric])
+  @@unique([speciesId, subtypeId, metric]) // Métrica única por espécie/subtipo
+  @@map("reference_data")
+}
+
+model ForageReference {
+  id          String   @id @default(cuid())
+  forageType  String   // 'brachiaria_brizantha','brachiaria_decumbens','panicum_maximum'
+  variety     String?  // 'marandu','xaraes','mombaca','tanzania'
+  metric      String   // 'biomassa_seca','proteina_bruta','fdn','fda','digestibilidade'
+  minValue    Float
+  idealValue  Float
+  maxValue    Float
+  unit        String   // 'kg/ha','%','cm'
+  season      String?  // 'aguas','seca','transicao'
+  source      String   // 'EMBRAPA Gado de Corte 2023'
+  description String?  // Descrição ou condições específicas
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([forageType, metric])
+  @@index([season])
+  @@unique([forageType, variety, metric, season]) // Combinação única
+  @@map("forage_references")
+}

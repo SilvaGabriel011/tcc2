@@ -1,0 +1,347 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Tabs } from '@/components/tabs'
+import { 
+  Bird, Beef, Fish, Wheat, Activity, ChevronDown, 
+  Info, Loader2
+} from 'lucide-react'
+import { toast } from 'sonner'
+
+// Ícones customizados para espécies não cobertas
+const PigIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="8"/>
+    <circle cx="9" cy="10" r="1.5"/>
+    <circle cx="15" cy="10" r="1.5"/>
+    <path d="M8 15 Q12 17 16 15" strokeLinecap="round"/>
+  </svg>
+)
+
+const SheepIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="7"/>
+    <path d="M8 8 Q12 6 16 8" strokeLinecap="round"/>
+    <circle cx="9" cy="10" r="1"/>
+    <circle cx="15" cy="10" r="1"/>
+  </svg>
+)
+
+const GoatIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="6"/>
+    <path d="M8 7 L8 5" strokeLinecap="round"/>
+    <path d="M16 7 L16 5" strokeLinecap="round"/>
+    <circle cx="9" cy="10" r="1"/>
+    <circle cx="15" cy="10" r="1"/>
+    <path d="M12 16 L12 18" strokeLinecap="round"/>
+  </svg>
+)
+
+interface AnimalSubtype {
+  id: string
+  name: string
+  code: string
+  description?: string
+}
+
+interface SpeciesConfig {
+  id: string
+  name: string
+  code: string
+  icon: React.ReactNode
+  subtypes?: AnimalSubtype[]
+  hasForage?: boolean
+  description: string
+  color: string
+}
+
+export const SPECIES_CONFIGS: SpeciesConfig[] = [
+  {
+    id: 'poultry',
+    name: 'Aves',
+    code: 'poultry',
+    icon: <Bird className="w-4 h-4" />,
+    color: 'orange',
+    subtypes: [
+      { id: 'broiler', name: 'Frango de Corte', code: 'broiler', description: 'Produção de carne de frango' },
+      { id: 'layer', name: 'Poedeiras', code: 'layer', description: 'Produção de ovos comerciais' },
+      { id: 'breeder', name: 'Matrizes', code: 'breeder', description: 'Reprodução e incubação' }
+    ],
+    description: 'Análise completa para produção avícola com métricas de desempenho zootécnico'
+  },
+  {
+    id: 'swine',
+    name: 'Suínos',
+    code: 'swine',
+    icon: <PigIcon />,
+    color: 'pink',
+    subtypes: [
+      { id: 'nursery', name: 'Creche', code: 'nursery', description: 'Leitões de 21 a 63 dias' },
+      { id: 'growing', name: 'Crescimento', code: 'growing', description: 'Fase de 63 a 120 dias' },
+      { id: 'finishing', name: 'Terminação', code: 'finishing', description: 'Fase final até o abate' },
+      { id: 'breeding', name: 'Reprodução', code: 'breeding', description: 'Matrizes e reprodutores' }
+    ],
+    description: 'Gestão completa da suinocultura com análise por fase de produção'
+  },
+  {
+    id: 'bovine',
+    name: 'Bovinos',
+    code: 'bovine',
+    icon: <Beef className="w-4 h-4" />,
+    color: 'brown',
+    subtypes: [
+      { id: 'dairy', name: 'Leite', code: 'dairy', description: 'Produção leiteira' },
+      { id: 'beef', name: 'Corte', code: 'beef', description: 'Produção de carne' },
+      { id: 'dual', name: 'Dupla Aptidão', code: 'dual', description: 'Leite e carne' }
+    ],
+    hasForage: true,
+    description: 'Análise completa para bovinocultura com integração de dados de pastagem'
+  },
+  {
+    id: 'sheep',
+    name: 'Ovinos',
+    code: 'sheep',
+    icon: <SheepIcon />,
+    color: 'gray',
+    subtypes: [
+      { id: 'meat', name: 'Corte', code: 'meat', description: 'Produção de carne ovina' },
+      { id: 'wool', name: 'Lã', code: 'wool', description: 'Produção de lã' },
+      { id: 'milk', name: 'Leite', code: 'milk', description: 'Produção de leite ovino' }
+    ],
+    description: 'Análise para ovinocultura com métricas específicas'
+  },
+  {
+    id: 'goat',
+    name: 'Caprinos',
+    code: 'goat',
+    icon: <GoatIcon />,
+    color: 'amber',
+    subtypes: [
+      { id: 'meat', name: 'Corte', code: 'meat', description: 'Produção de carne caprina' },
+      { id: 'milk', name: 'Leite', code: 'milk', description: 'Produção de leite caprino' },
+      { id: 'skin', name: 'Pele', code: 'skin', description: 'Produção de peles' }
+    ],
+    description: 'Análise para caprinocultura com foco em produtividade'
+  },
+  {
+    id: 'aquaculture',
+    name: 'Piscicultura',
+    code: 'aquaculture',
+    icon: <Fish className="w-4 h-4" />,
+    color: 'blue',
+    subtypes: [
+      { id: 'tilapia', name: 'Tilápia', code: 'tilapia', description: 'Produção de tilápia' },
+      { id: 'tambaqui', name: 'Tambaqui', code: 'tambaqui', description: 'Produção de tambaqui' },
+      { id: 'pintado', name: 'Pintado', code: 'pintado', description: 'Produção de pintado' },
+      { id: 'pacu', name: 'Pacu', code: 'pacu', description: 'Produção de pacu' }
+    ],
+    description: 'Análise completa para piscicultura com controle de qualidade da água'
+  }
+]
+
+interface ReferenceData {
+  [metric: string]: {
+    min: number
+    max: number
+    ideal_min?: number
+    ideal_max?: number
+    unit: string
+    source: string
+  }
+}
+
+interface MultiSpeciesTabsProps {
+  onSpeciesChange?: (species: string, subtype?: string) => void
+  children?: (species: string, subtype?: string, referenceData?: ReferenceData) => React.ReactNode
+}
+
+export function MultiSpeciesTabs({ 
+  onSpeciesChange, 
+  children 
+}: MultiSpeciesTabsProps) {
+  const [selectedSpecies] = useState('bovine')
+  const [selectedSubtype, setSelectedSubtype] = useState<string>('dairy')
+  const [referenceData, setReferenceData] = useState<ReferenceData | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [showSubtypeDropdown, setShowSubtypeDropdown] = useState(false)
+
+  // Carregar dados de referência quando mudar espécie/subtipo
+  useEffect(() => {
+    loadReferenceData(selectedSpecies, selectedSubtype)
+  }, [selectedSpecies, selectedSubtype])
+
+  const loadReferenceData = async (species: string, subtype: string | null) => {
+    setLoading(true)
+    try {
+      const url = `/api/reference/${species}/data`
+      const response = await fetch(subtype ? `${url}?subtype=${subtype}` : url)
+      if (response.ok) {
+        const result = await response.json()
+        setReferenceData(result.data)
+        console.log('📊 Dados de referência carregados:', result)
+      }
+    } catch (error) {
+      console.error('Erro ao carregar referências:', error)
+      toast.error('Erro ao carregar dados de referência')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubtypeChange = (subtypeId: string) => {
+    setSelectedSubtype(subtypeId)
+    setShowSubtypeDropdown(false)
+    onSpeciesChange?.(selectedSpecies, subtypeId)
+  }
+
+  const currentSpecies = SPECIES_CONFIGS.find(s => s.id === selectedSpecies)
+  const currentSubtype = currentSpecies?.subtypes?.find(st => st.id === selectedSubtype)
+
+  const tabs = SPECIES_CONFIGS.map(species => ({
+    id: species.id,
+    label: species.name,
+    icon: species.icon,
+    content: (
+      <div className="space-y-6">
+        {/* Seletor de Subtipo */}
+        {species.subtypes && species.subtypes.length > 0 && (
+          <div className="bg-card dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
+            <label className="block text-sm font-medium text-foreground dark:text-gray-200 mb-2">
+              Categoria de Produção
+            </label>
+            <div className="relative">
+              <button
+                onClick={() => setShowSubtypeDropdown(!showSubtypeDropdown)}
+                className="w-full md:w-64 px-4 py-2 text-left bg-background dark:bg-gray-900 border dark:border-gray-600 rounded-md flex items-center justify-between hover:bg-muted dark:hover:bg-gray-700 transition-colors"
+              >
+                <div>
+                  <span className="font-medium text-foreground dark:text-gray-200">
+                    {currentSubtype?.name || 'Selecione...'}
+                  </span>
+                  {currentSubtype?.description && (
+                    <span className="block text-xs text-muted-foreground dark:text-gray-400 mt-1">
+                      {currentSubtype.description}
+                    </span>
+                  )}
+                </div>
+                <ChevronDown className={`w-4 h-4 text-muted-foreground dark:text-gray-400 transition-transform ${showSubtypeDropdown ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {showSubtypeDropdown && selectedSpecies === species.id && (
+                <div className="absolute z-10 w-full md:w-64 mt-1 bg-card dark:bg-gray-800 border dark:border-gray-700 rounded-md shadow-lg">
+                  {species.subtypes.map(subtype => (
+                    <button
+                      key={subtype.id}
+                      onClick={() => handleSubtypeChange(subtype.id)}
+                      className={`w-full px-4 py-3 text-left hover:bg-muted dark:hover:bg-gray-700 transition-colors first:rounded-t-md last:rounded-b-md ${
+                        selectedSubtype === subtype.id ? 'bg-muted dark:bg-gray-700' : ''
+                      }`}
+                    >
+                      <div className="font-medium text-foreground dark:text-gray-200">
+                        {subtype.name}
+                      </div>
+                      {subtype.description && (
+                        <div className="text-xs text-muted-foreground dark:text-gray-400 mt-1">
+                          {subtype.description}
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Indicador de Integração com Forragem */}
+        {species.hasForage && (
+          <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-lg border border-green-200 dark:border-green-900">
+            <div className="flex items-center gap-2 text-green-800 dark:text-green-300">
+              <Wheat className="w-5 h-5" />
+              <p className="text-sm font-medium">
+                Esta espécie integra análise de forragem para nutrição animal
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Descrição da Espécie */}
+        <div className="bg-muted/50 dark:bg-gray-800/50 p-4 rounded-lg">
+          <h3 className="font-medium text-foreground dark:text-gray-200 mb-2 flex items-center gap-2">
+            <Info className="w-4 h-4" />
+            Sobre esta análise
+          </h3>
+          <p className="text-sm text-muted-foreground dark:text-gray-400 mb-4">
+            {species.description}
+          </p>
+          
+          {/* Indicador de Loading */}
+          {loading && selectedSpecies === species.id && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-gray-400">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Carregando dados de referência...
+            </div>
+          )}
+
+          {/* Métricas de Referência */}
+          {!loading && referenceData && selectedSpecies === species.id && (
+            <div className="mt-4">
+              <h4 className="text-sm font-medium text-foreground dark:text-gray-200 mb-3">
+                Valores de Referência Disponíveis:
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {Object.entries(referenceData).slice(0, 6).map(([metric, data]) => (
+                  <div key={metric} className="bg-card dark:bg-gray-900 p-3 rounded-lg border dark:border-gray-700">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium text-foreground dark:text-gray-200">
+                        {metric.replace(/_/g, ' ').toUpperCase()}
+                      </span>
+                      <span className="text-xs text-muted-foreground dark:text-gray-400">
+                        {data.unit}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground dark:text-gray-400">
+                      Ideal: {data.ideal_min || data.min}-{data.ideal_max || data.max} {data.unit}
+                    </div>
+                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                      {data.source}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {Object.keys(referenceData).length > 6 && (
+                <p className="text-xs text-muted-foreground dark:text-gray-400 mt-2">
+                  +{Object.keys(referenceData).length - 6} métricas disponíveis
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Área de Conteúdo Dinâmico */}
+        <div className="mt-6">
+          {children ? (
+            children(species.id, selectedSubtype, referenceData || undefined)
+          ) : (
+            <div className="text-center py-12 bg-card dark:bg-gray-800 rounded-lg border dark:border-gray-700">
+              <Activity className="w-12 h-12 mx-auto text-muted-foreground dark:text-gray-400 mb-4" />
+              <p className="text-muted-foreground dark:text-gray-400">
+                Faça upload de dados de {species.name.toLowerCase()} para começar a análise
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }))
+
+  return (
+    <div className="w-full">
+      <Tabs 
+        tabs={tabs} 
+        defaultTab="bovine"
+      />
+    </div>
+  )
+}
