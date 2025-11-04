@@ -172,11 +172,20 @@ export function MultiSpeciesTabs({
   onSpeciesChange, 
   children 
 }: MultiSpeciesTabsProps) {
-  const [selectedSpecies] = useState('bovine')
+  const [selectedSpecies, setSelectedSpecies] = useState('bovine')
   const [selectedSubtype, setSelectedSubtype] = useState<string>('dairy')
   const [referenceData, setReferenceData] = useState<ReferenceData | null>(null)
   const [loading, setLoading] = useState(false)
   const [showSubtypeDropdown, setShowSubtypeDropdown] = useState(false)
+
+  // Resetar subtipo quando espécie muda
+  useEffect(() => {
+    const currentSpeciesConfig = SPECIES_CONFIGS.find(s => s.id === selectedSpecies)
+    if (currentSpeciesConfig?.subtypes && currentSpeciesConfig.subtypes.length > 0) {
+      const firstSubtype = currentSpeciesConfig.subtypes[0].id
+      setSelectedSubtype(firstSubtype)
+    }
+  }, [selectedSpecies])
 
   // Carregar dados de referência quando mudar espécie/subtipo
   useEffect(() => {
@@ -206,18 +215,26 @@ export function MultiSpeciesTabs({
     setShowSubtypeDropdown(false)
     onSpeciesChange?.(selectedSpecies, subtypeId)
   }
+  
+  const handleSpeciesTabChange = (speciesId: string) => {
+    setSelectedSpecies(speciesId)
+  }
 
-  const currentSpecies = SPECIES_CONFIGS.find(s => s.id === selectedSpecies)
-  const currentSubtype = currentSpecies?.subtypes?.find(st => st.id === selectedSubtype)
-
-  const tabs = SPECIES_CONFIGS.map(species => ({
-    id: species.id,
-    label: species.name,
-    icon: species.icon,
-    content: (
-      <div className="space-y-6">
-        {/* Seletor de Subtipo */}
-        {species.subtypes && species.subtypes.length > 0 && (
+  const tabs = SPECIES_CONFIGS.map(species => {
+    // Calcular subtipo atual para ESTA espécie específica
+    const isActiveSpecies = selectedSpecies === species.id
+    const activeSubtype = isActiveSpecies 
+      ? species.subtypes?.find(st => st.id === selectedSubtype)
+      : species.subtypes?.[0]
+    
+    return {
+      id: species.id,
+      label: species.name,
+      icon: species.icon,
+      content: (
+        <div className="space-y-6" key={`${species.id}-${selectedSubtype}`}>
+          {/* Seletor de Subtipo */}
+          {species.subtypes && species.subtypes.length > 0 && (
           <div className="bg-card dark:bg-gray-800 p-4 rounded-lg border dark:border-gray-700">
             <label className="block text-sm font-medium text-foreground dark:text-gray-200 mb-2">
               Categoria de Produção
@@ -229,18 +246,18 @@ export function MultiSpeciesTabs({
               >
                 <div>
                   <span className="font-medium text-foreground dark:text-gray-200">
-                    {currentSubtype?.name || 'Selecione...'}
+                    {activeSubtype?.name || 'Selecione...'}
                   </span>
-                  {currentSubtype?.description && (
+                  {activeSubtype?.description && (
                     <span className="block text-xs text-muted-foreground dark:text-gray-400 mt-1">
-                      {currentSubtype.description}
+                      {activeSubtype.description}
                     </span>
                   )}
                 </div>
                 <ChevronDown className={`w-4 h-4 text-muted-foreground dark:text-gray-400 transition-transform ${showSubtypeDropdown ? 'rotate-180' : ''}`} />
               </button>
               
-              {showSubtypeDropdown && selectedSpecies === species.id && (
+              {showSubtypeDropdown && isActiveSpecies && (
                 <div className="absolute z-10 w-full md:w-64 mt-1 bg-card dark:bg-gray-800 border dark:border-gray-700 rounded-md shadow-lg">
                   {species.subtypes.map(subtype => (
                     <button
@@ -333,14 +350,16 @@ export function MultiSpeciesTabs({
           )}
         </div>
       </div>
-    )
-  }))
+      )
+    }
+  })
 
   return (
     <div className="w-full">
       <Tabs 
         tabs={tabs} 
         defaultTab="bovine"
+        onTabChange={handleSpeciesTabChange}
       />
     </div>
   )
