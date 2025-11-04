@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Análise estatística básica
-    const statistics = calculateBasicStatistics(parsed.data)
+    const statistics = calculateBasicStatistics(parsed.data as Record<string, number>[])
     
     // Comparação com referências
     const references = ReferenceDataService.compareMultipleMetrics(
@@ -66,8 +66,7 @@ export async function POST(request: NextRequest) {
     const interpretation = generateBasicInterpretation(
       statistics,
       references,
-      species,
-      subtype
+      species
     )
 
     // Se não tem projectId, usar o primeiro projeto do usuário
@@ -150,7 +149,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Função para calcular estatísticas básicas
-function calculateBasicStatistics(data: any[]) {
+function calculateBasicStatistics(data: Record<string, number>[]) {
   const numericColumns = Object.keys(data[0] || {}).filter(
     key => typeof data[0][key] === 'number'
   )
@@ -166,7 +165,7 @@ function calculateBasicStatistics(data: any[]) {
   }
   
   for (const col of numericColumns) {
-    const values = data.map(row => row[col]).filter(v => v !== null && !isNaN(v))
+    const values = data.map(row => row[col]).filter((v): v is number => v !== null && !isNaN(v))
     
     if (values.length > 0) {
       const mean = values.reduce((a, b) => a + b, 0) / values.length
@@ -193,10 +192,9 @@ function calculateBasicStatistics(data: any[]) {
 
 // Função para gerar interpretação básica
 function generateBasicInterpretation(
-  stats: any,
-  references: any,
-  species: string,
-  subtype: string | null
+  stats: ReturnType<typeof calculateBasicStatistics>,
+  references: ReturnType<typeof ReferenceDataService.compareMultipleMetrics>,
+  species: string
 ) {
   const insights: string[] = []
   const recommendations: string[] = []
@@ -211,7 +209,7 @@ function generateBasicInterpretation(
   }
   
   // Análise específica por métrica com problemas
-  references.comparisons.forEach((comp: any) => {
+  references.comparisons.forEach((comp) => {
     if (comp.validation.status === 'below_minimum' || comp.validation.status === 'above_maximum') {
       insights.push(`❗ ${comp.metric}: ${comp.value} ${comp.validation.reference?.unit || ''} - ${comp.validation.message}`)
       
@@ -230,7 +228,7 @@ function generateBasicInterpretation(
   
   // Análise de variabilidade (CV)
   const highVariability = Object.entries(stats.cvs)
-    .filter(([_, cv]) => (cv as number) > 35)
+    .filter(([, cv]) => (cv as number) > 35)
     .map(([metric, cv]) => `${metric} (CV: ${cv}%)`)
   
   if (highVariability.length > 0) {

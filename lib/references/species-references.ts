@@ -29,7 +29,7 @@ export class ReferenceDataService {
     
     // Adiciona dados NRC
     if (nrcData) {
-      Object.entries(nrcData).forEach(([key, value]: [string, any]) => {
+      Object.entries(nrcData).forEach(([key, value]) => {
         combined[key] = {
           min: value.min,
           ideal_min: value.ideal_min,
@@ -43,7 +43,7 @@ export class ReferenceDataService {
     
     // Adiciona/sobrescreve com dados EMBRAPA
     if (embrapaData) {
-      Object.entries(embrapaData).forEach(([key, value]: [string, any]) => {
+      Object.entries(embrapaData).forEach(([key, value]) => {
         if (value.ideal !== undefined) {
           // Formato EMBRAPA (min, ideal, max)
           combined[key] = {
@@ -78,8 +78,8 @@ export class ReferenceDataService {
   /**
    * Busca dados específicos do NRC
    */
-  static getNRCData(species: string, subtype?: string): any {
-    const speciesData = NRC_REFERENCES[species]
+  static getNRCData(species: string, subtype?: string): Record<string, ReferenceMetric> | null {
+    const speciesData = (NRC_REFERENCES as Record<string, Record<string, Record<string, ReferenceMetric>>>)[species]
     if (!speciesData) return null
     
     if (subtype && speciesData[subtype]) {
@@ -87,18 +87,18 @@ export class ReferenceDataService {
     }
     
     // Se não tem subtipo, retorna todos os subtipos
-    return speciesData
+    return speciesData as unknown as Record<string, ReferenceMetric>
   }
   
   /**
    * Busca dados específicos da EMBRAPA
    */
-  static getEMBRAPAData(species: string, subtype?: string): any {
+  static getEMBRAPAData(species: string, subtype?: string): Record<string, ReferenceMetric> | null {
     // EMBRAPA tem estrutura diferente para algumas espécies
     
     // Forragem
     if (species === 'forage') {
-      const forageData = EMBRAPA_REFERENCES.forage
+      const forageData = EMBRAPA_REFERENCES.forage as Record<string, Record<string, Record<string, ReferenceMetric>>>
       if (subtype) {
         // subtype pode ser 'brachiaria', 'panicum', etc
         const [type, variety] = subtype.split('_')
@@ -106,10 +106,10 @@ export class ReferenceDataService {
           if (variety && forageData[type][variety]) {
             return forageData[type][variety]
           }
-          return forageData[type]
+          return forageData[type] as unknown as Record<string, ReferenceMetric>
         }
       }
-      return forageData
+      return forageData as unknown as Record<string, ReferenceMetric>
     }
     
     // Ovinos e Caprinos
@@ -121,11 +121,11 @@ export class ReferenceDataService {
     
     // Piscicultura
     if (species === 'aquaculture') {
-      const aquaData = EMBRAPA_REFERENCES.aquaculture
+      const aquaData = EMBRAPA_REFERENCES.aquaculture as Record<string, Record<string, ReferenceMetric>>
       if (subtype && aquaData[subtype]) {
         return aquaData[subtype]
       }
-      return aquaData
+      return aquaData as unknown as Record<string, ReferenceMetric>
     }
     
     return null
@@ -221,7 +221,7 @@ export class ReferenceDataService {
     const embrapaSpecies = ['forage', 'sheep', 'goat', 'aquaculture']
     
     // Combina e remove duplicatas
-    return [...new Set([...nrcSpecies, ...embrapaSpecies])]
+    return Array.from(new Set([...nrcSpecies, ...embrapaSpecies]))
   }
   
   /**
@@ -231,15 +231,16 @@ export class ReferenceDataService {
     const subtypes: string[] = []
     
     // NRC
-    const nrcData = NRC_REFERENCES[species]
+    const nrcData = (NRC_REFERENCES as Record<string, Record<string, unknown>>)[species]
     if (nrcData && typeof nrcData === 'object') {
       subtypes.push(...Object.keys(nrcData))
     }
     
     // EMBRAPA
     if (species === 'forage') {
-      Object.keys(EMBRAPA_REFERENCES.forage).forEach(type => {
-        const varieties = EMBRAPA_REFERENCES.forage[type]
+      const forageData = EMBRAPA_REFERENCES.forage as Record<string, Record<string, unknown>>
+      Object.keys(forageData).forEach(type => {
+        const varieties = forageData[type]
         if (typeof varieties === 'object') {
           Object.keys(varieties).forEach(variety => {
             subtypes.push(`${type}_${variety}`)
@@ -250,7 +251,7 @@ export class ReferenceDataService {
       subtypes.push(...Object.keys(EMBRAPA_REFERENCES.aquaculture))
     }
     
-    return [...new Set(subtypes)]
+    return Array.from(new Set(subtypes))
   }
   
   /**
@@ -275,7 +276,11 @@ export class ReferenceDataService {
       noReference: number
     }
   } {
-    const comparisons: any[] = []
+    const comparisons: Array<{
+      metric: string
+      value: number
+      validation: ReturnType<typeof ReferenceDataService.validateMetric>
+    }> = []
     const summary = {
       excellent: 0,
       good: 0,

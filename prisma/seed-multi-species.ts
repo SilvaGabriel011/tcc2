@@ -161,7 +161,14 @@ async function seedNRCReferences(species: Record<string, any>, subtypes: Record<
         continue
       }
       
-      for (const [metric, values] of Object.entries(metrics as any)) {
+      for (const [metric, values] of Object.entries(metrics as Record<string, {
+        min: number
+        ideal_min?: number
+        ideal_max?: number
+        max: number
+        unit: string
+        source: string
+      }>)) {
         // Verificar se já existe
         const existing = await prisma.referenceData.findFirst({
           where: {
@@ -178,8 +185,8 @@ async function seedNRCReferences(species: Record<string, any>, subtypes: Record<
               subtypeId: subtype.id,
               metric,
               minValue: values.min,
-              idealMinValue: values.ideal_min,
-              idealMaxValue: values.ideal_max,
+              idealMinValue: values.ideal_min ?? null,
+              idealMaxValue: values.ideal_max ?? null,
               maxValue: values.max,
               unit: values.unit,
               source: values.source
@@ -200,7 +207,13 @@ async function seedForageReferences() {
   
   for (const [forageType, varieties] of Object.entries(forageData)) {
     for (const [variety, metrics] of Object.entries(varieties as any)) {
-      for (const [metric, values] of Object.entries(metrics as any)) {
+      for (const [metric, values] of Object.entries(metrics as Record<string, {
+        min: number
+        ideal: number
+        max: number
+        unit: string
+        source: string
+      }>)) {
         // Verificar se já existe
         const existing = await prisma.forageReference.findFirst({
           where: {
@@ -328,7 +341,13 @@ async function seedAquacultureReferences(species: Record<string, any>, subtypes:
       continue
     }
     
-    for (const [metric, values] of Object.entries(metrics as any)) {
+    for (const [metric, values] of Object.entries(metrics as Record<string, {
+      min: number
+      ideal?: number
+      max: number
+      unit: string
+      source: string
+    }>)) {
       const existing = await prisma.referenceData.findFirst({
         where: {
           speciesId: species.aquaculture.id,

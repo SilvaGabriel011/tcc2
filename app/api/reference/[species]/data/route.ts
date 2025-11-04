@@ -53,7 +53,11 @@ export async function GET(
     }
     
     // Buscar referências do banco de dados
-    const whereClause: any = {
+    const whereClause: {
+      speciesId: string
+      subtypeId?: string | null
+      metric?: string
+    } = {
       speciesId: speciesRecord.id
     }
     
@@ -124,7 +128,17 @@ export async function GET(
     }
     
     // Formatar os dados do banco
-    const formattedData: Record<string, any> = {}
+    const formattedData: Record<string, {
+      min: number | null
+      ideal_min: number | null
+      ideal_max: number | null
+      max: number | null
+      unit: string
+      source: string
+      description: string | null
+      speciesName: string
+      subtypeName?: string | null
+    }> = {}
     
     dbReferences.forEach(ref => {
       formattedData[ref.metric] = {
