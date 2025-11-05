@@ -100,16 +100,19 @@ export class ReferenceDataService {
     if (species === 'forage') {
       const forageData = EMBRAPA_REFERENCES.forage as Record<string, Record<string, Record<string, ReferenceMetric>>>
       if (subtype) {
-        // subtype pode ser 'brachiaria', 'panicum', etc
         const [type, variety] = subtype.split('_')
         if (forageData[type]) {
           if (variety && forageData[type][variety]) {
             return forageData[type][variety]
           }
-          return forageData[type] as unknown as Record<string, ReferenceMetric>
+          // Se não tem variedade especificada, retorna a primeira variedade disponível
+          const firstVariety = Object.keys(forageData[type])[0]
+          if (firstVariety && forageData[type][firstVariety]) {
+            return forageData[type][firstVariety]
+          }
         }
       }
-      return forageData as unknown as Record<string, ReferenceMetric>
+      return null
     }
     
     // Ovinos e Caprinos
