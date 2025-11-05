@@ -130,6 +130,23 @@ function getDisplayLabel(metricKey: string, category: MetricCategory): string {
   return labels[metricKey]?.[category] || `${metricKey} ${category}`
 }
 
+/**
+ * Get unit for metric
+ */
+function getMetricUnit(metricKey: string): string {
+  const units: Record<string, string> = {
+    peso_vs_meta_pct: '%',
+    gmd_7d: 'kg/dia',
+    gmd_30d: 'kg/dia',
+    bcs: '',
+    biomassa_kg_ha: 'kg/ha',
+    cobertura_pct: '%',
+    indice_visual: ''
+  }
+  
+  return units[metricKey] || ''
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Authenticate
@@ -203,6 +220,13 @@ export async function POST(request: NextRequest) {
     const final_color = determineFinalColor(categories)
     const short_label = final_color === 'green' ? 'ótimo' : final_color === 'yellow' ? 'ok' : 'ruim'
 
+    const badges = metric_summaries.map((summary) => ({
+      metric_key: summary.metric_key,
+      category: summary.category,
+      value: summary.value,
+      unit: getMetricUnit(summary.metric_key)
+    }))
+
     // Build response
     const response: EvaluationResponse = {
       entity_id,
@@ -210,7 +234,15 @@ export async function POST(request: NextRequest) {
       short_label,
       annotation: {
         mode: 'composition_metadata',
-        composition_metadata: null
+        composition_metadata: {
+          silhouette_type: body.entity_type,
+          overlay_color: final_color === 'green' ? '#22c55e' : final_color === 'yellow' ? '#eab308' : '#ef4444',
+          badges,
+          label_position: {
+            x: 85,
+            y: 15
+          }
+        }
       },
       metric_summaries,
       thresholds_version: 'v2025-11-04-01'

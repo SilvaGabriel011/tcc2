@@ -4,6 +4,7 @@
 
 'use client'
 
+import Image from 'next/image'
 import { getColorHex, getLabelText } from '@/lib/layman/colors'
 import type { ColorCategory, LabelCategory, Annotation } from '@/lib/layman/types'
 
@@ -17,21 +18,21 @@ export function CattleSilhouette({ color, label, annotation }: CattleSilhouetteP
   const colorHex = getColorHex(color)
   const labelText = getLabelText(label)
 
-  // If we have an image_url from annotation, display it
   if (annotation?.mode === 'image_url' && annotation.image_url) {
     return (
       <div className="bg-card rounded-lg border border-border p-6">
         <div className="text-center mb-4">
           <h3 className="text-lg font-semibold text-foreground">Status do Gado</h3>
         </div>
-        <div className="relative">
-          <img 
+        <div className="relative w-full h-64">
+          <Image 
             src={annotation.image_url} 
             alt="Anotação do gado"
-            className="w-full h-auto rounded-lg"
+            fill
+            className="rounded-lg object-cover"
           />
           <div 
-            className="absolute top-4 right-4 px-3 py-1 rounded-full text-white font-bold text-sm shadow-lg"
+            className="absolute top-4 right-4 px-3 py-1 rounded-full text-white font-bold text-sm shadow-lg z-10"
             style={{ backgroundColor: colorHex }}
           >
             {labelText}
