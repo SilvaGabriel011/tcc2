@@ -100,23 +100,36 @@ export class ReferenceDataService {
     if (species === 'forage') {
       const forageData = EMBRAPA_REFERENCES.forage as Record<string, Record<string, Record<string, ReferenceMetric>>>
       if (subtype) {
-        // subtype pode ser 'brachiaria', 'panicum', etc
         const [type, variety] = subtype.split('_')
         if (forageData[type]) {
           if (variety && forageData[type][variety]) {
             return forageData[type][variety]
           }
-          return forageData[type] as unknown as Record<string, ReferenceMetric>
+          // Se não tem variedade especificada, retorna a primeira variedade disponível
+          const firstVariety = Object.keys(forageData[type])[0]
+          if (firstVariety && forageData[type][firstVariety]) {
+            return forageData[type][firstVariety]
+          }
         }
       }
-      return forageData as unknown as Record<string, ReferenceMetric>
+      return null
     }
     
     // Ovinos e Caprinos
     if (species === 'sheep' || species === 'goat') {
-      const sgData = EMBRAPA_REFERENCES.sheep_goat
-      const embrapaSpecies = species === 'sheep' ? 'ovinos' : 'caprinos'
-      return sgData[embrapaSpecies] || null
+      const sgData = EMBRAPA_REFERENCES.sheep_goat as Record<string, Record<string, ReferenceMetric>>
+      
+      if (!subtype) return null
+      
+      const subtypeMapping: Record<string, string> = {
+        'meat': species === 'sheep' ? 'ovinos_corte' : 'caprinos_corte',
+        'wool': 'ovinos_la',
+        'milk': species === 'sheep' ? 'ovinos_leite' : 'caprinos_leite',
+        'skin': 'caprinos_pele'
+      }
+      
+      const embrapaKey = subtypeMapping[subtype]
+      return embrapaKey ? sgData[embrapaKey] : null
     }
     
     // Piscicultura
