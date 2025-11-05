@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { 
   Sprout, 
@@ -73,6 +73,7 @@ interface AnalysisData {
 export default function ResultadosPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [analyses, setAnalyses] = useState<Array<{
     id: string;
     name: string;
@@ -122,14 +123,33 @@ export default function ResultadosPage() {
     }
   }, [session])
 
+  useEffect(() => {
+    const analysisId = searchParams.get('id')
+    
+    if (analyses.length > 0) {
+      if (analysisId) {
+        const targetAnalysis = analyses.find(a => a.id === analysisId)
+        if (targetAnalysis) {
+          setSelectedAnalysis(targetAnalysis)
+          setShowDiagnostico(false)
+          setDiagnostico(null)
+        } else {
+          console.warn(`Analysis with ID ${analysisId} not found, selecting first analysis`)
+          setSelectedAnalysis(analyses[0])
+          setShowDiagnostico(false)
+          setDiagnostico(null)
+        }
+      } else {
+        setSelectedAnalysis(analyses[0])
+      }
+    }
+  }, [analyses, searchParams])
+
   const fetchAnalyses = async () => {
     try {
       const response = await fetch('/api/analise/resultados')
       const data = await response.json()
       setAnalyses(data.analyses || [])
-      if (data.analyses && data.analyses.length > 0) {
-        setSelectedAnalysis(data.analyses[0])
-      }
     } catch (error) {
       console.error('Erro ao carregar análises:', error)
     } finally {
@@ -138,7 +158,6 @@ export default function ResultadosPage() {
   }
 
   const handleDeleteAnalysis = async (analysisId: string, analysisName: string) => {
-    // Confirmação antes de deletar
     if (!confirm(`Tem certeza que deseja deletar a análise "${analysisName}"?\n\nEsta ação não pode ser desfeita.`)) {
       return
     }
@@ -155,15 +174,17 @@ export default function ResultadosPage() {
       if (response.ok) {
         toast.success('Análise deletada com sucesso!', { id: toastId })
         
-        // Remover da lista
         const updatedAnalyses = analyses.filter(a => a.id !== analysisId)
         setAnalyses(updatedAnalyses)
         
-        // Se era a selecionada, selecionar outra
         if (selectedAnalysis?.id === analysisId) {
-          setSelectedAnalysis(updatedAnalyses[0] || null)
           setShowDiagnostico(false)
           setDiagnostico(null)
+          if (updatedAnalyses.length > 0) {
+            router.push(`/dashboard/resultados?id=${updatedAnalyses[0].id}`, { scroll: false })
+          } else {
+            router.push('/dashboard/resultados', { scroll: false })
+          }
         }
       } else {
         toast.error(data.error || 'Erro ao deletar análise', { id: toastId })
@@ -485,7 +506,9 @@ export default function ResultadosPage() {
                         }`}
                       >
                         <button
-                          onClick={() => setSelectedAnalysis(analysis)}
+                          onClick={() => {
+                            router.push(`/dashboard/resultados?id=${analysis.id}`, { scroll: false })
+                          }}
                           className="w-full text-left p-3 pr-12"
                         >
                           <div className="font-medium text-sm text-foreground truncate">
