@@ -338,10 +338,26 @@ export function validateBiologicalPlausibility(
 }
 
 /**
+ * Helper para converter valores desconhecidos em números
+ * Lida com strings, separadores decimais, e texto extra
+ */
+function toNumber(v: unknown): number | undefined {
+  if (typeof v === 'number' && Number.isFinite(v)) return v
+  if (typeof v === 'string') {
+    const s = v.trim().replace(',', '.')
+    const match = s.match(/[-+]?[0-9]*\.?[0-9]+/)
+    if (!match) return undefined
+    const n = Number(match[0])
+    return Number.isFinite(n) ? n : undefined
+  }
+  return undefined
+}
+
+/**
  * Executa todas as validações cruzadas em um dataset
  */
 export function performCrossValidation(
-  data: Record<string, number | string | boolean | null | undefined>[],
+  data: Array<Record<string, unknown>>,
   species: string
 ): {
   overallValid: boolean
@@ -363,44 +379,62 @@ export function performCrossValidation(
   data.forEach((row, index) => {
     const validations: Record<string, CrossValidationResult> = {}
     
-    if (row.peso_inicial && row.peso_final && row.dias) {
+    const pesoInicial = toNumber(row.peso_inicial)
+    const pesoFinal = toNumber(row.peso_final)
+    const dias = toNumber(row.dias)
+    const gpdReportado = toNumber(row.gpd)
+    
+    if (pesoInicial !== undefined && pesoFinal !== undefined && dias !== undefined) {
       const gpdResult = validateGPD(
-        row.peso_inicial,
-        row.peso_final,
-        row.dias,
-        row.gpd
+        pesoInicial,
+        pesoFinal,
+        dias,
+        gpdReportado
       )
       validations.gpd = gpdResult
       totalWarnings += gpdResult.warnings.length
       totalErrors += gpdResult.errors.length
     }
     
-    if (row.consumo_total && row.ganho_total) {
+    const consumoTotal = toNumber(row.consumo_total)
+    const ganhoTotal = toNumber(row.ganho_total)
+    const fcrReportado = toNumber(row.conversao_alimentar)
+    
+    if (consumoTotal !== undefined && ganhoTotal !== undefined) {
       const fcrResult = validateFCR(
-        row.consumo_total,
-        row.ganho_total,
-        row.conversao_alimentar
+        consumoTotal,
+        ganhoTotal,
+        fcrReportado
       )
       validations.fcr = fcrResult
       totalWarnings += fcrResult.warnings.length
       totalErrors += fcrResult.errors.length
     }
     
-    if (species === 'poultry' && row.viabilidade && row.peso_medio && row.idade && row.conversao) {
-      const iepResult = validateIEP(
-        row.viabilidade,
-        row.peso_medio,
-        row.idade,
-        row.conversao,
-        row.iep
-      )
-      validations.iep = iepResult
-      totalWarnings += iepResult.warnings.length
-      totalErrors += iepResult.errors.length
+    if (species === 'poultry') {
+      const viabilidade = toNumber(row.viabilidade)
+      const pesoMedio = toNumber(row.peso_medio)
+      const idade = toNumber(row.idade)
+      const conversao = toNumber(row.conversao)
+      const iepReportado = toNumber(row.iep)
+      
+      if (viabilidade !== undefined && pesoMedio !== undefined && idade !== undefined && conversao !== undefined) {
+        const iepResult = validateIEP(
+          viabilidade,
+          pesoMedio,
+          idade,
+          conversao,
+          iepReportado
+        )
+        validations.iep = iepResult
+        totalWarnings += iepResult.warnings.length
+        totalErrors += iepResult.errors.length
+      }
     }
     
-    if (row.gpd) {
-      const plausResult = validateBiologicalPlausibility('gpd', row.gpd, species)
+    const gpdVal = toNumber(row.gpd)
+    if (gpdVal !== undefined) {
+      const plausResult = validateBiologicalPlausibility('gpd', gpdVal, species)
       validations.gpd_plausibility = plausResult
       totalWarnings += plausResult.warnings.length
       totalErrors += plausResult.errors.length
