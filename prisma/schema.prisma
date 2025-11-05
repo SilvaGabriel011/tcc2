@@ -77,6 +77,22 @@ model Dataset {
   status      String   @default("UPLOADED") // UPLOADED, PROCESSING, VALIDATED, APPROVED, REJECTED
   data        String   // Store processed data as JSON string
   metadata    String?  // Store metadata about the dataset as JSON string
+  
+  // Novos campos temporais
+  measurementDate  DateTime?  // Data da medição
+  startDate        DateTime?  // Data inicial do período
+  endDate          DateTime?  // Data final do período
+  
+  // Novos campos contextuais
+  farmLocation     String?   // JSON: {state, municipality, lat, lon}
+  environmentData  String?   // JSON: {temperature, humidity, thi, etc}
+  productionSystem String?   // intensivo, semi-intensivo, extensivo
+  
+  // Metadados de qualidade
+  dataQualityScore Float?
+  hasTemporalData  Boolean   @default(false)
+  hasEnvironmental Boolean   @default(false)
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -84,12 +100,14 @@ model Dataset {
   project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
   validations   DataValidation[]
   mappings      DataMapping[]
+  timeseriesData TimeSeriesData[]
 
   @@index([projectId])
   @@index([status])
   @@index([createdAt])
   @@index([projectId, status])
   @@index([projectId, createdAt])
+  @@index([measurementDate])
   @@map("datasets")
 }
 
@@ -316,4 +334,27 @@ model ForageReference {
   @@index([season])
   @@unique([forageType, variety, metric, season]) // Combinação única
   @@map("forage_references")
+}
+
+model TimeSeriesData {
+  id          String   @id @default(cuid())
+  datasetId   String
+  timestamp   DateTime
+  metric      String   // Nome da métrica (gpd, peso, consumo, etc)
+  value       Float
+  unit        String?
+  animalId    String?  // Identificador do animal (se aplicável)
+  lotId       String?  // Identificador do lote
+  metadata    String?  // JSON com dados contextuais adicionais
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  dataset     Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  
+  @@index([datasetId])
+  @@index([timestamp])
+  @@index([metric])
+  @@index([datasetId, timestamp])
+  @@index([datasetId, metric])
+  @@map("timeseries_data")
 }
