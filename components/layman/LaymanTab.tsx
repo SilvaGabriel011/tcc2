@@ -160,6 +160,7 @@ export function LaymanTab({ analysisData, entityType }: LaymanTabProps) {
               species={getSpeciesFromEntityType(entityType)}
               color={evaluation.final_color}
               label={evaluation.short_label}
+              annotation={evaluation.annotation}
             />
           )}
         </div>

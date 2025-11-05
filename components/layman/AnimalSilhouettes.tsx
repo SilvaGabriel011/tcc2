@@ -5,12 +5,13 @@
 'use client'
 
 import { getColorHex, getLabelText } from '@/lib/layman/colors'
-import type { ColorCategory, LabelCategory } from '@/lib/layman/types'
+import type { ColorCategory, LabelCategory, Annotation } from '@/lib/layman/types'
 
 interface AnimalSilhouetteProps {
   species: 'bovine' | 'swine' | 'poultry' | 'sheep' | 'goat' | 'fish'
   color: ColorCategory
   label: LabelCategory
+  annotation?: Annotation
 }
 
 // Bovino (Boi/Vaca) - Vista lateral realista
@@ -285,7 +286,7 @@ const FishSVG = ({ color }: { color: string }) => (
   </svg>
 )
 
-export function AnimalSilhouette({ species, color, label }: AnimalSilhouetteProps) {
+export function AnimalSilhouette({ species, color, label, annotation }: AnimalSilhouetteProps) {
   const colorHex = getColorHex(color)
   const labelText = getLabelText(label)
 
@@ -297,6 +298,30 @@ export function AnimalSilhouette({ species, color, label }: AnimalSilhouetteProp
     sheep: 'Status do Ovino',
     goat: 'Status do Caprino',
     fish: 'Status do Peixe'
+  }
+
+  // Mapa de labels de métricas
+  const metricLabels: Record<string, string> = {
+    peso_vs_meta_pct: 'Peso vs Meta',
+    gmd_7d: 'GMD 7d',
+    gmd_30d: 'GMD 30d',
+    bcs: 'ECC',
+    biomassa_kg_ha: 'Biomassa',
+    cobertura_pct: 'Cobertura',
+    indice_visual: 'Índice Visual'
+  }
+
+  const getBadgeColor = (category: string) => {
+    switch (category) {
+      case 'excellent':
+        return 'bg-green-500 text-white'
+      case 'ok':
+        return 'bg-yellow-500 text-white'
+      case 'ruim':
+        return 'bg-red-500 text-white'
+      default:
+        return 'bg-gray-500 text-white'
+    }
   }
 
   // Mapa de mensagens de status por espécie
@@ -362,10 +387,8 @@ export function AnimalSilhouette({ species, color, label }: AnimalSilhouetteProp
       </div>
       
       <div className="relative">
-        {/* Renderizar o SVG apropriado */}
         {getSVGComponent()}
 
-        {/* Label de status */}
         <div 
           className="absolute top-4 right-4 px-4 py-2 rounded-full text-white font-bold shadow-lg text-sm"
           style={{ backgroundColor: colorHex }}
@@ -374,7 +397,24 @@ export function AnimalSilhouette({ species, color, label }: AnimalSilhouetteProp
         </div>
       </div>
 
-      {/* Mensagem de status */}
+      {annotation?.mode === 'composition_metadata' && annotation.composition_metadata?.badges && (
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {annotation.composition_metadata.badges.map((badge, index) => (
+            <div
+              key={index}
+              className={`flex items-center justify-between px-3 py-2 rounded-lg ${getBadgeColor(badge.category)}`}
+            >
+              <span className="text-xs font-medium">
+                {metricLabels[badge.metric_key] || badge.metric_key}
+              </span>
+              <span className="text-xs font-bold ml-2">
+                {badge.value.toFixed(2)}{badge.unit}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="mt-4 text-center">
         <p className="text-sm text-muted-foreground">
           {statusMessages[species]?.[color] || statusMessages.bovine[color]}

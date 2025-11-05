@@ -4,6 +4,7 @@
 
 'use client'
 
+import Image from 'next/image'
 import { getColorHex, getLabelText } from '@/lib/layman/colors'
 import type { ColorCategory, LabelCategory, Annotation } from '@/lib/layman/types'
 
@@ -17,6 +18,25 @@ export function ForagePanel({ color, label, annotation }: ForagePanelProps) {
   const colorHex = getColorHex(color)
   const labelText = getLabelText(label)
 
+  const metricLabels: Record<string, string> = {
+    biomassa_kg_ha: 'Biomassa',
+    cobertura_pct: 'Cobertura',
+    indice_visual: 'Índice Visual'
+  }
+
+  const getBadgeColor = (category: string) => {
+    switch (category) {
+      case 'excellent':
+        return 'bg-green-500 text-white'
+      case 'ok':
+        return 'bg-yellow-500 text-white'
+      case 'ruim':
+        return 'bg-red-500 text-white'
+      default:
+        return 'bg-gray-500 text-white'
+    }
+  }
+
   // If we have an image_url from annotation, display it
   if (annotation?.mode === 'image_url' && annotation.image_url) {
     return (
@@ -24,14 +44,15 @@ export function ForagePanel({ color, label, annotation }: ForagePanelProps) {
         <div className="text-center mb-4">
           <h3 className="text-lg font-semibold text-foreground">Status da Forragem</h3>
         </div>
-        <div className="relative">
-          <img 
+        <div className="relative w-full h-64">
+          <Image 
             src={annotation.image_url} 
             alt="Anotação da forragem"
-            className="w-full h-auto rounded-lg"
+            fill
+            className="rounded-lg object-cover"
           />
           <div 
-            className="absolute top-4 right-4 px-3 py-1 rounded-full text-white font-bold text-sm shadow-lg"
+            className="absolute top-4 right-4 px-3 py-1 rounded-full text-white font-bold text-sm shadow-lg z-10"
             style={{ backgroundColor: colorHex }}
           >
             {labelText}
@@ -91,7 +112,24 @@ export function ForagePanel({ color, label, annotation }: ForagePanelProps) {
         </div>
       </div>
 
-      {/* Status text */}
+      {annotation?.mode === 'composition_metadata' && annotation.composition_metadata?.badges && (
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {annotation.composition_metadata.badges.map((badge, index) => (
+            <div
+              key={index}
+              className={`flex items-center justify-between px-3 py-2 rounded-lg ${getBadgeColor(badge.category)}`}
+            >
+              <span className="text-xs font-medium">
+                {metricLabels[badge.metric_key] || badge.metric_key}
+              </span>
+              <span className="text-xs font-bold ml-2">
+                {badge.value.toFixed(2)}{badge.unit}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="mt-4 text-center">
         <p className="text-sm text-muted-foreground">
           {color === 'green' && '✓ Pastagem em ótimo estado'}
