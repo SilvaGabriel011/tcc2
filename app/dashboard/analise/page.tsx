@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -12,7 +12,12 @@ import {
   CheckCircle,
   AlertCircle,
   BarChart3,
-  Beaker
+  Beaker,
+  Beef,
+  Bird,
+  Fish,
+  Wheat,
+  ChevronDown
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { validateFile, formatBytes, scanFileForThreats } from '@/lib/upload-validation'
@@ -44,6 +49,65 @@ export default function AnaliseDataPage() {
   const [previewData, setPreviewData] = useState<Record<string, unknown>[]>([])
   const [isParsing, setIsParsing] = useState(false)
   const [selectedSpecies, setSelectedSpecies] = useState<'bovino' | 'suino' | 'avicultura' | 'ovino' | 'caprino' | 'piscicultura' | 'forragem'>('bovino')
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isDropdownOpen])
+
+  const PigIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="8"/>
+      <circle cx="9" cy="10" r="1.5"/>
+      <circle cx="15" cy="10" r="1.5"/>
+      <path d="M8 15 Q12 17 16 15" strokeLinecap="round"/>
+    </svg>
+  )
+
+  const SheepIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="7"/>
+      <path d="M8 8 Q12 6 16 8" strokeLinecap="round"/>
+      <circle cx="9" cy="10" r="1"/>
+      <circle cx="15" cy="10" r="1"/>
+    </svg>
+  )
+
+  const GoatIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="6"/>
+      <path d="M8 7 L8 5" strokeLinecap="round"/>
+      <path d="M16 7 L16 5" strokeLinecap="round"/>
+      <circle cx="9" cy="10" r="1"/>
+      <circle cx="15" cy="10" r="1"/>
+      <path d="M12 16 L12 18" strokeLinecap="round"/>
+    </svg>
+  )
+
+  const speciesOptions = [
+    { value: 'bovino', label: 'Bovinos', icon: <Beef className="w-5 h-5" />, color: 'text-amber-600' },
+    { value: 'suino', label: 'Suínos', icon: <PigIcon />, color: 'text-pink-600' },
+    { value: 'avicultura', label: 'Aves', icon: <Bird className="w-5 h-5" />, color: 'text-orange-600' },
+    { value: 'ovino', label: 'Ovinos', icon: <SheepIcon />, color: 'text-gray-600' },
+    { value: 'caprino', label: 'Caprinos', icon: <GoatIcon />, color: 'text-amber-700' },
+    { value: 'piscicultura', label: 'Peixes', icon: <Fish className="w-5 h-5" />, color: 'text-blue-600' },
+    { value: 'forragem', label: 'Forragem', icon: <Wheat className="w-5 h-5" />, color: 'text-green-600' }
+  ]
+
+  const selectedOption = speciesOptions.find(opt => opt.value === selectedSpecies) || speciesOptions[0]
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
@@ -220,23 +284,50 @@ export default function AnaliseDataPage() {
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-3xl font-bold text-foreground">Análise de Dados Zootécnicos</h1>
             <div className="flex items-center gap-3">
-              <select
-                value={selectedSpecies}
-                onChange={(e) => setSelectedSpecies(e.target.value as typeof selectedSpecies)}
-                className="px-3 py-2 bg-card border border-input rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-purple-600"
-                title="Selecione a espécie para gerar dados de teste"
-              >
-                <option value="bovino">Bovinos</option>
-                <option value="suino">Suínos</option>
-                <option value="avicultura">Aves</option>
-                <option value="ovino">Ovinos</option>
-                <option value="caprino">Caprinos</option>
-                <option value="piscicultura">Peixes</option>
-                <option value="forragem">Forragem</option>
-              </select>
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 border-2 border-purple-200 dark:border-purple-800 rounded-lg text-sm font-medium text-foreground hover:from-purple-100 hover:to-purple-150 dark:hover:from-purple-900/40 dark:hover:to-purple-800/40 transition-all duration-200 shadow-sm hover:shadow-md min-w-[180px]"
+                  title="Selecione a espécie para gerar dados de teste"
+                >
+                  <span className={`${selectedOption.color} flex-shrink-0`}>
+                    {selectedOption.icon}
+                  </span>
+                  <span className="flex-1 text-left font-semibold">
+                    {selectedOption.label}
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-purple-600 dark:text-purple-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {isDropdownOpen && (
+                  <div className="absolute z-50 mt-2 w-full min-w-[240px] bg-card dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-800 rounded-lg shadow-xl overflow-hidden">
+                    {speciesOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          setSelectedSpecies(option.value as typeof selectedSpecies)
+                          setIsDropdownOpen(false)
+                        }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-150 ${
+                          selectedSpecies === option.value
+                            ? 'bg-purple-100 dark:bg-purple-900/50 border-l-4 border-purple-600'
+                            : 'hover:bg-purple-50 dark:hover:bg-purple-950/30 border-l-4 border-transparent'
+                        }`}
+                      >
+                        <span className={`${option.color} flex-shrink-0`}>
+                          {option.icon}
+                        </span>
+                        <span className={`font-medium ${selectedSpecies === option.value ? 'text-purple-900 dark:text-purple-100' : 'text-foreground'}`}>
+                          {option.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 onClick={handleGenerateTestData}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md transition-colors text-sm font-medium"
+                className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
                 title="Gera uma planilha CSV com dados fictícios para demonstração"
               >
                 <Beaker className="h-4 w-4" />
