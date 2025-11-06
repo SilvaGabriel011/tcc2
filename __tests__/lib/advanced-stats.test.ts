@@ -447,8 +447,13 @@ describe('advanced-stats', () => {
 
       expect(result.significantlyDifferentFrom).toBeDefined()
       expect(typeof result.significantlyDifferentFrom).toBe('function')
-      expect(result.significantlyDifferentFrom(100)).toBe(true)
-      expect(result.significantlyDifferentFrom(19)).toBe(false)
+
+      if (typeof result.significantlyDifferentFrom === 'function') {
+        expect(result.significantlyDifferentFrom(100)).toBe(true)
+        expect(result.significantlyDifferentFrom(19)).toBe(false)
+      } else {
+        fail('significantlyDifferentFrom should be a function')
+      }
     })
 
     it('should calculate all NumericStats properties', () => {
