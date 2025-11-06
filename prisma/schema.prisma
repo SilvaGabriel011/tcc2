@@ -29,6 +29,7 @@ model User {
 
   @@index([email])
   @@index([createdAt])
+  @@index([resetToken])  // NEW: Password reset lookup
   @@map("users")
 }
 
@@ -66,6 +67,7 @@ model ProjectUploadPreset {
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId])
+  @@index([projectId, reviewRequired])  // NEW: Filter by review status
   @@map("project_upload_presets")
 }
 
@@ -93,6 +95,12 @@ model Dataset {
   hasTemporalData  Boolean   @default(false)
   hasEnvironmental Boolean   @default(false)
   
+  // Archival fields
+  archivedAt      DateTime?
+  archivedToS3    Boolean   @default(false)
+  s3Key           String?
+  s3StorageClass  String?
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -108,6 +116,11 @@ model Dataset {
   @@index([projectId, status])
   @@index([projectId, createdAt])
   @@index([measurementDate])
+  @@index([projectId, status, createdAt])     // NEW: Combined filter + sort
+  @@index([status, measurementDate])          // NEW: Time-series queries
+  @@index([hasTemporalData, measurementDate]) // NEW: Temporal data filtering
+  @@index([archivedAt])                       // NEW: Archival queries
+  @@index([archivedToS3, createdAt])          // NEW: Archival status queries
   @@map("datasets")
 }
 
@@ -125,6 +138,8 @@ model DataMapping {
 
   @@index([datasetId])
   @@index([sourceField])
+  @@index([datasetId, sourceField])  // NEW: Fast field mapping lookup
+  @@index([datasetId, targetField])  // NEW: Reverse mapping lookup
   @@map("data_mappings")
 }
 
@@ -163,6 +178,8 @@ model ValidationSetting {
 
   @@index([projectId])
   @@index([enabled])
+  @@index([projectId, enabled])  // NEW: Active validation rules
+  @@index([projectId, field])    // NEW: Field-specific rules
   @@map("validation_settings")
 }
 
@@ -219,6 +236,11 @@ model SavedReference {
   // Conteúdo legado (manter compatibilidade)
   content         String?  // SQLite não precisa de @db.Text
   
+  // Archival fields
+  archivedAt      DateTime?
+  archivedToS3    Boolean   @default(false)
+  s3Key           String?
+  
   // Timestamps
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -229,6 +251,10 @@ model SavedReference {
   @@index([doi])
   @@index([userId, createdAt])
   @@index([source])
+  @@index([userId, url])     // NEW: Fast duplicate checking
+  @@index([userId, source])  // NEW: Filter by source
+  @@index([userId, year])    // NEW: Filter by publication year
+  @@index([archivedAt])      // NEW: Archival queries
   @@map("saved_references")
 }
 
@@ -240,6 +266,11 @@ model AuditLog {
   resourceId String
   changes   String?  // Store the changes made as JSON string
   createdAt DateTime @default(now())
+  
+  // Archival fields
+  archivedAt      DateTime?
+  archivedToS3    Boolean   @default(false)
+  s3Key           String?
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -250,6 +281,10 @@ model AuditLog {
   @@index([createdAt])
   @@index([userId, createdAt])
   @@index([resource, resourceId])
+  @@index([userId, resource, createdAt])  // NEW: Complex audit queries
+  @@index([resource, action])             // NEW: Filter by resource + action
+  @@index([archivedAt])                   // NEW: Archival queries
+  @@index([archivedToS3, createdAt])      // NEW: Archival status queries
   @@map("audit_logs")
 }
 
@@ -356,5 +391,8 @@ model TimeSeriesData {
   @@index([metric])
   @@index([datasetId, timestamp])
   @@index([datasetId, metric])
+  @@index([datasetId, metric, timestamp])  // NEW: Metric time-series
+  @@index([animalId, timestamp])           // NEW: Animal tracking
+  @@index([lotId, timestamp])              // NEW: Lot tracking
   @@map("timeseries_data")
 }
