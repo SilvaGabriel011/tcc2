@@ -15,11 +15,14 @@ export async function POST(request: NextRequest) {
   if (rateLimitResponse) return rateLimitResponse
   
   try {
+    console.log('🔍 [multi-species] Step 1: Auth check')
     const session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+    console.log('✅ [multi-species] Auth OK, user:', session.user.email)
 
+    console.log('🔍 [multi-species] Step 2: Parse form data')
     const formData = await request.formData()
     const file = formData.get('file') as File
     const species = formData.get('species') as string
@@ -32,8 +35,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    console.log('✅ [multi-species] Form data OK:', { species, subtype, hasProjectId: !!projectId })
 
-    // Security validation
+    console.log('🔍 [multi-species] Step 3: Security validation')
     const securityCheck = await validateUploadedFile(file, 'csv')
     if (!securityCheck.valid) {
       console.warn('🚫 Security check failed:', securityCheck.error)
@@ -42,9 +46,11 @@ export async function POST(request: NextRequest) {
         warnings: securityCheck.warnings 
       }, { status: 400 })
     }
+    console.log('✅ [multi-species] Security check passed')
 
     const secureFilename = generateUniqueFilename(file.name)
 
+    console.log('🔍 [multi-species] Step 4: Parse CSV')
     console.log('📊 Iniciando análise multi-espécie:', { species, subtype })
 
     // Parse CSV
@@ -63,33 +69,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validação básica dos dados
     if (!parsed.data || parsed.data.length === 0) {
       return NextResponse.json(
         { error: 'Arquivo vazio ou sem dados válidos' },
         { status: 400 }
       )
     }
+    console.log('✅ [multi-species] CSV parsed:', { rows: parsed.data.length })
 
-    // Análise estatística básica
+    console.log('🔍 [multi-species] Step 5: Calculate statistics')
     const statistics = calculateBasicStatistics(parsed.data as Record<string, number>[])
+    console.log('✅ [multi-species] Statistics calculated:', { metrics: Object.keys(statistics.means).length })
     
-    // Comparação com referências
+    console.log('🔍 [multi-species] Step 6: Compare with references')
     const references = ReferenceDataService.compareMultipleMetrics(
       statistics.means,
       species,
       subtype || undefined
     )
+    console.log('✅ [multi-species] References compared:', { status: references.overallStatus })
     
-    // Interpretação
+    console.log('🔍 [multi-species] Step 7: Generate interpretation')
     const interpretation = generateBasicInterpretation(
       statistics,
       references,
       species
     )
+    console.log('✅ [multi-species] Interpretation generated')
 
-    // Análise de correlações
-    console.log('🔬 Analisando correlações biologicamente relevantes...')
+    console.log('🔍 [multi-species] Step 8: Analyze correlations')
     const correlationReport = analyzeCorrelations(
       parsed.data as Record<string, unknown>[],
       species,
@@ -108,11 +116,12 @@ export async function POST(request: NextRequest) {
     const correlationProposals = proposeCorrelations(availableColumns, species)
     const missingVariables = getMissingVariables(availableColumns, species)
 
-    console.log(`✅ Encontradas ${correlationReport.totalCorrelations} correlações (${correlationReport.significantCorrelations} significativas)`)
+    console.log(`✅ [multi-species] Correlations analyzed: ${correlationReport.totalCorrelations} total (${correlationReport.significantCorrelations} significant)`)
 
-    // Se não tem projectId, usar o primeiro projeto do usuário
+    console.log('🔍 [multi-species] Step 9: Get or create project')
     let finalProjectId = projectId
     if (!finalProjectId) {
+      console.log('No projectId provided, looking up user in database...')
       const user = await prisma.user.findUnique({
         where: { email: session.user.email! },
         include: {
@@ -123,22 +132,37 @@ export async function POST(request: NextRequest) {
         }
       })
       
-      if (user?.projects[0]) {
+      if (!user) {
+        console.error('❌ [multi-species] User not found in database:', session.user.email)
+        return NextResponse.json(
+          { error: 'Usuário não encontrado no banco de dados. Por favor, faça login novamente.' },
+          { status: 400 }
+        )
+      }
+      
+      console.log('User found:', { id: user.id, email: user.email, projectCount: user.projects.length })
+      
+      if (user.projects[0]) {
         finalProjectId = user.projects[0].id
+        console.log('Using existing project:', finalProjectId)
       } else {
-        // Criar projeto padrão
+        console.log('No projects found, creating default project...')
         const newProject = await prisma.project.create({
           data: {
             name: 'Análise Multi-Espécie',
             description: 'Projeto criado automaticamente',
-            ownerId: user!.id
+            ownerId: user.id
           }
         })
         finalProjectId = newProject.id
+        console.log('Created new project:', finalProjectId)
       }
+    } else {
+      console.log('Using provided projectId:', finalProjectId)
     }
+    console.log('✅ [multi-species] Project resolved:', finalProjectId)
 
-    // Salvar no banco de dados
+    console.log('🔍 [multi-species] Step 10: Save to database')
     const analysis = await prisma.dataset.create({
       data: {
         projectId: finalProjectId,
@@ -146,7 +170,7 @@ export async function POST(request: NextRequest) {
         filename: secureFilename,
         status: 'VALIDATED',
         data: JSON.stringify({
-          raw: parsed.data.slice(0, 100), // Limitar dados brutos para economia de espaço
+          raw: parsed.data.slice(0, 100),
           statistics,
           references,
           interpretation,
@@ -168,7 +192,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    console.log('✅ Análise salva com ID:', analysis.id)
+    console.log('✅ [multi-species] Analysis saved with ID:', analysis.id)
 
     return NextResponse.json({
       success: true,
@@ -193,9 +217,22 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('❌ Erro na análise multi-espécie:', error)
+    console.error('❌ [multi-species] Error in multi-species analysis:', error)
+    
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    const errorStack = error instanceof Error ? error.stack : undefined
+    
+    console.error('Error details:', {
+      message: errorMessage,
+      stack: errorStack,
+      type: error?.constructor?.name
+    })
+    
     return NextResponse.json(
-      { error: 'Erro ao processar análise' },
+      { 
+        error: 'Erro ao processar análise',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     )
   }
