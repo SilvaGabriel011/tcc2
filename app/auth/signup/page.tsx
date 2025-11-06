@@ -4,46 +4,31 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Sprout, Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { signUpSchema, type SignUpFormData } from '@/lib/validations/auth'
 
 export default function SignUpPage() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const router = useRouter()
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
-  }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignUpFormData>({
+    resolver: zodResolver(signUpSchema),
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+  const onSubmit = async (data: SignUpFormData) => {
     setError('')
     setSuccess('')
-
-    // Validação básica
-    if (formData.password !== formData.confirmPassword) {
-      setError('As senhas não coincidem')
-      setIsLoading(false)
-      return
-    }
-
-    if (formData.password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres')
-      setIsLoading(false)
-      return
-    }
 
     try {
       const response = await fetch('/api/auth/signup', {
@@ -52,13 +37,13 @@ export default function SignUpPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
+          name: data.name,
+          email: data.email,
+          password: data.password,
         }),
       })
 
-      const data = await response.json()
+      const result = await response.json()
 
       if (response.ok) {
         setSuccess('Conta criada com sucesso! Redirecionando para o login...')
@@ -66,12 +51,10 @@ export default function SignUpPage() {
           router.push('/auth/signin')
         }, 2000)
       } else {
-        setError(data.error || 'Erro ao criar conta')
+        setError(result.error || 'Erro ao criar conta')
       }
     } catch {
       setError('Erro ao criar conta. Tente novamente.')
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -102,55 +85,50 @@ export default function SignUpPage() {
           </p>
         </div>
         
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Nome completo
-              </label>
-              <input
+              <Label htmlFor="name">Nome completo</Label>
+              <Input
                 id="name"
-                name="name"
                 type="text"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-green-400 dark:focus:border-green-400"
                 placeholder="Seu nome completo"
-                value={formData.name}
-                onChange={handleChange}
+                {...register('name')}
+                className="mt-1"
               />
+              {errors.name && (
+                <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                  {errors.name.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email
-              </label>
-              <input
+              <Label htmlFor="email">Email</Label>
+              <Input
                 id="email"
-                name="email"
                 type="email"
                 autoComplete="email"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-green-400 dark:focus:border-green-400"
                 placeholder="seu@email.com"
-                value={formData.email}
-                onChange={handleChange}
+                {...register('email')}
+                className="mt-1"
               />
+              {errors.email && (
+                <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Senha
-              </label>
-              <div className="mt-1 relative">
-                <input
+              <Label htmlFor="password">Senha</Label>
+              <div className="relative mt-1">
+                <Input
                   id="password"
-                  name="password"
                   type={showPassword ? 'text' : 'password'}
-                  required
-                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-green-400 dark:focus:border-green-400"
                   placeholder="Mínimo 6 caracteres"
-                  value={formData.password}
-                  onChange={handleChange}
+                  {...register('password')}
+                  className="pr-10"
                 />
                 <button
                   type="button"
@@ -164,22 +142,22 @@ export default function SignUpPage() {
                   )}
                 </button>
               </div>
+              {errors.password && (
+                <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Confirmar senha
-              </label>
-              <div className="mt-1 relative">
-                <input
+              <Label htmlFor="confirmPassword">Confirmar senha</Label>
+              <div className="relative mt-1">
+                <Input
                   id="confirmPassword"
-                  name="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
-                  required
-                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-green-400 dark:focus:border-green-400"
                   placeholder="Confirme sua senha"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
+                  {...register('confirmPassword')}
+                  className="pr-10"
                 />
                 <button
                   type="button"
@@ -193,6 +171,11 @@ export default function SignUpPage() {
                   )}
                 </button>
               </div>
+              {errors.confirmPassword && (
+                <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -208,15 +191,13 @@ export default function SignUpPage() {
             </div>
           )}
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Criando conta...' : 'Criar conta'}
-            </button>
-          </div>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-green-600 hover:bg-green-700 focus:ring-green-500"
+          >
+            {isSubmitting ? 'Criando conta...' : 'Criar conta'}
+          </Button>
 
           <div className="text-center">
             <p className="text-xs text-gray-500 dark:text-gray-400">

@@ -5,34 +5,44 @@ import { signIn, getSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Sprout, Eye, EyeOff, ArrowLeft, Info } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import ErrorDiagnostic from '@/components/debug/error-diagnostic'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { signInSchema, type SignInFormData } from '@/lib/validations/auth'
+import { useAuthStore } from '@/lib/stores'
 
 export default function SignInPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const setUser = useAuthStore((state) => state.setUser)
+  
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignInFormData>({
+    resolver: zodResolver(signInSchema),
+  })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+  const onSubmit = async (data: SignInFormData) => {
     setError('')
 
     try {
-      console.log('🔐 Tentando fazer login...', { email })
+      console.log('🔐 Tentando fazer login...', { email: data.email })
       
       const result = await signIn('credentials', {
-        email,
-        password,
+        email: data.email,
+        password: data.password,
         redirect: false,
       })
 
       console.log('🔐 Resultado do login:', result)
 
       if (result?.error) {
-        // Mapear códigos de erro para mensagens amigáveis
         const errorMessages: Record<string, string> = {
           'AUTH-001': 'Email ou senha incorretos. Verifique suas credenciais.',
           'AUTH-002': 'Usuário não encontrado. Verifique o email informado.',
@@ -47,16 +57,24 @@ export default function SignInPage() {
       } else if (result?.ok) {
         console.log('✅ Login bem-sucedido, redirecionando...')
         
-        // Aguardar um pouco para garantir que a sessão foi criada
         await new Promise(resolve => setTimeout(resolve, 500))
         
         try {
           const session = await getSession()
           console.log('👤 Sessão obtida:', session)
           
+          if (session?.user) {
+            setUser({
+              id: session.user.id as string,
+              name: session.user.name as string,
+              email: session.user.email as string,
+              role: (session.user.role as 'USER' | 'ADMIN') || 'USER',
+            })
+          }
+          
           if (session?.user?.role === 'ADMIN') {
             console.log('🔧 Redirecionando para admin...')
-            router.push('/dashboard') // Por enquanto, redirecionar para dashboard
+            router.push('/dashboard')
           } else {
             console.log('👤 Redirecionando para dashboard...')
             router.push('/dashboard')
@@ -72,8 +90,6 @@ export default function SignInPage() {
     } catch (error) {
       console.error('❌ Erro geral no login:', error)
       setError('[API-005] Ocorreu um erro. Tente novamente.')
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -104,50 +120,52 @@ export default function SignInPage() {
           </p>
         </div>
         
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+          <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="sr-only">
-                Endereço de email
-              </label>
-              <input
+              <Label htmlFor="email">Endereço de email</Label>
+              <Input
                 id="email"
-                name="email"
                 type="email"
                 autoComplete="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-green-400 dark:focus:border-green-400"
                 placeholder="Endereço de email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                {...register('email')}
+                className="mt-1"
               />
+              {errors.email && (
+                <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
-            <div className="relative">
-              <label htmlFor="password" className="sr-only">
-                Senha
-              </label>
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-green-400 dark:focus:border-green-400"
-                placeholder="Senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4 text-gray-400 dark:text-gray-300" />
-                ) : (
-                  <Eye className="h-4 w-4 text-gray-400 dark:text-gray-300" />
-                )}
-              </button>
+            <div>
+              <Label htmlFor="password">Senha</Label>
+              <div className="relative mt-1">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  placeholder="Senha"
+                  {...register('password')}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-gray-400 dark:text-gray-300" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-gray-400 dark:text-gray-300" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -164,15 +182,13 @@ export default function SignInPage() {
             <div className="text-red-600 dark:text-red-400 text-sm text-center bg-red-50 dark:bg-red-900/20 p-3 rounded-md">{error}</div>
           )}
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Entrando...' : 'Entrar'}
-            </button>
-          </div>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-green-600 hover:bg-green-700 focus:ring-green-500"
+          >
+            {isSubmitting ? 'Entrando...' : 'Entrar'}
+          </Button>
 
           <div className="relative mt-6">
             <div className="absolute inset-0 flex items-center" aria-hidden="true">
