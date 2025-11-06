@@ -57,10 +57,29 @@ export async function withRetry<T>(
  */
 export async function getPoolMetrics() {
   try {
-    const metrics = await prisma.$metrics.json()
+    const anyPrisma = prisma as unknown as { 
+      $metrics?: { 
+        json: () => Promise<{ 
+          counters: Array<{ key: string; value: number }> 
+        }> 
+      } 
+    }
+    
+    if (!anyPrisma.$metrics) {
+      return {
+        activeConnections: 0,
+        totalQueries: 0,
+      }
+    }
+    
+    const metrics = await anyPrisma.$metrics.json()
+    const counters = metrics.counters ?? []
+    const getValue = (key: string) => 
+      counters.find((c: { key: string; value: number }) => c.key === key)?.value ?? 0
+    
     return {
-      activeConnections: metrics.counters.find(c => c.key === 'prisma_client_queries_active')?.value || 0,
-      totalQueries: metrics.counters.find(c => c.key === 'prisma_client_queries_total')?.value || 0,
+      activeConnections: getValue('prisma_client_queries_active'),
+      totalQueries: getValue('prisma_client_queries_total'),
     }
   } catch (error) {
     console.error('❌ Failed to get pool metrics:', error)

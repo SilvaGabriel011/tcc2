@@ -29,7 +29,6 @@ model User {
 
   @@index([email])
   @@index([createdAt])
-  @@index([resetToken])  // NEW: Password reset lookup
   @@map("users")
 }
 
