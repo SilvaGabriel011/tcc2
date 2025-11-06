@@ -30,7 +30,8 @@ export function createUploadWorker() {
 
         await job.updateProgress(30)
 
-        const analysisResult = analyzeDataset(parseResult.data)
+        const rows = parseResult.data as Record<string, unknown>[]
+        const analysisResult = analyzeDataset(rows)
 
         await job.updateProgress(60)
 
@@ -58,8 +59,8 @@ export function createUploadWorker() {
             name: fileName,
             filename: fileName,
             status: 'COMPLETED',
-            data: parseResult.data.slice(0, 100),
-            metadata: {
+            data: JSON.stringify(rows.slice(0, 100)),
+            metadata: JSON.stringify({
               totalRows: analysisResult.totalRows,
               totalColumns: analysisResult.totalColumns,
               variablesInfo: analysisResult.variablesInfo,
@@ -68,7 +69,7 @@ export function createUploadWorker() {
               species,
               subtype,
               uploadedAt: new Date().toISOString(),
-            },
+            }),
           },
         })
 

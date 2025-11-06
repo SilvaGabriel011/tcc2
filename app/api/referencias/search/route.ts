@@ -30,7 +30,7 @@ import { authOptions } from '@/lib/auth'
 import { ReferenceSearchService } from '@/services/references'
 import { ApiResponse, getRequestId } from '@/lib/api/response'
 import { validateRequestBody } from '@/lib/validation/middleware'
-import { referenceSearchSchema } from '@/lib/validation/schemas'
+import { searchReferencesSchema } from '@/lib/validation/schemas'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       return ApiResponse.unauthorized('Não autorizado', requestId)
     }
 
-    const validation = await validateRequestBody(request, referenceSearchSchema)
+    const validation = await validateRequestBody(request, searchReferencesSchema)
     
     if (!validation.success) {
       return ApiResponse.validationError(validation.errors!, requestId)
@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
     } = validation.data!
 
     // Validate pagination
-    const validPage = Math.max(1, parseInt(String(page)) || 1)
-    const validPageSize = Math.min(20, Math.max(5, parseInt(String(pageSize)) || 10))
+    const validPage = Math.max(1, page || 1)
+    const validPageSize = Math.min(20, Math.max(5, pageSize || 10))
     const offset = (validPage - 1) * validPageSize
 
     console.log(`🔍 Searching for: "${query}" (source: ${source}, page: ${validPage})`);
@@ -72,8 +72,8 @@ export async function POST(request: NextRequest) {
     const searchOptions = {
       limit: validPageSize,
       offset: offset,
-      yearFrom: yearFrom ? parseInt(yearFrom) : undefined,
-      yearTo: yearTo ? parseInt(yearTo) : undefined,
+      yearFrom: yearFrom,
+      yearTo: yearTo,
       language: language as 'pt' | 'en' | 'es' | 'all',
       publicationType: publicationType,
       sources: source === 'all' ? undefined : [source]

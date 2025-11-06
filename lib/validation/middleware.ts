@@ -37,12 +37,12 @@ export async function validateFormData<T>(
   try {
     const data: Record<string, unknown> = {}
     
-    for (const [key, value] of formData.entries()) {
+    formData.forEach((value, key) => {
       if (value instanceof File) {
-        continue
+        return
       }
       data[key] = value
-    }
+    })
     
     const validated = schema.parse(data)
     return { success: true, data: validated }

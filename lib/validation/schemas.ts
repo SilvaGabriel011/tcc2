@@ -51,12 +51,13 @@ export const correlationRequestSchema = z.object({
 
 export const searchReferencesSchema = z.object({
   query: z.string().min(3, 'Consulta deve ter pelo menos 3 caracteres'),
-  source: z.enum(['all', 'scielo', 'crossref', 'pubmed']).optional().default('all'),
+  source: z.enum(['all', 'scholar', 'crossref', 'pubmed', 'embrapa']).optional().default('all'),
   page: z.coerce.number().int().positive().optional().default(1),
   pageSize: z.coerce.number().int().min(1).max(100).optional().default(20),
   yearFrom: z.coerce.number().int().min(1900).max(2100).optional(),
   yearTo: z.coerce.number().int().min(1900).max(2100).optional(),
   language: z.enum(['pt', 'en', 'es', 'all']).optional().default('all'),
+  publicationType: z.enum(['research', 'review', 'meta-analysis', 'case-study', 'all']).optional(),
 })
 
 export const saveReferenceSchema = z.object({

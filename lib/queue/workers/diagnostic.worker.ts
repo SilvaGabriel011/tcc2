@@ -27,11 +27,12 @@ export function createDiagnosticWorker() {
 
         await job.updateProgress(30)
 
-        const totalRows = analysis.metadata ? (analysis.metadata as Record<string, unknown>).totalRows as number || 0 : 0
+        const metaObj = analysis.metadata ? JSON.parse(analysis.metadata) as Record<string, unknown> : {}
+        const totalRows = (metaObj.totalRows as number) || 0
 
         const diagnostico = gerarDiagnosticoLocal(
-          numericStats,
-          categoricalStats,
+          numericStats as Record<string, unknown>,
+          categoricalStats as Record<string, unknown>,
           datasetName,
           totalRows
         )
@@ -41,11 +42,11 @@ export function createDiagnosticWorker() {
         await prisma.dataset.update({
           where: { id: analysisId },
           data: {
-            metadata: {
-              ...(analysis.metadata as Record<string, unknown>),
+            metadata: JSON.stringify({
+              ...metaObj,
               diagnostico,
               diagnosticoGeneratedAt: new Date().toISOString(),
-            },
+            }),
           },
         })
 

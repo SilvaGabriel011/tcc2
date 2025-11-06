@@ -28,6 +28,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getDiagnosticQueue, getUploadQueue, getCorrelationQueue } from '@/lib/queue/queues'
 import { ApiResponse, getRequestId } from '@/lib/api/response'
+import { Job } from 'bullmq'
+
+export const runtime = 'nodejs'
 
 export async function GET(
   request: NextRequest,
@@ -48,7 +51,7 @@ export async function GET(
     const uploadQueue = getUploadQueue()
     const correlationQueue = getCorrelationQueue()
 
-    let job = await diagnosticQueue.getJob(jobId)
+    let job: Job | undefined = await diagnosticQueue.getJob(jobId)
     let queueType = 'diagnostic'
 
     if (!job) {
