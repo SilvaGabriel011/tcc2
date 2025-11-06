@@ -9,7 +9,7 @@ import { Article, SearchOptions, SearchResult, SearchProvider } from './types'
 import PubMedProvider from './providers/pubmed.provider'
 import CrossrefProvider from './providers/crossref.provider'
 import GoogleScholarProvider from './providers/scholar.provider'
-import { getCachedData, setCachedData } from '@/lib/cache'
+import { getCache, setCache } from '@/lib/multi-level-cache'
 
 export class ReferenceSearchService {
   private providers: Map<string, SearchProvider>
@@ -32,9 +32,8 @@ export class ReferenceSearchService {
   async search(query: string, options: SearchOptions = {}): Promise<SearchResult> {
     const startTime = Date.now()
     
-    // Check cache first
     const cacheKey = this.generateCacheKey(query, options)
-    const cached = await getCachedData<SearchResult>(cacheKey)
+    const cached = await getCache<SearchResult>(cacheKey)
     
     if (cached) {
       console.log('📚 Reference search cache hit:', cacheKey)
@@ -97,8 +96,11 @@ export class ReferenceSearchService {
       sources: providersToUse
     }
     
-    // Cache the result
-    await setCachedData(cacheKey, searchResult, 3600) // 1 hour cache
+    // Cache the result in multi-level cache (L1 + L2)
+    await setCache(cacheKey, searchResult, { 
+      ttl: 3600, 
+      tags: ['search', 'references'] 
+    })
     
     return searchResult
   }
