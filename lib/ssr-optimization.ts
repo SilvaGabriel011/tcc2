@@ -89,7 +89,7 @@ export const getCachedReferenceData = createCachedFetcher(
     return prisma.animalSpecies.findMany({
       include: {
         subtypes: true,
-        referenceData: true
+        references: true
       }
     })
   },
@@ -111,7 +111,7 @@ export function getCachedSpeciesData(speciesCode: string) {
         where: { code: speciesCode },
         include: {
           subtypes: true,
-          referenceData: true
+          references: true
         }
       })
     },

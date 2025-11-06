@@ -34,7 +34,7 @@ export async function warmReferenceDataCache(): Promise<void> {
     const species = await prisma.animalSpecies.findMany({
       include: {
         subtypes: true,
-        referenceData: true
+        references: true
       }
     })
 
@@ -55,7 +55,7 @@ export async function warmReferenceDataCache(): Promise<void> {
         })
       }
 
-      const referenceData = sp.referenceData
+      const referenceData = sp.references
       if (referenceData.length > 0) {
         entries.push({
           key: `reference:${sp.code}`,
