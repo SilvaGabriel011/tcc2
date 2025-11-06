@@ -126,32 +126,62 @@ function ResultadosContent() {
   useEffect(() => {
     const analysisId = searchParams.get('id')
     
+    console.log('[resultados:select]', {
+      urlId: analysisId,
+      analysesCount: analyses.length,
+      listIds: analyses.map(a => a.id),
+      timestamp: new Date().toISOString()
+    })
+    
     if (analyses.length > 0) {
       if (analysisId) {
         const targetAnalysis = analyses.find(a => a.id === analysisId)
         if (targetAnalysis) {
+          console.log('[resultados:select:found]', { analysisId, name: targetAnalysis.name })
           setSelectedAnalysis(targetAnalysis)
           setShowDiagnostico(false)
           setDiagnostico(null)
         } else {
-          console.warn(`Analysis with ID ${analysisId} not found, selecting first analysis`)
+          console.warn('[resultados:select:not-found]', { 
+            analysisId, 
+            availableIds: analyses.map(a => a.id),
+            fallbackToFirst: true 
+          })
           setSelectedAnalysis(analyses[0])
           setShowDiagnostico(false)
           setDiagnostico(null)
         }
       } else {
+        console.log('[resultados:select:no-url-id]', { selectingFirst: true })
         setSelectedAnalysis(analyses[0])
       }
+    } else {
+      console.log('[resultados:select:empty-list]', { analysisId })
     }
   }, [analyses, searchParams])
 
   const fetchAnalyses = async () => {
+    console.log('[resultados:fetchAnalyses:start]', { timestamp: new Date().toISOString() })
     try {
       const response = await fetch('/api/analise/resultados')
+      console.log('[resultados:fetchAnalyses:response]', { 
+        status: response.status, 
+        ok: response.ok 
+      })
+      
       const data = await response.json()
+      console.log('[resultados:fetchAnalyses:success]', { 
+        count: data.analyses?.length || 0,
+        ids: data.analyses?.map((a: { id: string }) => a.id) || []
+      })
+      
       setAnalyses(data.analyses || [])
     } catch (error) {
-      console.error('Erro ao carregar análises:', error)
+      console.error('[resultados:fetchAnalyses:error]', { 
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      })
+      toast.error('Erro ao carregar análises. Por favor, recarregue a página.')
     } finally {
       setLoading(false)
     }
@@ -379,15 +409,44 @@ function ResultadosContent() {
 
   // Parse e compatibilidade com formato antigo
   const analysisData: AnalysisData | null = selectedAnalysis ? (() => {
-    const parsed = JSON.parse(selectedAnalysis.data) as AnalysisData
-    // Compatibilidade: converter formato antigo para novo
-    if (parsed.statistics && !parsed.numericStats) {
-      parsed.numericStats = parsed.statistics
+    try {
+      console.log('[resultados:parse:data]', { 
+        analysisId: selectedAnalysis.id,
+        dataType: typeof selectedAnalysis.data,
+        dataLength: typeof selectedAnalysis.data === 'string' ? selectedAnalysis.data.length : 'not-string'
+      })
+      
+      const parsed = typeof selectedAnalysis.data === 'string' 
+        ? JSON.parse(selectedAnalysis.data) as AnalysisData
+        : selectedAnalysis.data as AnalysisData
+      
+      // Compatibilidade: converter formato antigo para novo
+      if (parsed.statistics && !parsed.numericStats) {
+        parsed.numericStats = parsed.statistics
+      }
+      if (parsed.categoricalAnalysis && !parsed.categoricalStats) {
+        parsed.categoricalStats = parsed.categoricalAnalysis
+      }
+      
+      console.log('[resultados:parse:data:success]', { 
+        analysisId: selectedAnalysis.id,
+        hasNumericStats: !!parsed.numericStats,
+        hasCategoricalStats: !!parsed.categoricalStats
+      })
+      
+      return parsed
+    } catch (error) {
+      console.error('[resultados:parse:data:error]', { 
+        analysisId: selectedAnalysis?.id,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        dataPreview: typeof selectedAnalysis.data === 'string' 
+          ? selectedAnalysis.data.substring(0, 100) 
+          : 'not-string'
+      })
+      toast.error('Erro ao carregar dados da análise. Os dados podem estar corrompidos.')
+      return null
     }
-    if (parsed.categoricalAnalysis && !parsed.categoricalStats) {
-      parsed.categoricalStats = parsed.categoricalAnalysis
-    }
-    return parsed
   })() : null
   
   interface Metadata {
@@ -397,7 +456,31 @@ function ResultadosContent() {
     zootechnicalCount?: number;
   }
   
-  const metadata: Metadata | null = selectedAnalysis && selectedAnalysis.metadata ? JSON.parse(selectedAnalysis.metadata) as Metadata : null
+  const metadata: Metadata | null = selectedAnalysis && selectedAnalysis.metadata ? (() => {
+    try {
+      console.log('[resultados:parse:metadata]', { 
+        analysisId: selectedAnalysis.id,
+        metadataType: typeof selectedAnalysis.metadata
+      })
+      
+      const parsed = typeof selectedAnalysis.metadata === 'string'
+        ? JSON.parse(selectedAnalysis.metadata) as Metadata
+        : selectedAnalysis.metadata as Metadata
+      
+      console.log('[resultados:parse:metadata:success]', { 
+        analysisId: selectedAnalysis.id,
+        totalRows: parsed.totalRows
+      })
+      
+      return parsed
+    } catch (error) {
+      console.error('[resultados:parse:metadata:error]', { 
+        analysisId: selectedAnalysis?.id,
+        error: error instanceof Error ? error.message : String(error)
+      })
+      return null
+    }
+  })() : null
 
   return (
     <div className="min-h-screen bg-background">
