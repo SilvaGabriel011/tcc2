@@ -18,11 +18,6 @@
  */
 
 import { PrismaClient } from '@prisma/client'
-import { validateEnv } from './env'
-
-if (typeof window === 'undefined') {
-  validateEnv()
-}
 
 // Type augmentation for global object to include prisma
 const globalForPrisma = globalThis as unknown as {

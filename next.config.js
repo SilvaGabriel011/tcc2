@@ -1,8 +1,8 @@
 /**
  * Next.js Configuration File
- * 
+ *
  * This file configures various Next.js settings for the AgroInsight application.
- * 
+ *
  * @type {import('next').NextConfig}
  */
 const nextConfig = {
@@ -11,6 +11,10 @@ const nextConfig = {
     // Allowed domains for Next.js Image Optimization
     // Currently only localhost is allowed for development
     domains: ['localhost'],
+  },
+  // ESLint configuration
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 }
 

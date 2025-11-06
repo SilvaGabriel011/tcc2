@@ -128,9 +128,7 @@ Environment variables are validated at runtime using Zod schemas in `lib/env.ts`
 
 ### Usage
 
-The validation runs automatically when the Prisma client is initialized. If required variables are missing or invalid, the application will fail fast with a clear error message.
-
-You can also manually validate or access environment variables:
+The validation utility is available for use in your application code. You can manually validate or access environment variables in API routes or other runtime code:
 
 ```typescript
 import { validateEnv, getEnv, isProduction } from '@/lib/env'
