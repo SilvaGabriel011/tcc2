@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { getCachedData, setCachedData } from '@/lib/cache'
+import { getCache, setCache } from '@/lib/multi-level-cache'
 import { getPaginationFromRequest, buildPaginatedResponse } from '@/lib/pagination'
 
 // Force dynamic rendering for this route
@@ -16,9 +16,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    // 🚀 CACHE: Tentar buscar do cache primeiro
     const cacheKey = `resultados:${session.user.id}`
-    const cachedResults = await getCachedData<{
+    const cachedResults = await getCache<{
       analyses: Array<{
         id: string;
         name: string;
@@ -31,15 +30,12 @@ export async function GET(request: NextRequest) {
     }>(cacheKey)
 
     if (cachedResults) {
-      console.log('✅ Cache HIT: Resultados encontrados no cache')
       return NextResponse.json({
         success: true,
         analyses: cachedResults.analyses,
         cached: true
       })
     }
-
-    console.log('❌ Cache MISS: Buscando resultados do banco')
 
     // Get pagination parameters
     const pagination = getPaginationFromRequest(request)
@@ -87,10 +83,12 @@ export async function GET(request: NextRequest) {
       })
     ])
 
-    // 💾 CACHE: Salvar no cache (5 minutos = 300s)
+    // 💾 MULTI-LEVEL CACHE: Salvar no cache (L1 + L2, 5 minutos = 300s)
     const resultToCache = { analyses }
-    await setCachedData(cacheKey, resultToCache, 300)
-    console.log('💾 Resultados salvos no cache')
+    await setCache(cacheKey, resultToCache, { 
+      ttl: 300, 
+      tags: ['analysis', `user:${session.user.id}`] 
+    })
 
     // Build paginated response
     const paginatedResponse = buildPaginatedResponse(analyses, total, pagination)

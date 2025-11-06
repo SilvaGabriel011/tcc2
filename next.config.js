@@ -9,8 +9,53 @@ const nextConfig = {
   // Image optimization configuration
   images: {
     // Allowed domains for Next.js Image Optimization
-    // Currently only localhost is allowed for development
     domains: ['localhost'],
+    
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.googleapis.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.googleusercontent.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.jsdelivr.net',
+        pathname: '/**',
+      },
+    ],
+    
+    formats: ['image/avif', 'image/webp'],
+    
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    
+    minimumCacheTTL: 86400, // 24 hours
+    
+    disableStaticImages: false,
+    
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+  },
+  
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'recharts'],
+  },
+  
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
   },
   // ESLint configuration
   eslint: {

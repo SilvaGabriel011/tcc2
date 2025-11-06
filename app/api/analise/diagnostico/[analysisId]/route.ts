@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { gerarDiagnosticoLocal } from '@/lib/diagnostico-local'
-import { getCachedData, setCachedData } from '@/lib/cache'
+import { getCache, setCache } from '@/lib/multi-level-cache'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -35,16 +35,14 @@ export async function GET(
       return NextResponse.json({ error: 'Análise não encontrada' }, { status: 404 })
     }
 
-    // 🚀 CACHE: Tentar buscar do cache primeiro
     const cacheKey = `diagnostico:${analysisId}`
-    const cachedDiagnostico = await getCachedData<{
+    const cachedDiagnostico = await getCache<{
       diagnostico: string;
       geradoEm: string;
       metodo: string;
     }>(cacheKey)
 
     if (cachedDiagnostico) {
-      console.log('✅ Cache HIT: Diagnóstico encontrado no cache')
       return NextResponse.json({
         success: true,
         diagnostico: cachedDiagnostico.diagnostico,
@@ -53,8 +51,6 @@ export async function GET(
         cached: true
       })
     }
-
-    console.log('❌ Cache MISS: Gerando novo diagnóstico')
 
     const data = JSON.parse(analysis.data)
     const metadata = analysis.metadata ? JSON.parse(analysis.metadata) : {}
@@ -79,9 +75,11 @@ export async function GET(
       metodo: 'Análise baseada em referências zootécnicas (EMBRAPA, NRC)'
     }
 
-    // 💾 CACHE: Salvar no cache (24 horas = 86400s)
-    await setCachedData(cacheKey, response, 86400)
-    console.log('💾 Diagnóstico salvo no cache')
+    // 💾 MULTI-LEVEL CACHE: Salvar no cache (L1 + L2, 24 horas = 86400s)
+    await setCache(cacheKey, response, { 
+      ttl: 86400, 
+      tags: ['diagnostic', `analysis:${analysisId}`] 
+    })
 
     return NextResponse.json({
       success: true,
