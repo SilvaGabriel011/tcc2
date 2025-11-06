@@ -21,97 +21,84 @@ module.exports = {
   ],
   
   theme: {
-    // Container configuration for responsive layouts
-    container: {
-      center: true,           // Center containers by default
-      padding: "2rem",        // Default horizontal padding
-      screens: {
-        "2xl": "1400px",      // Max width for 2xl breakpoint
-      },
-    },
-    
-    extend: {
-      // Custom color palette using CSS variables
-      // These map to CSS custom properties defined in globals.css
-      // Using HSL format allows for easy theme switching and color manipulation
-      colors: {
-        border: "hsl(var(--border))",                           // Border colors for UI elements
-        input: "hsl(var(--input))",                             // Input field backgrounds
-        ring: "hsl(var(--ring))",                               // Focus ring color
-        background: "hsl(var(--background))",                   // Page background
-        foreground: "hsl(var(--foreground))",                   // Main text color
-        
-        // Primary brand colors - used for main actions and branding
-        primary: {
-          DEFAULT: "hsl(var(--primary))",                       // Primary color (buttons, links)
-          foreground: "hsl(var(--primary-foreground))",         // Text on primary background
-        },
-        
-        // Secondary colors - used for supporting UI elements
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",                     // Secondary color
-          foreground: "hsl(var(--secondary-foreground))",       // Text on secondary background
-        },
-        
-        // Destructive colors - used for delete/danger actions
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",                   // Destructive color (red)
-          foreground: "hsl(var(--destructive-foreground))",     // Text on destructive background
-        },
-        
-        // Muted colors - used for subtle UI elements
-        muted: {
-          DEFAULT: "hsl(var(--muted))",                         // Muted background
-          foreground: "hsl(var(--muted-foreground))",           // Muted text
-        },
-        
-        // Accent colors - used for highlights and emphasis
-        accent: {
-          DEFAULT: "hsl(var(--accent))",                        // Accent color
-          foreground: "hsl(var(--accent-foreground))",          // Text on accent background
-        },
-        
-        // Popover colors - used for floating UI elements
-        popover: {
-          DEFAULT: "hsl(var(--popover))",                       // Popover background
-          foreground: "hsl(var(--popover-foreground))",         // Popover text
-        },
-        
-        // Card colors - used for card components
-        card: {
-          DEFAULT: "hsl(var(--card))",                          // Card background
-          foreground: "hsl(var(--card-foreground))",            // Card text
-        },
-      },
-      
-      // Custom border radius values using CSS variables
-      // Allows for consistent rounded corners across the app
-      borderRadius: {
-        lg: "var(--radius)",                    // Large radius
-        md: "calc(var(--radius) - 2px)",        // Medium radius
-        sm: "calc(var(--radius) - 4px)",        // Small radius
-      },
-      
-      // Keyframe definitions for custom animations
-      keyframes: {
-        // Accordion expand animation (used by Radix UI accordion)
-        "accordion-down": {
-          from: { height: 0 },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        // Accordion collapse animation
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: 0 },
-        },
-      },
-      
-      // Animation utilities that use the keyframes above
-      animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",     // Smooth expand
-        "accordion-up": "accordion-up 0.2s ease-out",         // Smooth collapse
-      },
-    },
+  	container: {
+  		center: true,
+  		padding: '2rem',
+  		screens: {
+  			'2xl': '1400px'
+  		}
+  	},
+  	extend: {
+  		colors: {
+  			border: 'hsl(var(--border))',
+  			input: 'hsl(var(--input))',
+  			ring: 'hsl(var(--ring))',
+  			background: 'hsl(var(--background))',
+  			foreground: 'hsl(var(--foreground))',
+  			primary: {
+  				DEFAULT: 'hsl(var(--primary))',
+  				foreground: 'hsl(var(--primary-foreground))'
+  			},
+  			secondary: {
+  				DEFAULT: 'hsl(var(--secondary))',
+  				foreground: 'hsl(var(--secondary-foreground))'
+  			},
+  			destructive: {
+  				DEFAULT: 'hsl(var(--destructive))',
+  				foreground: 'hsl(var(--destructive-foreground))'
+  			},
+  			muted: {
+  				DEFAULT: 'hsl(var(--muted))',
+  				foreground: 'hsl(var(--muted-foreground))'
+  			},
+  			accent: {
+  				DEFAULT: 'hsl(var(--accent))',
+  				foreground: 'hsl(var(--accent-foreground))'
+  			},
+  			popover: {
+  				DEFAULT: 'hsl(var(--popover))',
+  				foreground: 'hsl(var(--popover-foreground))'
+  			},
+  			card: {
+  				DEFAULT: 'hsl(var(--card))',
+  				foreground: 'hsl(var(--card-foreground))'
+  			},
+  			chart: {
+  				'1': 'hsl(var(--chart-1))',
+  				'2': 'hsl(var(--chart-2))',
+  				'3': 'hsl(var(--chart-3))',
+  				'4': 'hsl(var(--chart-4))',
+  				'5': 'hsl(var(--chart-5))'
+  			}
+  		},
+  		borderRadius: {
+  			lg: 'var(--radius)',
+  			md: 'calc(var(--radius) - 2px)',
+  			sm: 'calc(var(--radius) - 4px)'
+  		},
+  		keyframes: {
+  			'accordion-down': {
+  				from: {
+  					height: 0
+  				},
+  				to: {
+  					height: 'var(--radix-accordion-content-height)'
+  				}
+  			},
+  			'accordion-up': {
+  				from: {
+  					height: 'var(--radix-accordion-content-height)'
+  				},
+  				to: {
+  					height: 0
+  				}
+  			}
+  		},
+  		animation: {
+  			'accordion-down': 'accordion-down 0.2s ease-out',
+  			'accordion-up': 'accordion-up 0.2s ease-out'
+  		}
+  	}
   },
   
   // Plugins extend Tailwind's functionality
