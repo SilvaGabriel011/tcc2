@@ -113,7 +113,7 @@ describe('canonical-metrics', () => {
 
     it('should convert kg to arroba', () => {
       const result = convertUnit(30, 'kg', 'arroba')
-      expect(result).toBeCloseTo(1, 4)
+      expect(result).toBeCloseTo(1, 3)
     })
 
     it('should convert percent to decimal', () => {

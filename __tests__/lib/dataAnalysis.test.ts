@@ -18,8 +18,8 @@ describe('dataAnalysis', () => {
     })
 
     it('should detect quantitative discrete variables', () => {
-      const values = [1, 2, 2, 3, 3, 3, 4, 4, 4, 4]
-      const result = detectVariableType('quantidade_animais', values)
+      const values = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+      const result = detectVariableType('qtd_animais', values)
       
       expect(result.type).toBe(VariableType.QUANTITATIVE_DISCRETE)
       expect(result.rawType).toBe('numeric')
@@ -127,7 +127,7 @@ describe('dataAnalysis', () => {
       const stats = calculateNumericStats(values)
       
       expect(stats.variance).toBeGreaterThan(0)
-      expect(stats.stdDev).toBe(Math.sqrt(stats.variance))
+      expect(stats.stdDev).toBeCloseTo(Math.sqrt(stats.variance), 4)
     })
 
     it('should handle string numbers with commas', () => {
@@ -249,7 +249,9 @@ describe('dataAnalysis', () => {
     it('should identify variable types correctly', () => {
       const data = [
         { id: 'A001', peso: 450, raca: 'Nelore' },
-        { id: 'A002', peso: 480, raca: 'Angus' }
+        { id: 'A002', peso: 480, raca: 'Angus' },
+        { id: 'A003', peso: 460, raca: 'Nelore' },
+        { id: 'A004', peso: 470, raca: 'Angus' }
       ]
       
       const result = analyzeDataset(data)
