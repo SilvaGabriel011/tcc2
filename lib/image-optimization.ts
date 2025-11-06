@@ -10,15 +10,17 @@
  * - Blur placeholder generation
  */
 
+import type { ImageProps } from 'next/image'
+
 export interface ImageConfig {
   src: string
   alt: string
   width?: number
   height?: number
-  quality?: number
+  quality?: number | `${number}`
   priority?: boolean
   loading?: 'lazy' | 'eager'
-  placeholder?: 'blur' | 'empty'
+  placeholder?: ImageProps['placeholder']
   blurDataURL?: string
 }
 
@@ -71,10 +73,10 @@ export function getOptimizedImageConfig(
     alt,
     width: options.width,
     height: options.height,
-    quality: options.quality || DEFAULT_IMAGE_QUALITY,
-    priority: options.priority || false,
-    loading: options.loading || 'lazy',
-    placeholder: options.placeholder || 'blur',
+    quality: (options.quality ?? DEFAULT_IMAGE_QUALITY) as number | `${number}`,
+    priority: options.priority ?? false,
+    loading: options.loading ?? 'lazy',
+    placeholder: options.placeholder ?? 'blur',
     blurDataURL: options.blurDataURL
   }
 }
@@ -93,8 +95,7 @@ export function generateBlurDataURL(
     </svg>
   `
   
-  const base64 = Buffer.from(svg).toString('base64')
-  return `data:image/svg+xml;base64,${base64}`
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
 }
 
 /**

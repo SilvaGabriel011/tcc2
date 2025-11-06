@@ -236,11 +236,11 @@ export class MultiLevelCache {
   async invalidatePattern(pattern: string): Promise<void> {
     if (this.config.enableL1) {
       const keysToDelete: string[] = []
-      for (const key of this.l1Cache.keys()) {
+      this.l1Cache.forEach((_, key) => {
         if (this.matchPattern(key, pattern)) {
           keysToDelete.push(key)
         }
-      }
+      })
       keysToDelete.forEach(key => this.l1Cache.delete(key))
     }
     
