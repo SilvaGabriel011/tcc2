@@ -3,6 +3,7 @@ import { getRedisConnection } from '../connection'
 import { DiagnosticJobData } from '../queues'
 import { prisma } from '@/lib/prisma'
 import { gerarDiagnosticoLocal } from '@/lib/diagnostico-local'
+import type { NumericStats } from '@/types/api'
 
 export function createDiagnosticWorker() {
   const connection = getRedisConnection()
@@ -31,7 +32,7 @@ export function createDiagnosticWorker() {
         const totalRows = (metaObj.totalRows as number) || 0
 
         const diagnostico = gerarDiagnosticoLocal(
-          numericStats as Record<string, unknown>,
+          numericStats as Record<string, NumericStats>,
           categoricalStats as Record<string, unknown>,
           datasetName,
           totalRows
