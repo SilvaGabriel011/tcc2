@@ -10,12 +10,21 @@ import { withRateLimit } from '@/lib/rate-limit'
 import { analyzeCorrelations, proposeCorrelations, getMissingVariables } from '@/lib/correlations/correlation-analysis'
 
 export async function POST(request: NextRequest) {
-  // Apply rate limiting
-  const rateLimitResponse = await withRateLimit(request, 'UPLOAD')
-  if (rateLimitResponse) return rateLimitResponse
+  let stage = 'init'
   
   try {
+    console.log('🔍 [multi-species] Step 0: Rate limit check')
+    stage = 'rate_limit'
+    try {
+      const rateLimitResponse = await withRateLimit(request, 'UPLOAD')
+      if (rateLimitResponse) return rateLimitResponse
+      console.log('✅ [multi-species] Rate limit OK')
+    } catch (rateLimitError) {
+      console.warn('⚠️ [multi-species] Rate limit check failed, continuing without rate limit:', rateLimitError)
+    }
+    
     console.log('🔍 [multi-species] Step 1: Auth check')
+    stage = 'auth'
     const session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
@@ -23,6 +32,7 @@ export async function POST(request: NextRequest) {
     console.log('✅ [multi-species] Auth OK, user:', session.user.email)
 
     console.log('🔍 [multi-species] Step 2: Parse form data')
+    stage = 'form_data'
     const formData = await request.formData()
     const file = formData.get('file') as File
     const species = formData.get('species') as string
@@ -31,19 +41,21 @@ export async function POST(request: NextRequest) {
 
     if (!file || !species) {
       return NextResponse.json(
-        { error: 'Arquivo e espécie são obrigatórios' },
+        { error: 'Arquivo e espécie são obrigatórios', stage },
         { status: 400 }
       )
     }
     console.log('✅ [multi-species] Form data OK:', { species, subtype, hasProjectId: !!projectId })
 
     console.log('🔍 [multi-species] Step 3: Security validation')
+    stage = 'security'
     const securityCheck = await validateUploadedFile(file, 'csv')
     if (!securityCheck.valid) {
       console.warn('🚫 Security check failed:', securityCheck.error)
       return NextResponse.json({ 
         error: securityCheck.error,
-        warnings: securityCheck.warnings 
+        warnings: securityCheck.warnings,
+        stage
       }, { status: 400 })
     }
     console.log('✅ [multi-species] Security check passed')
@@ -51,6 +63,7 @@ export async function POST(request: NextRequest) {
     const secureFilename = generateUniqueFilename(file.name)
 
     console.log('🔍 [multi-species] Step 4: Parse CSV')
+    stage = 'csv_parse'
     console.log('📊 Iniciando análise multi-espécie:', { species, subtype })
 
     // Parse CSV
@@ -163,39 +176,64 @@ export async function POST(request: NextRequest) {
     console.log('✅ [multi-species] Project resolved:', finalProjectId)
 
     console.log('🔍 [multi-species] Step 10: Save to database')
-    const analysis = await prisma.dataset.create({
-      data: {
-        projectId: finalProjectId,
-        name: `${species}${subtype ? ` - ${subtype}` : ''} - ${new Date().toLocaleDateString('pt-BR')}`,
-        filename: secureFilename,
-        status: 'VALIDATED',
-        data: JSON.stringify({
-          raw: parsed.data.slice(0, 100),
-          statistics,
-          references,
-          interpretation,
-          correlations: {
-            report: correlationReport,
-            proposals: correlationProposals,
-            missingVariables,
-            analyzedAt: new Date().toISOString()
-          }
-        }),
-        metadata: JSON.stringify({
-          species,
-          subtype,
-          totalRows: parsed.data.length,
-          totalColumns: Object.keys(parsed.data[0] || {}).length,
-          analyzedAt: new Date().toISOString(),
-          version: '2.0'
-        })
+    stage = 'db_save'
+    
+    let analysis
+    let persisted = true
+    let dbWarning = null
+    
+    try {
+      analysis = await prisma.dataset.create({
+        data: {
+          projectId: finalProjectId,
+          name: `${species}${subtype ? ` - ${subtype}` : ''} - ${new Date().toLocaleDateString('pt-BR')}`,
+          filename: secureFilename,
+          status: 'VALIDATED',
+          data: JSON.stringify({
+            raw: parsed.data.slice(0, 100),
+            statistics,
+            references,
+            interpretation,
+            correlations: {
+              report: correlationReport,
+              proposals: correlationProposals,
+              missingVariables,
+              analyzedAt: new Date().toISOString()
+            }
+          }),
+          metadata: JSON.stringify({
+            species,
+            subtype,
+            totalRows: parsed.data.length,
+            totalColumns: Object.keys(parsed.data[0] || {}).length,
+            analyzedAt: new Date().toISOString(),
+            version: '2.0'
+          })
+        }
+      })
+      console.log('✅ [multi-species] Analysis saved with ID:', analysis.id)
+    } catch (dbError) {
+      console.error('⚠️ [multi-species] Database save failed:', dbError)
+      
+      if (dbError.code === 'P2022' || dbError.code === 'P1001' || dbError.code === 'P2021') {
+        console.warn('⚠️ [multi-species] Database schema mismatch or connectivity issue, returning analysis without persisting')
+        persisted = false
+        dbWarning = 'Análise concluída mas não foi salva no banco de dados. O esquema do banco precisa ser atualizado.'
+        
+        analysis = {
+          id: `temp_${Date.now()}`,
+          name: `${species}${subtype ? ` - ${subtype}` : ''} - ${new Date().toLocaleDateString('pt-BR')}`,
+          createdAt: new Date()
+        }
+      } else {
+        throw dbError
       }
-    })
-
-    console.log('✅ [multi-species] Analysis saved with ID:', analysis.id)
+    }
 
     return NextResponse.json({
       success: true,
+      persisted,
+      warning: dbWarning,
       analysis: {
         id: analysis.id,
         name: analysis.name,
@@ -225,12 +263,14 @@ export async function POST(request: NextRequest) {
     console.error('Error details:', {
       message: errorMessage,
       stack: errorStack,
-      type: error?.constructor?.name
+      type: error?.constructor?.name,
+      stage
     })
     
     return NextResponse.json(
       { 
         error: 'Erro ao processar análise',
+        stage,
         details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
       },
       { status: 500 }
