@@ -24,35 +24,30 @@
  * ```
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { ReferenceSearchService } from '@/services/references'
+import { ApiResponse, getRequestId } from '@/lib/api/response'
+import { validateRequestBody } from '@/lib/validation/middleware'
+import { referenceSearchSchema } from '@/lib/validation/schemas'
 
-// Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
+  const requestId = getRequestId(request)
+  
   try {
-    // Step 1: Authenticate user
     const session = await getServerSession(authOptions)
     
     if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Não autorizado' },
-        { status: 401 }
-      )
+      return ApiResponse.unauthorized('Não autorizado', requestId)
     }
 
-    // Step 2: Parse and validate request body
-    let body
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json(
-        { error: 'JSON inválido na requisição' },
-        { status: 400 }
-      )
+    const validation = await validateRequestBody(request, referenceSearchSchema)
+    
+    if (!validation.success) {
+      return ApiResponse.validationError(validation.errors!, requestId)
     }
 
     const { 
@@ -64,14 +59,7 @@ export async function POST(request: NextRequest) {
       yearTo,
       language = 'all',
       publicationType
-    } = body
-
-    // Validate query
-    if (!query || query.trim().length < 2) {
-      return NextResponse.json({ 
-        error: 'Termo de pesquisa deve ter pelo menos 2 caracteres' 
-      }, { status: 400 })
-    }
+    } = validation.data!
 
     // Validate pagination
     const validPage = Math.max(1, parseInt(String(page)) || 1)
@@ -98,45 +86,37 @@ export async function POST(request: NextRequest) {
       
       console.log(`✅ Found ${searchResult.articles.length} articles from ${searchResult.sources.join(', ')}`);
       
-      // Step 5: Return formatted response
-      return NextResponse.json({
-        success: true,
-        articles: searchResult.articles,
-        page: searchResult.page,
-        pageSize: searchResult.pageSize,
-        hasMore: searchResult.hasMore,
-        total: searchResult.totalResults,
-        query: searchResult.query,
-        source: source,
-        sources: searchResult.sources,
-        searchTime: searchResult.searchTime,
-        message: `${searchResult.totalResults} artigo(s) encontrado(s)`,
-        cached: false
-      })
+        return ApiResponse.success(
+        {
+          articles: searchResult.articles,
+          page: searchResult.page,
+          pageSize: searchResult.pageSize,
+          hasMore: searchResult.hasMore,
+          total: searchResult.totalResults,
+          query: searchResult.query,
+          source: source,
+          sources: searchResult.sources,
+          searchTime: searchResult.searchTime,
+          message: `${searchResult.totalResults} artigo(s) encontrado(s)`
+        },
+        { requestId, cached: false }
+      )
     } catch (searchError) {
       console.error('❌ Reference search error:', searchError)
       
-      // Return user-friendly error
-      return NextResponse.json({
-        success: false,
-        articles: [],
-        error: 'Erro ao buscar referências. Tente novamente com outros termos.',
-        query: query,
-        page: validPage,
-        pageSize: validPageSize,
-        hasMore: false,
-        total: 0
-      }, { status: 500 })
+      return ApiResponse.serverError(
+        'Erro ao buscar referências. Tente novamente com outros termos.',
+        searchError instanceof Error ? searchError.message : 'Erro desconhecido',
+        requestId
+      )
     }
 
   } catch (error) {
     console.error('❌ Erro geral na pesquisa:', error)
-    return NextResponse.json(
-      { 
-        success: false,
-        error: 'Erro interno do servidor. Tente novamente.' 
-      },
-      { status: 500 }
+    return ApiResponse.serverError(
+      'Erro ao processar pesquisa',
+      error instanceof Error ? error.message : 'Erro desconhecido',
+      requestId
     )
   }
 }

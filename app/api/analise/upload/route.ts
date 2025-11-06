@@ -29,7 +29,7 @@
  * - 500: Server error during processing
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -38,6 +38,9 @@ import { analyzeDataset } from '@/lib/dataAnalysis'
 import { invalidateCache } from '@/lib/cache'
 import { withRateLimit } from '@/lib/rate-limit'
 import { validateUploadedFile, generateUniqueFilename } from '@/lib/upload-security'
+import { ApiResponse, getRequestId } from '@/lib/api/response'
+import { validateFormData } from '@/lib/validation/middleware'
+import { uploadFormDataSchema } from '@/lib/validation/schemas'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -62,28 +65,36 @@ export async function POST(request: NextRequest) {
   const rateLimitResponse = await withRateLimit(request, 'UPLOAD')
   if (rateLimitResponse) return rateLimitResponse
   
+  const requestId = getRequestId(request)
+  
   try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      return ApiResponse.unauthorized('Não autorizado', requestId)
     }
 
     const formData = await request.formData()
     const file = formData.get('file') as File
     
     if (!file) {
-      return NextResponse.json({ error: 'Nenhum arquivo enviado' }, { status: 400 })
+      return ApiResponse.badRequest('Nenhum arquivo enviado', undefined, requestId)
+    }
+
+    const validation = await validateFormData(formData, uploadFormDataSchema)
+    if (!validation.success) {
+      return ApiResponse.validationError(validation.errors!, requestId)
     }
 
     // Security validation
     const securityCheck = await validateUploadedFile(file, 'csv')
     if (!securityCheck.valid) {
       console.warn('🚫 Security check failed:', securityCheck.error)
-      return NextResponse.json({ 
-        error: securityCheck.error,
-        warnings: securityCheck.warnings 
-      }, { status: 400 })
+      return ApiResponse.badRequest(
+        securityCheck.error || 'Arquivo inválido',
+        { warnings: securityCheck.warnings },
+        requestId
+      )
     }
 
     // Log warnings if any
@@ -158,16 +169,20 @@ export async function POST(request: NextRequest) {
       console.warn(`⚠️ ${parseErrors.length} erros durante parse`)
       // Only fail if there are critical errors
       if (data.length === 0) {
-        return NextResponse.json({ 
-          error: 'Erro ao processar CSV: ' + parseErrors[0].message 
-        }, { status: 400 })
+        return ApiResponse.badRequest(
+          'Erro ao processar CSV: ' + parseErrors[0].message,
+          { errorCount: parseErrors.length },
+          requestId
+        )
       }
     }
     
     if (data.length === 0) {
-      return NextResponse.json({ 
-        error: 'Arquivo CSV vazio ou sem dados válidos' 
-      }, { status: 400 })
+      return ApiResponse.badRequest(
+        'Arquivo CSV vazio ou sem dados válidos',
+        undefined,
+        requestId
+      )
     }
 
     // Usar o novo sistema de análise
@@ -229,24 +244,27 @@ export async function POST(request: NextRequest) {
     await invalidateCache(cacheKey)
     console.log('🗑️ Cache de resultados invalidado')
 
-    return NextResponse.json({
-      success: true,
-      analysisId: analysis.id,
-      totalRows: analysisResult.totalRows,
-      totalColumns: analysisResult.totalColumns,
-      validRows,
-      zootechnicalVariables,
-      variablesInfo: analysisResult.variablesInfo,
-      numericStats: analysisResult.numericStats,
-      categoricalStats: analysisResult.categoricalStats,
-      message: 'Arquivo analisado com sucesso!'
-    })
+    return ApiResponse.created(
+      {
+        analysisId: analysis.id,
+        totalRows: analysisResult.totalRows,
+        totalColumns: analysisResult.totalColumns,
+        validRows,
+        zootechnicalVariables,
+        variablesInfo: analysisResult.variablesInfo,
+        numericStats: analysisResult.numericStats,
+        categoricalStats: analysisResult.categoricalStats,
+        message: 'Arquivo analisado com sucesso!'
+      },
+      { requestId }
+    )
 
   } catch (error) {
     console.error('Erro na análise:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor: ' + (error instanceof Error ? error.message : 'Erro desconhecido') },
-      { status: 500 }
+    return ApiResponse.serverError(
+      'Erro ao processar análise',
+      error instanceof Error ? error.message : 'Erro desconhecido',
+      requestId
     )
   }
 }

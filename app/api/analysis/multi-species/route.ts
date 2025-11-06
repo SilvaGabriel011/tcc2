@@ -1,5 +1,42 @@
-// app/api/analysis/multi-species/route.ts
-import { NextRequest, NextResponse } from 'next/server'
+/**
+ * @swagger
+ * /api/analysis/multi-species:
+ *   post:
+ *     summary: Analyze multi-species zootechnical data
+ *     tags: [Analysis]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - file
+ *               - species
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *               species:
+ *                 type: string
+ *                 enum: [bovine, swine, poultry, sheep, goat, aquaculture, forage]
+ *               subtype:
+ *                 type: string
+ *               projectId:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Analysis created successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+import { NextRequest } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -8,39 +45,46 @@ import Papa from 'papaparse'
 import { validateUploadedFile, generateUniqueFilename } from '@/lib/upload-security'
 import { withRateLimit } from '@/lib/rate-limit'
 import { analyzeCorrelations, proposeCorrelations, getMissingVariables } from '@/lib/correlations/correlation-analysis'
+import { ApiResponse, getRequestId } from '@/lib/api/response'
+import { validateFormData } from '@/lib/validation/middleware'
+import { multiSpeciesUploadFormDataSchema } from '@/lib/validation/schemas'
 
 export async function POST(request: NextRequest) {
   // Apply rate limiting
   const rateLimitResponse = await withRateLimit(request, 'UPLOAD')
   if (rateLimitResponse) return rateLimitResponse
   
+  const requestId = getRequestId(request)
+  
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      return ApiResponse.unauthorized('Não autorizado', requestId)
     }
 
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const species = formData.get('species') as string
-    const subtype = formData.get('subtype') as string | null
-    const projectId = formData.get('projectId') as string
-
-    if (!file || !species) {
-      return NextResponse.json(
-        { error: 'Arquivo e espécie são obrigatórios' },
-        { status: 400 }
-      )
+    
+    if (!file) {
+      return ApiResponse.badRequest('Nenhum arquivo enviado', undefined, requestId)
     }
+
+    const validation = await validateFormData(formData, multiSpeciesUploadFormDataSchema)
+    if (!validation.success) {
+      return ApiResponse.validationError(validation.errors!, requestId)
+    }
+
+    const { species, subtype, projectId } = validation.data!
 
     // Security validation
     const securityCheck = await validateUploadedFile(file, 'csv')
     if (!securityCheck.valid) {
       console.warn('🚫 Security check failed:', securityCheck.error)
-      return NextResponse.json({ 
-        error: securityCheck.error,
-        warnings: securityCheck.warnings 
-      }, { status: 400 })
+      return ApiResponse.badRequest(
+        securityCheck.error || 'Arquivo inválido',
+        { warnings: securityCheck.warnings },
+        requestId
+      )
     }
 
     const secureFilename = generateUniqueFilename(file.name)
@@ -57,17 +101,18 @@ export async function POST(request: NextRequest) {
 
     if (parsed.errors.length > 0) {
       console.error('❌ Erros no CSV:', parsed.errors)
-      return NextResponse.json(
-        { error: 'Erro ao processar CSV', details: parsed.errors },
-        { status: 400 }
+      return ApiResponse.badRequest(
+        'Erro ao processar CSV',
+        { errors: parsed.errors },
+        requestId
       )
     }
 
-    // Validação básica dos dados
     if (!parsed.data || parsed.data.length === 0) {
-      return NextResponse.json(
-        { error: 'Arquivo vazio ou sem dados válidos' },
-        { status: 400 }
+      return ApiResponse.badRequest(
+        'Arquivo vazio ou sem dados válidos',
+        undefined,
+        requestId
       )
     }
 
@@ -170,33 +215,36 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Análise salva com ID:', analysis.id)
 
-    return NextResponse.json({
-      success: true,
-      analysis: {
-        id: analysis.id,
-        name: analysis.name,
-        species,
-        subtype,
-        statistics,
-        references: references.comparisons,
-        overallStatus: references.overallStatus,
-        summary: references.summary,
-        interpretation,
-        correlations: {
-          total: correlationReport.totalCorrelations,
-          significant: correlationReport.significantCorrelations,
-          highRelevance: correlationReport.highRelevanceCorrelations,
-          topCorrelations: correlationReport.topCorrelations.slice(0, 5)
-        },
-        createdAt: analysis.createdAt
-      }
-    })
+    return ApiResponse.created(
+      {
+        analysis: {
+          id: analysis.id,
+          name: analysis.name,
+          species,
+          subtype,
+          statistics,
+          references: references.comparisons,
+          overallStatus: references.overallStatus,
+          summary: references.summary,
+          interpretation,
+          correlations: {
+            total: correlationReport.totalCorrelations,
+            significant: correlationReport.significantCorrelations,
+            highRelevance: correlationReport.highRelevanceCorrelations,
+            topCorrelations: correlationReport.topCorrelations.slice(0, 5)
+          },
+          createdAt: analysis.createdAt
+        }
+      },
+      { requestId }
+    )
 
   } catch (error) {
     console.error('❌ Erro na análise multi-espécie:', error)
-    return NextResponse.json(
-      { error: 'Erro ao processar análise' },
-      { status: 500 }
+    return ApiResponse.serverError(
+      'Erro ao processar análise',
+      error instanceof Error ? error.message : 'Erro desconhecido',
+      requestId
     )
   }
 }
