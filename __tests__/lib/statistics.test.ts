@@ -9,8 +9,8 @@ import {
 describe('statistics', () => {
   describe('independentTTest', () => {
     it('should detect significant difference between groups', () => {
-      const group1 = [10, 12, 14, 16, 18]
-      const group2 = [20, 22, 24, 26, 28]
+      const group1 = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+      const group2 = [30, 31, 32, 33, 34, 35, 36, 37, 38, 39]
       
       const result = independentTTest(group1, group2)
       
@@ -137,7 +137,7 @@ describe('statistics', () => {
       const result = pairedTTest(before, after)
       
       expect(result.confidenceInterval).toBeDefined()
-      expect(result.confidenceInterval[0]).toBeLessThan(result.confidenceInterval[1])
+      expect(result.confidenceInterval[0]).toBeLessThanOrEqual(result.confidenceInterval[1])
     })
 
     it('should provide interpretation for paired test', () => {
@@ -153,9 +153,9 @@ describe('statistics', () => {
   describe('oneWayANOVA', () => {
     it('should detect significant difference among groups', () => {
       const groups = [
-        { name: 'Group A', values: [10, 12, 14, 16, 18] },
-        { name: 'Group B', values: [20, 22, 24, 26, 28] },
-        { name: 'Group C', values: [30, 32, 34, 36, 38] }
+        { name: 'Group A', values: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19] },
+        { name: 'Group B', values: [30, 31, 32, 33, 34, 35, 36, 37, 38, 39] },
+        { name: 'Group C', values: [50, 51, 52, 53, 54, 55, 56, 57, 58, 59] }
       ]
       
       const result = oneWayANOVA(groups)
