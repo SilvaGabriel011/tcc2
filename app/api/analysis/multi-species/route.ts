@@ -44,6 +44,10 @@ export async function POST(request: NextRequest) {
       console.error('❌ [DEBUG] No session or user')
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+    if (!session.user.email) {
+      console.error('❌ [DEBUG] Session user has no email')
+      return NextResponse.json({ error: 'Sessão inválida: email não encontrado' }, { status: 400 })
+    }
     console.log('✅ [DEBUG] Session OK:', { email: session.user.email })
 
     console.log('🔍 [DEBUG] Step 2: Parsing form data')
@@ -278,7 +282,19 @@ export async function POST(request: NextRequest) {
       stack: error instanceof Error ? error.stack : undefined,
       name: error instanceof Error ? error.name : undefined,
     })
-    return NextResponse.json({ error: 'Erro ao processar análise' }, { status: 500 })
+
+    const isProduction = process.env.VERCEL_ENV === 'production'
+    const errorResponse: Record<string, unknown> = { error: 'Erro ao processar análise' }
+
+    if (!isProduction) {
+      errorResponse.debug = {
+        message: error instanceof Error ? error.message : String(error),
+        name: error instanceof Error ? error.name : 'Unknown',
+        stack: error instanceof Error ? error.stack?.split('\n').slice(0, 5).join('\n') : undefined,
+      }
+    }
+
+    return NextResponse.json(errorResponse, { status: 500 })
   }
 }
 
