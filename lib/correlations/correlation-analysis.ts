@@ -87,18 +87,17 @@ export function analyzeCorrelations(
     minRelevanceScore?: number
     minDataPoints?: number
     significanceLevel?: number
+    allowUnknownSpeciesFallback?: boolean
   } = {}
 ): CorrelationAnalysisReport {
   const normalizedSpecies = normalizeSpecies(species)
 
-  const datasetSize = data.length
-  const defaultMinDataPoints = Math.min(10, Math.max(5, Math.floor(datasetSize * 0.6)))
-
   const {
     maxCorrelations = 20,
     minRelevanceScore = 5,
-    minDataPoints = defaultMinDataPoints,
+    minDataPoints = 10,
     significanceLevel = 0.05,
+    allowUnknownSpeciesFallback = false,
   } = options
 
   const warnings: string[] = []
@@ -123,6 +122,18 @@ export function analyzeCorrelations(
 
   const config = getSpeciesCorrelationConfig(normalizedSpecies)
   if (!config) {
+    if (!allowUnknownSpeciesFallback) {
+      return {
+        totalCorrelations: 0,
+        significantCorrelations: 0,
+        highRelevanceCorrelations: 0,
+        correlationsByCategory: {},
+        topCorrelations: [],
+        allCorrelations: [],
+        warnings: [`Configuração de correlação não encontrada para espécie: ${species}`],
+        recommendations: [],
+      }
+    }
     warnings.push(
       `⚠️ Configuração específica não encontrada para '${species}'. Usando análise automática de correlações.`
     )

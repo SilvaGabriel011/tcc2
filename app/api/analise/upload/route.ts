@@ -196,11 +196,14 @@ export async function POST(request: NextRequest) {
       Object.values(row).some((val) => val !== null && val !== undefined && val !== '')
     ).length
 
+    const dynamicMinDataPoints = Math.min(10, Math.max(5, Math.floor(validRows * 0.6)))
+
     const correlationReport = analyzeCorrelations(data, 'gado', {
       maxCorrelations: 20,
       minRelevanceScore: 3,
-      minDataPoints: 10,
+      minDataPoints: dynamicMinDataPoints,
       significanceLevel: 0.05,
+      allowUnknownSpeciesFallback: true,
     })
 
     console.log(
