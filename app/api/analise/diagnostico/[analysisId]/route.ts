@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { generateDiagnostico } from '@/lib/diagnostico-generator'
+import { generateAIDiagnostic } from '@/lib/ai-diagnostic'
 import { getCache, setCache } from '@/lib/multi-level-cache'
 
 // Force dynamic rendering for this route
@@ -54,34 +54,41 @@ export async function GET(request: NextRequest, { params }: { params: { analysis
     const data = JSON.parse(analysis.data)
     const metadata = analysis.metadata ? JSON.parse(analysis.metadata) : {}
 
-    console.log('🔍 Gerando diagnóstico avançado...')
+    console.log('🔍 Gerando diagnóstico com IA...')
     console.log(
       '📊 Total de variáveis:',
       Object.keys(data.numericStats || data.statistics || {}).length
     )
 
-    // Gerar diagnóstico com o novo sistema avançado
+    // Gerar diagnóstico com IA (Gemini/OpenAI) ou fallback para rule-based
     const diagnosticoData = {
       species: metadata.species || 'unknown',
       subtype: metadata.subtype,
       statistics: data.statistics || { numericStats: data.numericStats },
       references: data.references || {},
       correlations: data.correlations,
-      metadata,
+      metadata: {
+        totalRows: metadata.totalRows,
+        totalColumns: metadata.totalColumns,
+        validRows: metadata.validRows,
+      },
     }
 
-    const diagnosticoResult = generateDiagnostico(
-      diagnosticoData as Parameters<typeof generateDiagnostico>[0]
-    )
+    const diagnosticoResult = await generateAIDiagnostic(diagnosticoData)
 
-    console.log('✅ Diagnóstico gerado com sucesso')
+    console.log(`✅ Diagnóstico gerado com sucesso (${diagnosticoResult.generatedBy || 'unknown'})`)
 
     // Preparar resposta no formato esperado pelo frontend
     const response = {
       ...diagnosticoResult,
       diagnostico: `Diagnóstico gerado para ${analysis.name}`,
       geradoEm: new Date().toISOString(),
-      metodo: 'Análise Estatística Avançada com IA',
+      metodo:
+        diagnosticoResult.generatedBy === 'gemini'
+          ? 'Análise com IA (Google Gemini)'
+          : diagnosticoResult.generatedBy === 'openai'
+            ? 'Análise com IA (OpenAI GPT-4)'
+            : 'Análise Estatística Avançada',
     }
 
     // 💾 MULTI-LEVEL CACHE: Salvar no cache (L1 + L2, 24 horas = 86400s)
