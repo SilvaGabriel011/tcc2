@@ -8,6 +8,46 @@
 import { getSpeciesCorrelationConfig, CorrelationPair } from './species-correlations'
 import { pearsonCorrelation } from '../statistics'
 
+/**
+ * Normalize species names to match correlation config keys
+ */
+function normalizeSpecies(species: string): string {
+  const normalized = species.toLowerCase().trim()
+
+  const speciesMap: Record<string, string> = {
+    gado: 'bovine',
+    bovino: 'bovine',
+    bovinos: 'bovine',
+    boi: 'bovine',
+    vaca: 'bovine',
+    cattle: 'bovine',
+    suino: 'swine',
+    suinos: 'swine',
+    porco: 'swine',
+    pig: 'swine',
+    aves: 'poultry',
+    frango: 'poultry',
+    galinha: 'poultry',
+    chicken: 'poultry',
+    ovino: 'sheep',
+    ovinos: 'sheep',
+    ovelha: 'sheep',
+    caprino: 'goat',
+    caprinos: 'goat',
+    cabra: 'goat',
+    peixe: 'aquaculture',
+    peixes: 'aquaculture',
+    aquicultura: 'aquaculture',
+    fish: 'aquaculture',
+    forragem: 'forage',
+    pastagem: 'forage',
+    capim: 'forage',
+    grass: 'forage',
+  }
+
+  return speciesMap[normalized] || normalized
+}
+
 export interface CorrelationResult {
   var1: string
   var2: string
@@ -49,26 +89,17 @@ export function analyzeCorrelations(
     significanceLevel?: number
   } = {}
 ): CorrelationAnalysisReport {
+  const normalizedSpecies = normalizeSpecies(species)
+
+  const datasetSize = data.length
+  const defaultMinDataPoints = Math.min(10, Math.max(5, Math.floor(datasetSize * 0.6)))
+
   const {
     maxCorrelations = 20,
     minRelevanceScore = 5,
-    minDataPoints = 10,
+    minDataPoints = defaultMinDataPoints,
     significanceLevel = 0.05,
   } = options
-
-  const config = getSpeciesCorrelationConfig(species)
-  if (!config) {
-    return {
-      totalCorrelations: 0,
-      significantCorrelations: 0,
-      highRelevanceCorrelations: 0,
-      correlationsByCategory: {},
-      topCorrelations: [],
-      allCorrelations: [],
-      warnings: [`Configuração de correlação não encontrada para espécie: ${species}`],
-      recommendations: [],
-    }
-  }
 
   const warnings: string[] = []
   const recommendations: string[] = []
@@ -90,66 +121,75 @@ export function analyzeCorrelations(
     }
   }
 
-  for (const pair of config.correlationPairs) {
-    const matchedPair = findMatchingVariables(numericColumns, pair)
+  const config = getSpeciesCorrelationConfig(normalizedSpecies)
+  if (!config) {
+    warnings.push(
+      `⚠️ Configuração específica não encontrada para '${species}'. Usando análise automática de correlações.`
+    )
+  }
 
-    if (matchedPair) {
-      const { var1, var2 } = matchedPair
+  if (config) {
+    for (const pair of config.correlationPairs) {
+      const matchedPair = findMatchingVariables(numericColumns, pair)
 
-      const dataPoints = extractDataPoints(data, var1, var2)
+      if (matchedPair) {
+        const { var1, var2 } = matchedPair
 
-      if (dataPoints.length >= minDataPoints) {
-        try {
-          const xValues = dataPoints.map((p) => p.x)
-          const yValues = dataPoints.map((p) => p.y)
+        const dataPoints = extractDataPoints(data, var1, var2)
 
-          const corrResult = pearsonCorrelation(xValues, yValues, significanceLevel)
+        if (dataPoints.length >= minDataPoints) {
+          try {
+            const xValues = dataPoints.map((p) => p.x)
+            const yValues = dataPoints.map((p) => p.y)
 
-          const matchesExpectation = checkExpectedDirection(
-            corrResult.coefficient,
-            pair.expectedDirection
-          )
+            const corrResult = pearsonCorrelation(xValues, yValues, significanceLevel)
 
-          const strengthPt = getStrengthLabel(corrResult.strength)
-
-          const result: CorrelationResult = {
-            var1,
-            var2,
-            coefficient: corrResult.coefficient,
-            pValue: corrResult.pValue,
-            significant: corrResult.significant,
-            strength: corrResult.strength,
-            direction: corrResult.direction,
-            relevanceScore: pair.relevanceScore,
-            category: pair.category,
-            interpretation: pair.interpretation,
-            expectedDirection: pair.expectedDirection,
-            matchesExpectation,
-            dataPoints,
-            idealRange: pair.idealRange,
-          }
-
-          allCorrelations.push(result)
-
-          if (corrResult.significant && !matchesExpectation) {
-            warnings.push(
-              `⚠️ Correlação inesperada: ${var1} vs ${var2} - ` +
-                `esperado ${pair.expectedDirection}, encontrado ${corrResult.direction}`
+            const matchesExpectation = checkExpectedDirection(
+              corrResult.coefficient,
+              pair.expectedDirection
             )
-          }
 
-          if (
-            corrResult.significant &&
-            pair.relevanceScore >= 8 &&
-            Math.abs(corrResult.coefficient) > 0.6
-          ) {
-            recommendations.push(
-              `✅ ${pair.category}: ${var1} e ${var2} apresentam correlação ${strengthPt} ` +
-                `(r = ${corrResult.coefficient.toFixed(3)}). ${pair.interpretation}`
-            )
+            const strengthPt = getStrengthLabel(corrResult.strength)
+
+            const result: CorrelationResult = {
+              var1,
+              var2,
+              coefficient: corrResult.coefficient,
+              pValue: corrResult.pValue,
+              significant: corrResult.significant,
+              strength: corrResult.strength,
+              direction: corrResult.direction,
+              relevanceScore: pair.relevanceScore,
+              category: pair.category,
+              interpretation: pair.interpretation,
+              expectedDirection: pair.expectedDirection,
+              matchesExpectation,
+              dataPoints,
+              idealRange: pair.idealRange,
+            }
+
+            allCorrelations.push(result)
+
+            if (corrResult.significant && !matchesExpectation) {
+              warnings.push(
+                `⚠️ Correlação inesperada: ${var1} vs ${var2} - ` +
+                  `esperado ${pair.expectedDirection}, encontrado ${corrResult.direction}`
+              )
+            }
+
+            if (
+              corrResult.significant &&
+              pair.relevanceScore >= 8 &&
+              Math.abs(corrResult.coefficient) > 0.6
+            ) {
+              recommendations.push(
+                `✅ ${pair.category}: ${var1} e ${var2} apresentam correlação ${strengthPt} ` +
+                  `(r = ${corrResult.coefficient.toFixed(3)}). ${pair.interpretation}`
+              )
+            }
+          } catch (err) {
+            console.warn(`Erro ao calcular correlação ${var1} vs ${var2}:`, err)
           }
-        } catch (err) {
-          console.warn(`Erro ao calcular correlação ${var1} vs ${var2}:`, err)
         }
       }
     }
