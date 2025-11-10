@@ -7,6 +7,7 @@ import { getCache, setCache } from '@/lib/multi-level-cache'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest, { params }: { params: { analysisId: string } }) {
   try {
@@ -32,21 +33,13 @@ export async function GET(request: NextRequest, { params }: { params: { analysis
       return NextResponse.json({ error: 'Análise não encontrada' }, { status: 404 })
     }
 
-    const cacheKey = `diagnostico:${analysisId}`
-    interface DiagnosticoCache {
-      summary: string
-      recommendations: string[]
-      strengths: string[]
-      alerts: string[]
-      insights: Record<string, unknown>
-      metadata: Record<string, unknown>
-    }
-    const cachedDiagnostico = await getCache<DiagnosticoCache>(cacheKey)
+    const cacheKey = `diagnostico:v2:${analysisId}`
+    const cachedDiagnostico = await getCache<Record<string, unknown>>(cacheKey)
 
     if (cachedDiagnostico) {
       return NextResponse.json({
         success: true,
-        diagnostico: cachedDiagnostico,
+        ...cachedDiagnostico,
         cached: true,
       })
     }
