@@ -91,7 +91,25 @@ export async function generateAIDiagnostic(input: DiagnosticInput): Promise<Diag
   }
 
   console.log('📋 Using rule-based diagnostic generation (no AI available)')
-  const result = generateDiagnostico(input)
+
+  const refs = input.references
+    ? {
+        comparisons: input.references.comparisons ?? [],
+        overallStatus: input.references.overallStatus ?? 'unknown',
+        summary: input.references.summary ?? '',
+      }
+    : { comparisons: [], overallStatus: 'unknown', summary: '' }
+
+  const fallbackData = {
+    species: input.species,
+    subtype: input.subtype,
+    statistics: input.statistics,
+    references: refs,
+    correlations: input.correlations,
+    metadata: input.metadata as Record<string, unknown> | undefined,
+  } as Parameters<typeof generateDiagnostico>[0]
+
+  const result = generateDiagnostico(fallbackData)
   return { ...result, generatedBy: 'rule-based' }
 }
 
