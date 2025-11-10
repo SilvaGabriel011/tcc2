@@ -127,20 +127,7 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        console.log('🔍 [DEBUG] Step 4: Parsing CSV')
-        // Parse CSV
-        const text = await file.text()
-        const parsed = Papa.parse(text, {
-          header: true,
-          dynamicTyping: true,
-          skipEmptyLines: true,
-        })
-        console.log('✅ [DEBUG] CSV parsed:', {
-          rows: parsed.data.length,
-          errors: parsed.errors.length,
-        })
-
-        return parsed.data
+        return parsed
       },
       correlationId
     )
@@ -160,6 +147,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    const parsed = parseResult.data
 
     // Validação básica dos dados
     if (!parsed.data || parsed.data.length === 0) {
@@ -212,15 +201,7 @@ export async function POST(request: NextRequest) {
       significant: correlationReport.significantCorrelations,
     })
 
-    console.log(`[${correlationId}] 🔬 Analisando correlações biologicamente relevantes...`)
-    const correlationReport = analyzeCorrelations(data as Record<string, unknown>[], species, {
-      maxCorrelations: 20,
-      minRelevanceScore: 5,
-      minDataPoints: 10,
-      significanceLevel: 0.05,
-    })
-
-    const rows = (data ?? []) as Array<Record<string, unknown>>
+    const rows = (parsed.data ?? []) as Array<Record<string, unknown>>
     const firstRow = rows[0] ?? {}
     const availableColumns = Object.keys(firstRow)
 
