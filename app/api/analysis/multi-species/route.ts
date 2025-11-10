@@ -28,7 +28,7 @@ import {
   generateCorrelationId,
   AnalysisErrorException,
   ERROR_CODES,
-  createAnalysisError,
+  createAnalysisError as _createAnalysisError,
 } from '@/lib/analysis-errors'
 
 /**
@@ -127,23 +127,18 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        const firstRow = parsed.data[0] as Record<string, unknown>
-        const numericColumns = Object.keys(firstRow).filter(
-          (key) => typeof firstRow[key] === 'number'
-        )
-
-    console.log('🔍 [DEBUG] Step 4: Parsing CSV')
-    // Parse CSV
-    const text = await file.text()
-    const parsed = Papa.parse(text, {
-      header: true,
-      dynamicTyping: true,
-      skipEmptyLines: true,
-    })
-    console.log('✅ [DEBUG] CSV parsed:', {
-      rows: parsed.data.length,
-      errors: parsed.errors.length,
-    })
+        console.log('🔍 [DEBUG] Step 4: Parsing CSV')
+        // Parse CSV
+        const text = await file.text()
+        const parsed = Papa.parse(text, {
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+        })
+        console.log('✅ [DEBUG] CSV parsed:', {
+          rows: parsed.data.length,
+          errors: parsed.errors.length,
+        })
 
         return parsed.data
       },
@@ -315,28 +310,11 @@ export async function POST(request: NextRequest) {
           totalColumns: Object.keys(parsed.data[0] || {}).length,
           analyzedAt: new Date().toISOString(),
           version: '2.0',
+          correlationId,
         }),
       },
-      correlationId
-    )
+    })
 
-    if (!persistenceResult.ok) {
-      console.error(
-        `[${correlationId}] ❌ [PERSISTENCE] Falha ao salvar análise:`,
-        persistenceResult.error
-      )
-      return NextResponse.json(
-        {
-          error: persistenceResult.error.message,
-          stage: persistenceResult.error.stage,
-          code: persistenceResult.error.code,
-          correlationId,
-        },
-        { status: 500 }
-      )
-    }
-
-    const analysis = persistenceResult.data
     console.log(`[${correlationId}] ✅ [PERSISTENCE] Análise salva com ID: ${analysis.id}`)
 
     console.log('✅ [DEBUG] Analysis saved with ID:', analysis.id)
