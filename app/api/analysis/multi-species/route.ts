@@ -23,6 +23,13 @@ import {
   proposeCorrelations,
   getMissingVariables,
 } from '@/lib/correlations/correlation-analysis'
+import {
+  safeStep,
+  generateCorrelationId,
+  AnalysisErrorException,
+  ERROR_CODES,
+  createAnalysisError,
+} from '@/lib/analysis-errors'
 
 /**
  * EN: POST handler for multi-species data analysis
@@ -36,6 +43,9 @@ export async function POST(request: NextRequest) {
   if (rateLimitResponse) {
     return rateLimitResponse
   }
+
+  const correlationId = generateCorrelationId()
+  console.log(`[${correlationId}] 📊 Iniciando análise multi-espécie`)
 
   try {
     console.log('🔍 [DEBUG] Step 1: Getting session')
@@ -67,7 +77,7 @@ export async function POST(request: NextRequest) {
     // Security validation
     const securityCheck = await validateUploadedFile(file, 'csv')
     if (!securityCheck.valid) {
-      console.warn('🚫 Security check failed:', securityCheck.error)
+      console.warn(`[${correlationId}] 🚫 Security check failed:`, securityCheck.error)
       return NextResponse.json(
         {
           error: securityCheck.error,
@@ -80,7 +90,47 @@ export async function POST(request: NextRequest) {
 
     const secureFilename = generateUniqueFilename(file.name)
 
-    console.log('📊 Iniciando análise multi-espécie:', { species, subtype })
+    console.log(`[${correlationId}] 📊 Processando arquivo:`, {
+      species,
+      subtype,
+      filename: file.name,
+    })
+
+    console.log(`[${correlationId}] [STAGE 1/4] Análise de dados (parsing e validação)`)
+    const parseResult = await safeStep(
+      'parse',
+      async () => {
+        const parsed = await parseFile(file)
+
+        if (parsed.errors.length > 0) {
+          const errorMessage = parsed.errors.map((e) => e.message).join('; ')
+          throw new Error(errorMessage)
+        }
+
+        // Validação básica dos dados
+        if (!parsed.data || parsed.data.length === 0) {
+          throw new AnalysisErrorException(
+            'validation',
+            ERROR_CODES.EMPTY_FILE,
+            undefined,
+            correlationId
+          )
+        }
+
+        // Validação de pontos mínimos de dados
+        if (parsed.data.length < 3) {
+          throw new AnalysisErrorException(
+            'validation',
+            ERROR_CODES.INSUFFICIENT_DATA,
+            { rows: parsed.data.length },
+            correlationId
+          )
+        }
+
+        const firstRow = parsed.data[0] as Record<string, unknown>
+        const numericColumns = Object.keys(firstRow).filter(
+          (key) => typeof firstRow[key] === 'number'
+        )
 
     console.log('🔍 [DEBUG] Step 4: Parsing CSV')
     // Parse CSV
@@ -95,10 +145,23 @@ export async function POST(request: NextRequest) {
       errors: parsed.errors.length,
     })
 
-    if (parsed.errors.length > 0) {
-      console.error('❌ Erros ao processar arquivo:', parsed.errors)
+        return parsed.data
+      },
+      correlationId
+    )
+
+    if (!parseResult.ok) {
+      console.error(
+        `[${correlationId}] ❌ [STAGE 1/4] Falha na análise de dados:`,
+        parseResult.error
+      )
       return NextResponse.json(
-        { error: 'Erro ao processar arquivo', details: parsed.errors },
+        {
+          error: parseResult.error.message,
+          stage: parseResult.error.stage,
+          code: parseResult.error.code,
+          correlationId,
+        },
         { status: 400 }
       )
     }
@@ -154,7 +217,15 @@ export async function POST(request: NextRequest) {
       significant: correlationReport.significantCorrelations,
     })
 
-    const rows = (parsed.data ?? []) as Array<Record<string, unknown>>
+    console.log(`[${correlationId}] 🔬 Analisando correlações biologicamente relevantes...`)
+    const correlationReport = analyzeCorrelations(data as Record<string, unknown>[], species, {
+      maxCorrelations: 20,
+      minRelevanceScore: 5,
+      minDataPoints: 10,
+      significanceLevel: 0.05,
+    })
+
+    const rows = (data ?? []) as Array<Record<string, unknown>>
     const firstRow = rows[0] ?? {}
     const availableColumns = Object.keys(firstRow)
 
@@ -162,7 +233,7 @@ export async function POST(request: NextRequest) {
     const missingVariables = getMissingVariables(availableColumns, species)
 
     console.log(
-      `✅ Encontradas ${correlationReport.totalCorrelations} correlações (${correlationReport.significantCorrelations} significativas)`
+      `[${correlationId}] ✅ Encontradas ${correlationReport.totalCorrelations} correlações (${correlationReport.significantCorrelations} significativas)`
     )
 
     console.log('🔍 [DEBUG] Step 9: Resolving project ID')
@@ -246,7 +317,27 @@ export async function POST(request: NextRequest) {
           version: '2.0',
         }),
       },
-    })
+      correlationId
+    )
+
+    if (!persistenceResult.ok) {
+      console.error(
+        `[${correlationId}] ❌ [PERSISTENCE] Falha ao salvar análise:`,
+        persistenceResult.error
+      )
+      return NextResponse.json(
+        {
+          error: persistenceResult.error.message,
+          stage: persistenceResult.error.stage,
+          code: persistenceResult.error.code,
+          correlationId,
+        },
+        { status: 500 }
+      )
+    }
+
+    const analysis = persistenceResult.data
+    console.log(`[${correlationId}] ✅ [PERSISTENCE] Análise salva com ID: ${analysis.id}`)
 
     console.log('✅ [DEBUG] Analysis saved with ID:', analysis.id)
 
@@ -274,6 +365,7 @@ export async function POST(request: NextRequest) {
         },
         createdAt: analysis.createdAt,
       },
+      correlationId,
     })
   } catch (error) {
     console.error('❌ [DEBUG] Error in multi-species analysis:', error)
