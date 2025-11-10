@@ -23,6 +23,7 @@ import AuthSessionProvider from '@/components/providers/session-provider'
 import ThemeProvider from '@/components/providers/theme-provider'
 import { ToastProvider } from '@/components/toast-provider'
 import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 // Configure Inter font from Google Fonts
 // Latin subset for optimal performance with Portuguese content
@@ -61,6 +62,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </AuthSessionProvider>
         {/* Vercel Analytics - tracks page views and visitor data */}
         <Analytics />
+        {/* Vercel Speed Insights - monitors page performance metrics */}
+        <SpeedInsights />
       </body>
     </html>
   )
