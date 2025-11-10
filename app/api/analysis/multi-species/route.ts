@@ -48,21 +48,32 @@ export async function POST(request: NextRequest) {
   console.log(`[${correlationId}] 📊 Iniciando análise multi-espécie`)
 
   try {
+    console.log('🔍 [DEBUG] Step 1: Getting session')
     const session = await getServerSession(authOptions)
     if (!session?.user) {
+      console.error('❌ [DEBUG] No session or user')
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
+    if (!session.user.email) {
+      console.error('❌ [DEBUG] Session user has no email')
+      return NextResponse.json({ error: 'Sessão inválida: email não encontrado' }, { status: 400 })
+    }
+    console.log('✅ [DEBUG] Session OK:', { email: session.user.email })
 
+    console.log('🔍 [DEBUG] Step 2: Parsing form data')
     const formData = await request.formData()
     const file = formData.get('file') as File
     const species = formData.get('species') as string
     const subtype = formData.get('subtype') as string | null
     const projectId = formData.get('projectId') as string
+    console.log('✅ [DEBUG] Form data parsed:', { species, subtype, hasFile: !!file, projectId })
 
     if (!file || !species) {
+      console.error('❌ [DEBUG] Missing file or species')
       return NextResponse.json({ error: 'Arquivo e espécie são obrigatórios' }, { status: 400 })
     }
 
+    console.log('🔍 [DEBUG] Step 3: Security validation')
     // Security validation
     const securityCheck = await validateUploadedFile(file, 'csv')
     if (!securityCheck.valid) {
@@ -75,6 +86,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    console.log('✅ [DEBUG] Security check passed')
 
     const secureFilename = generateUniqueFilename(file.name)
 
@@ -120,14 +132,18 @@ export async function POST(request: NextRequest) {
           (key) => typeof firstRow[key] === 'number'
         )
 
-        if (numericColumns.length === 0) {
-          throw new AnalysisErrorException(
-            'validation',
-            ERROR_CODES.NO_NUMERIC_COLUMNS,
-            undefined,
-            correlationId
-          )
-        }
+    console.log('🔍 [DEBUG] Step 4: Parsing CSV')
+    // Parse CSV
+    const text = await file.text()
+    const parsed = Papa.parse(text, {
+      header: true,
+      dynamicTyping: true,
+      skipEmptyLines: true,
+    })
+    console.log('✅ [DEBUG] CSV parsed:', {
+      rows: parsed.data.length,
+      errors: parsed.errors.length,
+    })
 
         return parsed.data
       },
@@ -150,166 +166,56 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const data = parseResult.data
-    console.log(
-      `[${correlationId}] ✅ [STAGE 1/4] Análise de dados concluída: ${data.length} registros, ${Object.keys(data[0] || {}).length} colunas`
-    )
-
-    console.log(`[${correlationId}] [STAGE 2/4] Cálculo de estatísticas`)
-    const statsResult = await safeStep(
-      'statistics',
-      () => {
-        const stats = calculateBasicStatistics(data as Record<string, number>[])
-
-        // Verificar se conseguimos calcular estatísticas
-        if (Object.keys(stats.means).length === 0) {
-          throw new AnalysisErrorException(
-            'statistics',
-            ERROR_CODES.STATISTICS_FAILED,
-            { reason: 'Nenhuma estatística calculada' },
-            correlationId
-          )
-        }
-
-        return stats
-      },
-      correlationId
-    )
-
-    if (!statsResult.ok) {
-      console.error(
-        `[${correlationId}] ❌ [STAGE 2/4] Falha no cálculo de estatísticas:`,
-        statsResult.error
-      )
-      return NextResponse.json(
-        {
-          error: statsResult.error.message,
-          stage: statsResult.error.stage,
-          code: statsResult.error.code,
-          correlationId,
-        },
-        { status: 500 }
-      )
+    // Validação básica dos dados
+    if (!parsed.data || parsed.data.length === 0) {
+      console.error('❌ [DEBUG] Empty data')
+      return NextResponse.json({ error: 'Arquivo vazio ou sem dados válidos' }, { status: 400 })
     }
 
-    const statistics = statsResult.data
-    console.log(
-      `[${correlationId}] ✅ [STAGE 2/4] Estatísticas calculadas: ${Object.keys(statistics.means).length} métricas`
+    console.log('🔍 [DEBUG] Step 5: Calculating statistics')
+    // Análise estatística básica
+    const statistics = calculateBasicStatistics(parsed.data as Record<string, number>[])
+    console.log('✅ [DEBUG] Statistics calculated:', {
+      numericColumns: Object.keys(statistics.means).length,
+    })
+
+    console.log('🔍 [DEBUG] Step 6: Comparing with references')
+    // Comparação com referências
+    const references = ReferenceDataService.compareMultipleMetrics(
+      statistics.means,
+      species,
+      subtype || undefined
     )
+    console.log('✅ [DEBUG] References compared:', {
+      comparisons: references.comparisons.length,
+      status: references.overallStatus,
+    })
 
-    console.log(`[${correlationId}] [STAGE 3/5] Busca de dados de referência (NRC/EMBRAPA)`)
-    const referenceResult = await safeStep(
-      'reference',
-      () => {
-        const referenceData = ReferenceDataService.getReference(species, subtype || undefined)
+    console.log('🔍 [DEBUG] Step 7: Generating interpretation')
+    // Interpretação
+    const interpretation = generateBasicInterpretation(statistics, references, species)
+    console.log('✅ [DEBUG] Interpretation generated:', {
+      insights: interpretation.insights.length,
+      recommendations: interpretation.recommendations.length,
+    })
 
-        if (!referenceData) {
-          console.warn(
-            `[${correlationId}] ⚠️ Dados de referência não encontrados para ${species}${subtype ? `/${subtype}` : ''}`
-          )
-        }
-
-        return referenceData
-      },
-      correlationId
+    console.log('🔍 [DEBUG] Step 8: Analyzing correlations')
+    // Análise de correlações
+    console.log('🔬 Analisando correlações biologicamente relevantes...')
+    const correlationReport = analyzeCorrelations(
+      parsed.data as Record<string, unknown>[],
+      species,
+      {
+        maxCorrelations: 20,
+        minRelevanceScore: 5,
+        minDataPoints: 10,
+        significanceLevel: 0.05,
+      }
     )
-
-    if (!referenceResult.ok) {
-      console.error(
-        `[${correlationId}] ❌ [STAGE 3/5] Falha ao buscar dados de referência:`,
-        referenceResult.error
-      )
-      return NextResponse.json(
-        {
-          error: referenceResult.error.message,
-          stage: referenceResult.error.stage,
-          code: referenceResult.error.code,
-          correlationId,
-        },
-        { status: 500 }
-      )
-    }
-
-    console.log(
-      `[${correlationId}] ✅ [STAGE 3/5] Dados de referência obtidos para ${species}${subtype ? `/${subtype}` : ''}`
-    )
-
-    console.log(`[${correlationId}] [STAGE 4/5] Comparação com dados de referência`)
-    const comparisonResult = await safeStep(
-      'comparison',
-      () => {
-        const references = ReferenceDataService.compareMultipleMetrics(
-          statistics.means,
-          species,
-          subtype || undefined
-        )
-
-        return references
-      },
-      correlationId
-    )
-
-    if (!comparisonResult.ok) {
-      console.error(
-        `[${correlationId}] ❌ [STAGE 4/5] Falha na comparação com referências:`,
-        comparisonResult.error
-      )
-      return NextResponse.json(
-        {
-          error: comparisonResult.error.message,
-          stage: comparisonResult.error.stage,
-          code: comparisonResult.error.code,
-          correlationId,
-        },
-        { status: 500 }
-      )
-    }
-
-    const references = comparisonResult.data
-    console.log(
-      `[${correlationId}] ✅ [STAGE 4/5] Comparação concluída: ${references.comparisons.length} métricas comparadas, status geral: ${references.overallStatus}`
-    )
-
-    console.log(`[${correlationId}] [STAGE 5/5] Geração de diagnóstico e interpretação`)
-    const diagnosisResult = await safeStep(
-      'diagnosis',
-      () => {
-        const interpretation = generateBasicInterpretation(statistics, references, species)
-
-        if (!interpretation || (!interpretation.insights && !interpretation.recommendations)) {
-          throw new AnalysisErrorException(
-            'diagnosis',
-            ERROR_CODES.DIAGNOSIS_FAILED,
-            undefined,
-            correlationId
-          )
-        }
-
-        return interpretation
-      },
-      correlationId
-    )
-
-    if (!diagnosisResult.ok) {
-      console.error(
-        `[${correlationId}] ❌ [STAGE 5/5] Falha na geração de diagnóstico:`,
-        diagnosisResult.error
-      )
-      return NextResponse.json(
-        {
-          error: diagnosisResult.error.message,
-          stage: diagnosisResult.error.stage,
-          code: diagnosisResult.error.code,
-          correlationId,
-        },
-        { status: 500 }
-      )
-    }
-
-    const interpretation = diagnosisResult.data
-    console.log(
-      `[${correlationId}] ✅ [STAGE 5/5] Diagnóstico gerado: ${interpretation.insights.length} insights, ${interpretation.recommendations.length} recomendações`
-    )
+    console.log('✅ [DEBUG] Correlations analyzed:', {
+      total: correlationReport.totalCorrelations,
+      significant: correlationReport.significantCorrelations,
+    })
 
     console.log(`[${correlationId}] 🔬 Analisando correlações biologicamente relevantes...`)
     const correlationReport = analyzeCorrelations(data as Record<string, unknown>[], species, {
@@ -330,66 +236,86 @@ export async function POST(request: NextRequest) {
       `[${correlationId}] ✅ Encontradas ${correlationReport.totalCorrelations} correlações (${correlationReport.significantCorrelations} significativas)`
     )
 
-    console.log(`[${correlationId}] [PERSISTENCE] Salvando análise no banco de dados`)
-    const persistenceResult = await safeStep(
-      'persistence',
-      async () => {
-        let finalProjectId = projectId
-        if (!finalProjectId) {
-          const user = await prisma.user.findUnique({
-            where: { email: session.user.email! },
-            include: {
-              projects: {
-                take: 1,
-                orderBy: { createdAt: 'desc' },
-              },
-            },
-          })
+    console.log('🔍 [DEBUG] Step 9: Resolving project ID')
+    // Se não tem projectId, usar o primeiro projeto do usuário
+    let finalProjectId = projectId
+    if (!finalProjectId) {
+      console.log('🔍 [DEBUG] No projectId provided, looking up user')
+      const user = await prisma.user.findUnique({
+        where: { email: session.user.email! },
+        include: {
+          projects: {
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+      })
+      console.log('✅ [DEBUG] User lookup:', {
+        hasUser: !!user,
+        projectCount: user?.projects.length || 0,
+      })
 
-          if (user?.projects[0]) {
-            finalProjectId = user.projects[0].id
-          } else {
-            const newProject = await prisma.project.create({
-              data: {
-                name: 'Análise Multi-Espécie',
-                description: 'Projeto criado automaticamente',
-                ownerId: user!.id,
-              },
-            })
-            finalProjectId = newProject.id
-          }
-        }
+      if (!user) {
+        console.error('❌ [DEBUG] User not found in database')
+        return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 400 })
+      }
 
-        const analysis = await prisma.dataset.create({
+      if (user.projects[0]) {
+        finalProjectId = user.projects[0].id
+        console.log('✅ [DEBUG] Using existing project:', finalProjectId)
+      } else {
+        console.log('🔍 [DEBUG] Creating new project for user:', user.id)
+        // Criar projeto padrão
+        const newProject = await prisma.project.create({
           data: {
-            projectId: finalProjectId,
-            name: `${species}${subtype ? ` - ${subtype}` : ''} - ${new Date().toLocaleDateString('pt-BR')}`,
-            filename: secureFilename,
-            status: 'VALIDATED',
-            data: JSON.stringify({
-              raw: data.slice(0, 100),
-              statistics,
-              references,
-              interpretation,
-              correlations: {
-                report: correlationReport,
-                proposals: correlationProposals,
-                missingVariables,
-                analyzedAt: new Date().toISOString(),
-              },
-            }),
-            metadata: JSON.stringify({
-              species,
-              subtype,
-              totalRows: data.length,
-              totalColumns: Object.keys(data[0] || {}).length,
-              analyzedAt: new Date().toISOString(),
-              version: '2.0',
-            }),
+            name: 'Análise Multi-Espécie',
+            description: 'Projeto criado automaticamente',
+            ownerId: user.id,
           },
         })
+        finalProjectId = newProject.id
+        console.log('✅ [DEBUG] New project created:', finalProjectId)
+      }
+    } else {
+      console.log('✅ [DEBUG] Using provided projectId:', finalProjectId)
+    }
 
-        return analysis
+    console.log('🔍 [DEBUG] Step 10: Saving to database')
+    console.log('🔍 [DEBUG] Dataset info:', {
+      projectId: finalProjectId,
+      species,
+      subtype,
+      dataRows: parsed.data.length,
+      secureFilename,
+    })
+
+    // Salvar no banco de dados
+    const analysis = await prisma.dataset.create({
+      data: {
+        projectId: finalProjectId,
+        name: `${species}${subtype ? ` - ${subtype}` : ''} - ${new Date().toLocaleDateString('pt-BR')}`,
+        filename: secureFilename,
+        status: 'VALIDATED',
+        data: JSON.stringify({
+          raw: parsed.data.slice(0, 100), // Limitar dados brutos para economia de espaço
+          statistics,
+          references,
+          interpretation,
+          correlations: {
+            report: correlationReport,
+            proposals: correlationProposals,
+            missingVariables,
+            analyzedAt: new Date().toISOString(),
+          },
+        }),
+        metadata: JSON.stringify({
+          species,
+          subtype,
+          totalRows: parsed.data.length,
+          totalColumns: Object.keys(parsed.data[0] || {}).length,
+          analyzedAt: new Date().toISOString(),
+          version: '2.0',
+        }),
       },
       correlationId
     )
@@ -413,7 +339,11 @@ export async function POST(request: NextRequest) {
     const analysis = persistenceResult.data
     console.log(`[${correlationId}] ✅ [PERSISTENCE] Análise salva com ID: ${analysis.id}`)
 
-    console.log(`[${correlationId}] ✅ Análise multi-espécie concluída com sucesso`)
+    console.log('✅ [DEBUG] Analysis saved with ID:', analysis.id)
+
+    console.log('🔍 [DEBUG] Step 11: Preparing response')
+    const topCorrelations = (correlationReport.topCorrelations ?? []).slice(0, 5)
+    console.log('✅ [DEBUG] Response prepared, returning to client')
 
     return NextResponse.json({
       success: true,
@@ -431,31 +361,32 @@ export async function POST(request: NextRequest) {
           total: correlationReport.totalCorrelations,
           significant: correlationReport.significantCorrelations,
           highRelevance: correlationReport.highRelevanceCorrelations,
-          topCorrelations: correlationReport.topCorrelations.slice(0, 5),
+          topCorrelations,
         },
         createdAt: analysis.createdAt,
       },
       correlationId,
     })
   } catch (error) {
-    console.error(`[${correlationId}] ❌ Erro inesperado na análise multi-espécie:`, error)
+    console.error('❌ [DEBUG] Error in multi-species analysis:', error)
+    console.error('❌ [DEBUG] Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined,
+    })
 
-    const analysisError = createAnalysisError(
-      'unknown',
-      ERROR_CODES.UNEXPECTED_ERROR,
-      error instanceof Error ? { message: error.message } : undefined,
-      correlationId
-    )
+    const isProduction = process.env.VERCEL_ENV === 'production'
+    const errorResponse: Record<string, unknown> = { error: 'Erro ao processar análise' }
 
-    return NextResponse.json(
-      {
-        error: analysisError.message,
-        stage: analysisError.stage,
-        code: analysisError.code,
-        correlationId,
-      },
-      { status: 500 }
-    )
+    if (!isProduction) {
+      errorResponse.debug = {
+        message: error instanceof Error ? error.message : String(error),
+        name: error instanceof Error ? error.name : 'Unknown',
+        stack: error instanceof Error ? error.stack?.split('\n').slice(0, 5).join('\n') : undefined,
+      }
+    }
+
+    return NextResponse.json(errorResponse, { status: 500 })
   }
 }
 
@@ -482,11 +413,9 @@ function calculateBasicStatistics(data: Record<string, number>[]) {
   }
 
   for (const col of numericColumns) {
-    const values = data
-      .map((row) => row[col])
-      .filter((v): v is number => v !== null && !isNaN(v) && isFinite(v))
+    const values = data.map((row) => row[col]).filter((v): v is number => v !== null && !isNaN(v))
 
-    if (values.length >= 2) {
+    if (values.length > 0) {
       const mean = values.reduce((a, b) => a + b, 0) / values.length
       const sorted = [...values].sort((a, b) => a - b)
       const median =
@@ -495,7 +424,7 @@ function calculateBasicStatistics(data: Record<string, number>[]) {
           : sorted[Math.floor(sorted.length / 2)]
       const variance = values.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / values.length
       const stdDev = Math.sqrt(variance)
-      const cv = mean === 0 ? 0 : (stdDev / Math.abs(mean)) * 100
+      const cv = mean === 0 ? 0 : (stdDev / mean) * 100
 
       stats.means[col] = Number(mean.toFixed(2))
       stats.medians[col] = Number(median.toFixed(2))
