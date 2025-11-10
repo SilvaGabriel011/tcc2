@@ -23,6 +23,12 @@ import {
   proposeCorrelations,
   getMissingVariables,
 } from '@/lib/correlations/correlation-analysis'
+import {
+  safeStep,
+  generateCorrelationId,
+  createAnalysisError,
+  ERROR_CODES,
+} from '@/lib/analysis-errors'
 
 /**
  * EN: POST handler for multi-species data analysis
@@ -36,6 +42,9 @@ export async function POST(request: NextRequest) {
   if (rateLimitResponse) {
     return rateLimitResponse
   }
+
+  const correlationId = generateCorrelationId()
+  console.log(`[${correlationId}] 📊 Iniciando análise multi-espécie`)
 
   try {
     const session = await getServerSession(authOptions)
@@ -56,7 +65,7 @@ export async function POST(request: NextRequest) {
     // Security validation
     const securityCheck = await validateUploadedFile(file, 'csv')
     if (!securityCheck.valid) {
-      console.warn('🚫 Security check failed:', securityCheck.error)
+      console.warn(`[${correlationId}] 🚫 Security check failed:`, securityCheck.error)
       return NextResponse.json(
         {
           error: securityCheck.error,
@@ -68,61 +77,226 @@ export async function POST(request: NextRequest) {
 
     const secureFilename = generateUniqueFilename(file.name)
 
-    console.log('📊 Iniciando análise multi-espécie:', { species, subtype })
+    console.log(`[${correlationId}] 📊 Processando arquivo:`, {
+      species,
+      subtype,
+      filename: file.name,
+    })
 
-    const parsed = await parseFile(file)
+    console.log(`[${correlationId}] [STAGE 1/4] Análise de dados (parsing e validação)`)
+    const parseResult = await safeStep(
+      'parse',
+      async () => {
+        const parsed = await parseFile(file)
 
-    if (parsed.errors.length > 0) {
-      console.error('❌ Erros ao processar arquivo:', parsed.errors)
-      return NextResponse.json(
-        { error: 'Erro ao processar arquivo', details: parsed.errors },
-        { status: 400 }
+        if (parsed.errors.length > 0) {
+          const errorMessage = parsed.errors.map((e) => e.message).join('; ')
+          throw new Error(errorMessage)
+        }
+
+        // Validação básica dos dados
+        if (!parsed.data || parsed.data.length === 0) {
+          const error = createAnalysisError(
+            'validation',
+            ERROR_CODES.EMPTY_FILE,
+            undefined,
+            correlationId
+          )
+          throw new Error(error.message)
+        }
+
+        // Validação de pontos mínimos de dados
+        if (parsed.data.length < 3) {
+          const error = createAnalysisError(
+            'validation',
+            ERROR_CODES.INSUFFICIENT_DATA,
+            { rows: parsed.data.length },
+            correlationId
+          )
+          throw new Error(error.message)
+        }
+
+        const firstRow = parsed.data[0] as Record<string, unknown>
+        const numericColumns = Object.keys(firstRow).filter(
+          (key) => typeof firstRow[key] === 'number'
+        )
+
+        if (numericColumns.length === 0) {
+          const error = createAnalysisError(
+            'validation',
+            ERROR_CODES.NO_NUMERIC_COLUMNS,
+            undefined,
+            correlationId
+          )
+          throw new Error(error.message)
+        }
+
+        return parsed.data
+      },
+      correlationId
+    )
+
+    if (!parseResult.ok) {
+      console.error(
+        `[${correlationId}] ❌ [STAGE 1/4] Falha na análise de dados:`,
+        parseResult.error
       )
-    }
-
-    // Validação básica dos dados
-    if (!parsed.data || parsed.data.length === 0) {
-      return NextResponse.json({ error: 'Arquivo vazio ou sem dados válidos' }, { status: 400 })
-    }
-
-    // Validação de pontos mínimos de dados
-    if (parsed.data.length < 3) {
       return NextResponse.json(
         {
-          error:
-            'Número insuficiente de dados. São necessários pelo menos 3 registros para análise estatística.',
+          error: parseResult.error.message,
+          stage: parseResult.error.stage,
+          code: parseResult.error.code,
+          correlationId,
         },
         { status: 400 }
       )
     }
 
-    // Análise estatística básica
-    const statistics = calculateBasicStatistics(parsed.data as Record<string, number>[])
-
-    // Comparação com referências
-    const references = ReferenceDataService.compareMultipleMetrics(
-      statistics.means,
-      species,
-      subtype || undefined
+    const data = parseResult.data
+    console.log(
+      `[${correlationId}] ✅ [STAGE 1/4] Análise de dados concluída: ${data.length} registros, ${Object.keys(data[0] || {}).length} colunas`
     )
 
-    // Interpretação
-    const interpretation = generateBasicInterpretation(statistics, references, species)
+    console.log(`[${correlationId}] [STAGE 2/4] Cálculo de estatísticas`)
+    const statsResult = await safeStep(
+      'statistics',
+      () => {
+        const stats = calculateBasicStatistics(data as Record<string, number>[])
 
-    // Análise de correlações
-    console.log('🔬 Analisando correlações biologicamente relevantes...')
-    const correlationReport = analyzeCorrelations(
-      parsed.data as Record<string, unknown>[],
-      species,
-      {
-        maxCorrelations: 20,
-        minRelevanceScore: 5,
-        minDataPoints: 10,
-        significanceLevel: 0.05,
-      }
+        // Verificar se conseguimos calcular estatísticas
+        if (Object.keys(stats.means).length === 0) {
+          const error = createAnalysisError(
+            'statistics',
+            ERROR_CODES.STATISTICS_FAILED,
+            { reason: 'Nenhuma estatística calculada' },
+            correlationId
+          )
+          throw new Error(error.message)
+        }
+
+        return stats
+      },
+      correlationId
     )
 
-    const rows = (parsed.data ?? []) as Array<Record<string, unknown>>
+    if (!statsResult.ok) {
+      console.error(
+        `[${correlationId}] ❌ [STAGE 2/4] Falha no cálculo de estatísticas:`,
+        statsResult.error
+      )
+      return NextResponse.json(
+        {
+          error: statsResult.error.message,
+          stage: statsResult.error.stage,
+          code: statsResult.error.code,
+          correlationId,
+        },
+        { status: 500 }
+      )
+    }
+
+    const statistics = statsResult.data
+    console.log(
+      `[${correlationId}] ✅ [STAGE 2/4] Estatísticas calculadas: ${Object.keys(statistics.means).length} métricas`
+    )
+
+    console.log(
+      `[${correlationId}] [STAGE 3/4] Busca e comparação com dados de referência (NRC/EMBRAPA)`
+    )
+    const referenceResult = await safeStep(
+      'reference',
+      () => {
+        const referenceData = ReferenceDataService.getReference(species, subtype || undefined)
+
+        if (!referenceData) {
+          console.warn(
+            `[${correlationId}] ⚠️ Dados de referência não encontrados para ${species}${subtype ? `/${subtype}` : ''}`
+          )
+        }
+
+        const references = ReferenceDataService.compareMultipleMetrics(
+          statistics.means,
+          species,
+          subtype || undefined
+        )
+
+        return references
+      },
+      correlationId
+    )
+
+    if (!referenceResult.ok) {
+      console.error(
+        `[${correlationId}] ❌ [STAGE 3/4] Falha na comparação com referências:`,
+        referenceResult.error
+      )
+      return NextResponse.json(
+        {
+          error: referenceResult.error.message,
+          stage: referenceResult.error.stage,
+          code: referenceResult.error.code,
+          correlationId,
+        },
+        { status: 500 }
+      )
+    }
+
+    const references = referenceResult.data
+    console.log(
+      `[${correlationId}] ✅ [STAGE 3/4] Comparação concluída: ${references.comparisons.length} métricas comparadas, status geral: ${references.overallStatus}`
+    )
+
+    console.log(`[${correlationId}] [STAGE 4/4] Geração de diagnóstico e interpretação`)
+    const diagnosisResult = await safeStep(
+      'diagnosis',
+      () => {
+        const interpretation = generateBasicInterpretation(statistics, references, species)
+
+        if (!interpretation || (!interpretation.insights && !interpretation.recommendations)) {
+          const error = createAnalysisError(
+            'diagnosis',
+            ERROR_CODES.DIAGNOSIS_FAILED,
+            undefined,
+            correlationId
+          )
+          throw new Error(error.message)
+        }
+
+        return interpretation
+      },
+      correlationId
+    )
+
+    if (!diagnosisResult.ok) {
+      console.error(
+        `[${correlationId}] ❌ [STAGE 4/4] Falha na geração de diagnóstico:`,
+        diagnosisResult.error
+      )
+      return NextResponse.json(
+        {
+          error: diagnosisResult.error.message,
+          stage: diagnosisResult.error.stage,
+          code: diagnosisResult.error.code,
+          correlationId,
+        },
+        { status: 500 }
+      )
+    }
+
+    const interpretation = diagnosisResult.data
+    console.log(
+      `[${correlationId}] ✅ [STAGE 4/4] Diagnóstico gerado: ${interpretation.insights.length} insights, ${interpretation.recommendations.length} recomendações`
+    )
+
+    console.log(`[${correlationId}] 🔬 Analisando correlações biologicamente relevantes...`)
+    const correlationReport = analyzeCorrelations(data as Record<string, unknown>[], species, {
+      maxCorrelations: 20,
+      minRelevanceScore: 5,
+      minDataPoints: 10,
+      significanceLevel: 0.05,
+    })
+
+    const rows = (data ?? []) as Array<Record<string, unknown>>
     const firstRow = rows[0] ?? {}
     const availableColumns = Object.keys(firstRow)
 
@@ -130,68 +304,93 @@ export async function POST(request: NextRequest) {
     const missingVariables = getMissingVariables(availableColumns, species)
 
     console.log(
-      `✅ Encontradas ${correlationReport.totalCorrelations} correlações (${correlationReport.significantCorrelations} significativas)`
+      `[${correlationId}] ✅ Encontradas ${correlationReport.totalCorrelations} correlações (${correlationReport.significantCorrelations} significativas)`
     )
 
-    // Se não tem projectId, usar o primeiro projeto do usuário
-    let finalProjectId = projectId
-    if (!finalProjectId) {
-      const user = await prisma.user.findUnique({
-        where: { email: session.user.email! },
-        include: {
-          projects: {
-            take: 1,
-            orderBy: { createdAt: 'desc' },
-          },
-        },
-      })
+    console.log(`[${correlationId}] [PERSISTENCE] Salvando análise no banco de dados`)
+    const persistenceResult = await safeStep(
+      'persistence',
+      async () => {
+        let finalProjectId = projectId
+        if (!finalProjectId) {
+          const user = await prisma.user.findUnique({
+            where: { email: session.user.email! },
+            include: {
+              projects: {
+                take: 1,
+                orderBy: { createdAt: 'desc' },
+              },
+            },
+          })
 
-      if (user?.projects[0]) {
-        finalProjectId = user.projects[0].id
-      } else {
-        // Criar projeto padrão
-        const newProject = await prisma.project.create({
+          if (user?.projects[0]) {
+            finalProjectId = user.projects[0].id
+          } else {
+            const newProject = await prisma.project.create({
+              data: {
+                name: 'Análise Multi-Espécie',
+                description: 'Projeto criado automaticamente',
+                ownerId: user!.id,
+              },
+            })
+            finalProjectId = newProject.id
+          }
+        }
+
+        const analysis = await prisma.dataset.create({
           data: {
-            name: 'Análise Multi-Espécie',
-            description: 'Projeto criado automaticamente',
-            ownerId: user!.id,
+            projectId: finalProjectId,
+            name: `${species}${subtype ? ` - ${subtype}` : ''} - ${new Date().toLocaleDateString('pt-BR')}`,
+            filename: secureFilename,
+            status: 'VALIDATED',
+            data: JSON.stringify({
+              raw: data.slice(0, 100),
+              statistics,
+              references,
+              interpretation,
+              correlations: {
+                report: correlationReport,
+                proposals: correlationProposals,
+                missingVariables,
+                analyzedAt: new Date().toISOString(),
+              },
+            }),
+            metadata: JSON.stringify({
+              species,
+              subtype,
+              totalRows: data.length,
+              totalColumns: Object.keys(data[0] || {}).length,
+              analyzedAt: new Date().toISOString(),
+              version: '2.0',
+            }),
           },
         })
-        finalProjectId = newProject.id
-      }
+
+        return analysis
+      },
+      correlationId
+    )
+
+    if (!persistenceResult.ok) {
+      console.error(
+        `[${correlationId}] ❌ [PERSISTENCE] Falha ao salvar análise:`,
+        persistenceResult.error
+      )
+      return NextResponse.json(
+        {
+          error: persistenceResult.error.message,
+          stage: persistenceResult.error.stage,
+          code: persistenceResult.error.code,
+          correlationId,
+        },
+        { status: 500 }
+      )
     }
 
-    // Salvar no banco de dados
-    const analysis = await prisma.dataset.create({
-      data: {
-        projectId: finalProjectId,
-        name: `${species}${subtype ? ` - ${subtype}` : ''} - ${new Date().toLocaleDateString('pt-BR')}`,
-        filename: secureFilename,
-        status: 'VALIDATED',
-        data: JSON.stringify({
-          raw: parsed.data.slice(0, 100), // Limitar dados brutos para economia de espaço
-          statistics,
-          references,
-          interpretation,
-          correlations: {
-            report: correlationReport,
-            proposals: correlationProposals,
-            missingVariables,
-            analyzedAt: new Date().toISOString(),
-          },
-        }),
-        metadata: JSON.stringify({
-          species,
-          subtype,
-          totalRows: parsed.data.length,
-          totalColumns: Object.keys(parsed.data[0] || {}).length,
-          analyzedAt: new Date().toISOString(),
-          version: '2.0',
-        }),
-      },
-    })
+    const analysis = persistenceResult.data
+    console.log(`[${correlationId}] ✅ [PERSISTENCE] Análise salva com ID: ${analysis.id}`)
 
-    console.log('✅ Análise salva com ID:', analysis.id)
+    console.log(`[${correlationId}] ✅ Análise multi-espécie concluída com sucesso`)
 
     return NextResponse.json({
       success: true,
@@ -213,10 +412,27 @@ export async function POST(request: NextRequest) {
         },
         createdAt: analysis.createdAt,
       },
+      correlationId,
     })
   } catch (error) {
-    console.error('❌ Erro na análise multi-espécie:', error)
-    return NextResponse.json({ error: 'Erro ao processar análise' }, { status: 500 })
+    console.error(`[${correlationId}] ❌ Erro inesperado na análise multi-espécie:`, error)
+
+    const analysisError = createAnalysisError(
+      'unknown',
+      ERROR_CODES.UNEXPECTED_ERROR,
+      error instanceof Error ? { message: error.message } : undefined,
+      correlationId
+    )
+
+    return NextResponse.json(
+      {
+        error: analysisError.message,
+        stage: analysisError.stage,
+        code: analysisError.code,
+        correlationId,
+      },
+      { status: 500 }
+    )
   }
 }
 
