@@ -3,7 +3,14 @@
  * Cria planilhas CSV com dados realistas para demonstração
  */
 
-export type Species = 'bovino' | 'suino' | 'avicultura' | 'ovino' | 'caprino' | 'piscicultura' | 'forragem'
+export type Species =
+  | 'bovino'
+  | 'suino'
+  | 'avicultura'
+  | 'ovino'
+  | 'caprino'
+  | 'piscicultura'
+  | 'forragem'
 
 export interface TestDataConfig {
   rows: number
@@ -11,32 +18,78 @@ export interface TestDataConfig {
   includeNumeric: boolean
   includeCategorical: boolean
   includeMissing: boolean
+  seed?: number
 }
 
-const BOVINO_RACAS = ['Nelore', 'Angus', 'Brahman', 'Simental', 'Hereford', 'Gir', 'Guzerá', 'Caracu']
+const BOVINO_RACAS = [
+  'Nelore',
+  'Angus',
+  'Brahman',
+  'Simental',
+  'Hereford',
+  'Gir',
+  'Guzerá',
+  'Caracu',
+]
 const SUINO_RACAS = ['Landrace', 'Large White', 'Duroc', 'Pietrain', 'Hampshire']
 const OVINO_RACAS = ['Santa Inês', 'Dorper', 'Suffolk', 'Texel', 'Ile de France']
 const CAPRINO_RACAS = ['Boer', 'Saanen', 'Anglo-Nubiana', 'Parda Alpina', 'Toggenburg']
 const AVE_RACAS = ['Cobb', 'Ross', 'Hubbard', 'ISA Brown', 'Lohmann']
 const PEIXE_ESPECIES = ['Tilápia', 'Tambaqui', 'Pacu', 'Pintado', 'Matrinxã']
-const FORRAGEM_TIPOS = ['Brachiaria brizantha', 'Brachiaria decumbens', 'Panicum maximum', 'Cynodon dactylon', 'Pennisetum purpureum']
+const FORRAGEM_TIPOS = [
+  'Brachiaria brizantha',
+  'Brachiaria decumbens',
+  'Panicum maximum',
+  'Cynodon dactylon',
+  'Pennisetum purpureum',
+]
 
 const SEXO = ['Macho', 'Fêmea']
 const ESTADOS = ['MT', 'MS', 'GO', 'SP', 'MG', 'RS', 'PR', 'BA']
 const BOVINO_CATEGORIAS = ['Bezerro', 'Recria', 'Terminação', 'Reprodução']
 const SUINO_CATEGORIAS = ['Leitão', 'Crescimento', 'Terminação', 'Reprodução']
 const AVE_CATEGORIAS = ['Inicial', 'Crescimento', 'Terminação', 'Postura']
-const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+const MESES = [
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
+]
 
-// Função para gerar número aleatório dentro de um range
+class SeededRandom {
+  private seed: number
+
+  constructor(seed: number) {
+    this.seed = seed
+  }
+
+  next(): number {
+    this.seed = (this.seed * 9301 + 49297) % 233280
+    return this.seed / 233280
+  }
+}
+
+let rng: SeededRandom | null = null
+
+function getRandom(): number {
+  return rng ? rng.next() : Math.random()
+}
+
 function randomBetween(min: number, max: number, decimals: number = 2): number {
-  const value = Math.random() * (max - min) + min
+  const value = getRandom() * (max - min) + min
   return Number(value.toFixed(decimals))
 }
 
-// Função para escolher item aleatório de array
 function randomChoice<T>(array: T[]): T {
-  return array[Math.floor(Math.random() * array.length)]
+  return array[Math.floor(getRandom() * array.length)]
 }
 
 // Função para gerar data aleatória
@@ -45,22 +98,28 @@ function randomChoice<T>(array: T[]): T {
 //   return date.toISOString().split('T')[0]
 // }
 
-// Adicionar missing values de forma aleatória
-function possiblyNull<T>(value: T, probability: number = 0.05): T | '' {
-  return Math.random() < probability ? '' : value
+function possiblyNull<T>(value: T, probability: number = 0.05): T | null {
+  return getRandom() < probability ? null : value
 }
 
 /**
  * Gera dataset de teste com dados zootécnicos realistas
  */
-export function generateTestData(config: TestDataConfig = {
-  rows: 100,
-  species: 'bovino',
-  includeNumeric: true,
-  includeCategorical: true,
-  includeMissing: false
-}): Record<string, unknown>[] {
-  
+export function generateTestData(
+  config: TestDataConfig = {
+    rows: 100,
+    species: 'bovino',
+    includeNumeric: true,
+    includeCategorical: true,
+    includeMissing: false,
+  }
+): Record<string, unknown>[] {
+  if (config.seed !== undefined) {
+    rng = new SeededRandom(config.seed)
+  } else {
+    rng = null
+  }
+
   switch (config.species) {
     case 'bovino':
       return generateBovinoData(config)
@@ -89,9 +148,9 @@ function generateBovinoData(config: TestDataConfig): Record<string, unknown>[] {
     const sexo = randomChoice(SEXO)
     const raca = randomChoice(BOVINO_RACAS)
     const categoria = randomChoice(BOVINO_CATEGORIAS)
-    
+
     let pesoNasc, pesoDesmame, pesoAtual
-    
+
     if (categoria === 'Bezerro') {
       pesoNasc = randomBetween(28, 38, 1)
       pesoDesmame = randomBetween(160, 200, 1)
@@ -110,14 +169,18 @@ function generateBovinoData(config: TestDataConfig): Record<string, unknown>[] {
       pesoAtual = sexo === 'Macho' ? randomBetween(700, 900, 1) : randomBetween(450, 550, 1)
     }
 
-    const idadeMeses = categoria === 'Bezerro' ? randomBetween(3, 8, 0) :
-                       categoria === 'Recria' ? randomBetween(8, 18, 0) :
-                       categoria === 'Terminação' ? randomBetween(18, 30, 0) :
-                       randomBetween(30, 72, 0)
+    const idadeMeses =
+      categoria === 'Bezerro'
+        ? randomBetween(3, 8, 0)
+        : categoria === 'Recria'
+          ? randomBetween(8, 18, 0)
+          : categoria === 'Terminação'
+            ? randomBetween(18, 30, 0)
+            : randomBetween(30, 72, 0)
 
     const row: Record<string, unknown> = {
       ID: `BOV${String(i).padStart(5, '0')}`,
-      ANIMAL: `BOV${String(i).padStart(4, '0')}`
+      ANIMAL: `BOV${String(i).padStart(4, '0')}`,
     }
 
     if (config.includeCategorical) {
@@ -154,9 +217,9 @@ function generateSuinoData(config: TestDataConfig): Record<string, unknown>[] {
     const sexo = randomChoice(SEXO)
     const raca = randomChoice(SUINO_RACAS)
     const categoria = randomChoice(SUINO_CATEGORIAS)
-    
+
     let pesoAtual, idadeDias
-    
+
     if (categoria === 'Leitão') {
       pesoAtual = randomBetween(1.2, 1.8, 2)
       idadeDias = randomBetween(1, 21, 0)
@@ -173,7 +236,7 @@ function generateSuinoData(config: TestDataConfig): Record<string, unknown>[] {
 
     const row: Record<string, unknown> = {
       ID: `SUI${String(i).padStart(5, '0')}`,
-      ANIMAL: `SUI${String(i).padStart(4, '0')}`
+      ANIMAL: `SUI${String(i).padStart(4, '0')}`,
     }
 
     if (config.includeCategorical) {
@@ -208,9 +271,9 @@ function generateAviculturaData(config: TestDataConfig): Record<string, unknown>
     const sexo = randomChoice(SEXO)
     const raca = randomChoice(AVE_RACAS)
     const categoria = randomChoice(AVE_CATEGORIAS)
-    
+
     let pesoAtual, idadeDias
-    
+
     if (categoria === 'Inicial') {
       pesoAtual = randomBetween(0.04, 0.15, 3)
       idadeDias = randomBetween(1, 7, 0)
@@ -227,7 +290,7 @@ function generateAviculturaData(config: TestDataConfig): Record<string, unknown>
 
     const row: Record<string, unknown> = {
       ID: `AVE${String(i).padStart(5, '0')}`,
-      LOTE: `L${String(Math.ceil(i / 100)).padStart(3, '0')}`
+      LOTE: `L${String(Math.ceil(i / 100)).padStart(3, '0')}`,
     }
 
     if (config.includeCategorical) {
@@ -263,13 +326,13 @@ function generateOvinoData(config: TestDataConfig): Record<string, unknown>[] {
   for (let i = 1; i <= config.rows; i++) {
     const sexo = randomChoice(SEXO)
     const raca = randomChoice(OVINO_RACAS)
-    
+
     const pesoAtual = sexo === 'Macho' ? randomBetween(60, 100, 1) : randomBetween(40, 70, 1)
     const idadeMeses = randomBetween(6, 36, 0)
 
     const row: Record<string, unknown> = {
       ID: `OVI${String(i).padStart(5, '0')}`,
-      ANIMAL: `OVI${String(i).padStart(4, '0')}`
+      ANIMAL: `OVI${String(i).padStart(4, '0')}`,
     }
 
     if (config.includeCategorical) {
@@ -301,13 +364,13 @@ function generateCaprinoData(config: TestDataConfig): Record<string, unknown>[] 
   for (let i = 1; i <= config.rows; i++) {
     const sexo = randomChoice(SEXO)
     const raca = randomChoice(CAPRINO_RACAS)
-    
+
     const pesoAtual = sexo === 'Macho' ? randomBetween(50, 80, 1) : randomBetween(35, 60, 1)
     const idadeMeses = randomBetween(6, 36, 0)
 
     const row: Record<string, unknown> = {
       ID: `CAP${String(i).padStart(5, '0')}`,
-      ANIMAL: `CAP${String(i).padStart(4, '0')}`
+      ANIMAL: `CAP${String(i).padStart(4, '0')}`,
     }
 
     if (config.includeCategorical) {
@@ -321,7 +384,7 @@ function generateCaprinoData(config: TestDataConfig): Record<string, unknown>[] 
       row.ANO = possiblyNull(randomBetween(2023, 2025, 0), missingProb)
       row.PESO_ATUAL_KG = possiblyNull(pesoAtual, missingProb)
       row.IDADE_MESES = possiblyNull(idadeMeses, missingProb)
-      row.GPD = possiblyNull(randomBetween(0.12, 0.30, 3), missingProb)
+      row.GPD = possiblyNull(randomBetween(0.12, 0.3, 3), missingProb)
       row.RENDIMENTO_CARCACA = possiblyNull(randomBetween(42, 50, 1), missingProb)
       row.PRODUCAO_LEITE_DIA_L = possiblyNull(randomBetween(1.5, 4.0, 2), missingProb)
     }
@@ -338,13 +401,13 @@ function generatePisciculturaData(config: TestDataConfig): Record<string, unknow
 
   for (let i = 1; i <= config.rows; i++) {
     const especie = randomChoice(PEIXE_ESPECIES)
-    
+
     const pesoAtual = randomBetween(0.5, 2.5, 2)
     const idadeDias = randomBetween(90, 240, 0)
 
     const row: Record<string, unknown> = {
       ID: `PEI${String(i).padStart(5, '0')}`,
-      TANQUE: `T${String(Math.ceil(i / 50)).padStart(3, '0')}`
+      TANQUE: `T${String(Math.ceil(i / 50)).padStart(3, '0')}`,
     }
 
     if (config.includeCategorical) {
@@ -379,7 +442,7 @@ function generateForragemData(config: TestDataConfig): Record<string, unknown>[]
 
     const row: Record<string, unknown> = {
       ID: `FOR${String(i).padStart(5, '0')}`,
-      PARCELA: parcela
+      PARCELA: parcela,
     }
 
     if (config.includeCategorical) {
@@ -408,25 +471,29 @@ function generateForragemData(config: TestDataConfig): Record<string, unknown>[]
  * Converte array de objetos para CSV
  */
 export function convertToCSV(data: Record<string, unknown>[]): string {
-  if (data.length === 0) return ''
+  if (data.length === 0) {
+    return ''
+  }
 
   // Headers
   const headers = Object.keys(data[0])
-  let csv = headers.join(',') + '\n'
+  let csv = `${headers.join(',')}\n`
 
   // Rows
   for (const row of data) {
-    const values = headers.map(header => {
+    const values = headers.map((header) => {
       const value = row[header]
       // Se valor tem vírgula ou aspas, envolve em aspas
-      if (value === null || value === undefined || value === '') return ''
+      if (value === null || value === undefined || value === '') {
+        return ''
+      }
       const str = String(value)
       if (str.includes(',') || str.includes('"') || str.includes('\n')) {
         return `"${str.replace(/"/g, '""')}"`
       }
       return str
     })
-    csv += values.join(',') + '\n'
+    csv += `${values.join(',')}\n`
   }
 
   return csv
@@ -439,15 +506,15 @@ export function downloadCSV(filename: string, csvContent: string): void {
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   const link = document.createElement('a')
   const url = URL.createObjectURL(blob)
-  
+
   link.setAttribute('href', url)
   link.setAttribute('download', filename)
   link.style.visibility = 'hidden'
-  
+
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
-  
+
   URL.revokeObjectURL(url)
 }
 
@@ -460,21 +527,21 @@ export function generateAndDownloadTestData(rows: number = 100, species: Species
     species,
     includeNumeric: true,
     includeCategorical: true,
-    includeMissing: true
+    includeMissing: true,
   })
 
   const csv = convertToCSV(data)
   const speciesLabel = {
-    'bovino': 'bovinos',
-    'suino': 'suinos',
-    'avicultura': 'aves',
-    'ovino': 'ovinos',
-    'caprino': 'caprinos',
-    'piscicultura': 'peixes',
-    'forragem': 'forragem'
+    bovino: 'bovinos',
+    suino: 'suinos',
+    avicultura: 'aves',
+    ovino: 'ovinos',
+    caprino: 'caprinos',
+    piscicultura: 'peixes',
+    forragem: 'forragem',
   }[species]
-  
+
   const filename = `dados_teste_${speciesLabel}_${rows}_registros_${new Date().toISOString().split('T')[0]}.csv`
-  
+
   downloadCSV(filename, csv)
 }

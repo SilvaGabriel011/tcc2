@@ -1,29 +1,29 @@
 /**
  * Upload Validation for AgroInsight CSV Files
- * 
+ *
  * This module provides specialized validation for CSV file uploads in the agricultural
  * data platform. It extends general file validation with CSV-specific checks:
  * - Row count limits to prevent performance issues
  * - Content validation after parsing
  * - Security scanning for malicious content
  * - Warning system for large files
- * 
+ *
  * Key features:
  * - Pre-upload validation (file metadata)
  * - Post-upload validation (parsed content)
  * - Security threat detection
  * - Performance optimization warnings
- * 
+ *
  * Usage:
  * ```ts
  * import { validateFile, validateCSVContent } from '@/lib/upload-validation'
- * 
+ *
  * // Before upload
  * const fileValidation = validateFile(file)
  * if (!fileValidation.valid) {
  *   return fileValidation.error
  * }
- * 
+ *
  * // After parsing
  * const contentValidation = validateCSVContent(parsedData)
  * if (!contentValidation.valid) {
@@ -46,9 +46,10 @@ export const uploadConfig = {
     'text/x-csv',
     'application/x-csv',
     'text/comma-separated-values',
-    'text/x-comma-separated-values'
+    'text/x-comma-separated-values',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   ],
-  allowedExtensions: ['.csv']
+  allowedExtensions: ['.csv', '.xls', '.xlsx'],
 }
 
 /**
@@ -56,8 +57,8 @@ export const uploadConfig = {
  * Extends basic validation with warning system for non-critical issues
  */
 export interface ValidationResult {
-  valid: boolean      // Whether validation passed
-  error?: string      // Error message if validation failed
+  valid: boolean // Whether validation passed
+  error?: string // Error message if validation failed
   warnings?: string[] // Non-critical warnings that don't block upload
 }
 
@@ -71,19 +72,19 @@ export function validateFile(file: File): ValidationResult {
   if (file.size > uploadConfig.maxFileSize) {
     return {
       valid: false,
-      error: `Arquivo muito grande. Tamanho máximo: ${formatBytes(uploadConfig.maxFileSize)}`
+      error: `Arquivo muito grande. Tamanho máximo: ${formatBytes(uploadConfig.maxFileSize)}`,
     }
   }
 
   // Validar tipo MIME
   if (!uploadConfig.allowedTypes.includes(file.type)) {
-    // Alguns browsers não setam o MIME type corretamente para CSV
+    // Alguns browsers não setam o MIME type corretamente para CSV/Excel
     // então também checamos a extensão
     const extension = getFileExtension(file.name)
     if (!uploadConfig.allowedExtensions.includes(extension)) {
       return {
         valid: false,
-        error: 'Tipo de arquivo inválido. Apenas arquivos CSV são aceitos.'
+        error: 'Tipo de arquivo inválido. Apenas arquivos CSV, XLS e XLSX são aceitos.',
       }
     }
     warnings.push('Tipo MIME não reconhecido, mas extensão é válida.')
@@ -94,18 +95,19 @@ export function validateFile(file: File): ValidationResult {
   if (!uploadConfig.allowedExtensions.includes(extension)) {
     return {
       valid: false,
-      error: 'Extensão inválida. Use arquivos .csv'
+      error: 'Extensão inválida. Use arquivos .csv, .xls ou .xlsx',
     }
   }
 
   // Avisos para arquivos muito grandes (mas ainda válidos)
-  if (file.size > 10 * 1024 * 1024) { // > 10MB
+  if (file.size > 10 * 1024 * 1024) {
+    // > 10MB
     warnings.push('Arquivo grande detectado. O processamento pode levar alguns segundos.')
   }
 
   return {
     valid: true,
-    warnings: warnings.length > 0 ? warnings : undefined
+    warnings: warnings.length > 0 ? warnings : undefined,
   }
 }
 
@@ -116,14 +118,14 @@ export function validateCSVContent(data: Record<string, unknown>[]): ValidationR
   if (!data || data.length === 0) {
     return {
       valid: false,
-      error: 'Arquivo CSV vazio ou sem dados válidos.'
+      error: 'Arquivo CSV vazio ou sem dados válidos.',
     }
   }
 
   if (data.length > uploadConfig.maxRows) {
     return {
       valid: false,
-      error: `Número de linhas excede o limite. Máximo: ${uploadConfig.maxRows.toLocaleString()} linhas`
+      error: `Número de linhas excede o limite. Máximo: ${uploadConfig.maxRows.toLocaleString()} linhas`,
     }
   }
 
@@ -132,7 +134,7 @@ export function validateCSVContent(data: Record<string, unknown>[]): ValidationR
   if (!firstRow || Object.keys(firstRow).length === 0) {
     return {
       valid: false,
-      error: 'CSV não possui colunas válidas.'
+      error: 'CSV não possui colunas válidas.',
     }
   }
 
@@ -140,12 +142,14 @@ export function validateCSVContent(data: Record<string, unknown>[]): ValidationR
 
   // Avisar se houver muitas linhas
   if (data.length > 50000) {
-    warnings.push(`Dataset grande: ${data.length.toLocaleString()} linhas. Análise pode levar mais tempo.`)
+    warnings.push(
+      `Dataset grande: ${data.length.toLocaleString()} linhas. Análise pode levar mais tempo.`
+    )
   }
 
   return {
     valid: true,
-    warnings: warnings.length > 0 ? warnings : undefined
+    warnings: warnings.length > 0 ? warnings : undefined,
   }
 }
 
@@ -153,13 +157,15 @@ export function validateCSVContent(data: Record<string, unknown>[]): ValidationR
  * Formata bytes em formato legível
  */
 export function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 Bytes'
+  if (bytes === 0) {
+    return '0 Bytes'
+  }
 
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
 
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+  return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`
 }
 
 /**
@@ -186,14 +192,14 @@ export async function scanFileForThreats(file: File): Promise<ValidationResult> 
     /<iframe/i,
     /eval\(/i,
     /=IMPORTXML\(/i, // Excel formula injection
-    /=WEBSERVICE\(/i
+    /=WEBSERVICE\(/i,
   ]
 
   for (const pattern of suspiciousPatterns) {
     if (pattern.test(text)) {
       return {
         valid: false,
-        error: 'Arquivo contém conteúdo potencialmente malicioso e foi bloqueado.'
+        error: 'Arquivo contém conteúdo potencialmente malicioso e foi bloqueado.',
       }
     }
   }
