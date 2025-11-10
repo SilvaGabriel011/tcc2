@@ -207,6 +207,17 @@ export async function POST(request: NextRequest) {
       `📊 Análise de correlações: ${correlationReport.totalCorrelations} correlações encontradas, ${correlationReport.significantCorrelations} significativas`
     )
 
+    console.log('📊 Data to be saved:', {
+      hasNumericStats: !!analysisResult.numericStats,
+      numericStatsCount: Object.keys(analysisResult.numericStats || {}).length,
+      hasCategoricalStats: !!analysisResult.categoricalStats,
+      categoricalStatsCount: Object.keys(analysisResult.categoricalStats || {}).length,
+      hasCorrelations: !!correlationReport,
+      correlationsCount: correlationReport.totalCorrelations,
+      topCorrelationsCount: correlationReport.topCorrelations?.length || 0,
+      hasDataPoints: correlationReport.topCorrelations?.[0]?.dataPoints?.length || 0,
+    })
+
     // Garantir projeto do usuário (usa o primeiro existente ou cria um padrão)
     let userProject = await prisma.project.findFirst({
       where: { ownerId: session.user.id },
