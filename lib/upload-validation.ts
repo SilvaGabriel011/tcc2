@@ -49,7 +49,7 @@ export const uploadConfig = {
     'text/x-comma-separated-values',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   ],
-  allowedExtensions: ['.csv', '.xls', '.xlsx'],
+  allowedExtensions: ['.csv'],
 }
 
 /**
@@ -84,7 +84,7 @@ export function validateFile(file: File): ValidationResult {
     if (!uploadConfig.allowedExtensions.includes(extension)) {
       return {
         valid: false,
-        error: 'Tipo de arquivo inválido. Apenas arquivos CSV, XLS e XLSX são aceitos.',
+        error: 'Tipo de arquivo inválido. Apenas arquivos CSV são aceitos.',
       }
     }
     warnings.push('Tipo MIME não reconhecido, mas extensão é válida.')
@@ -95,7 +95,7 @@ export function validateFile(file: File): ValidationResult {
   if (!uploadConfig.allowedExtensions.includes(extension)) {
     return {
       valid: false,
-      error: 'Extensão inválida. Use arquivos .csv, .xls ou .xlsx',
+      error: 'Extensão inválida. Use arquivos .csv',
     }
   }
 
