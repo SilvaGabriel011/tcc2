@@ -116,16 +116,32 @@ async function parseCSV(file: File): Promise<ParseResult> {
   let data = parsed.data as Record<string, unknown>[]
   const errors: Array<{ message: string; row?: number }> = []
 
-  errors.push(
-    ...parsed.errors.map((err) => ({
-      message: err.message,
-      row: err.row,
-    }))
-  )
+  const raggedRows: number[] = []
+  const otherErrors: Array<{ message: string; row?: number }> = []
 
-  if (data.length > 0) {
-    const headers = Object.keys(data[0])
-    const headerError = validateHeaders(headers)
+  parsed.errors.forEach((err) => {
+    if (err.type === 'FieldMismatch' && err.row !== undefined) {
+      raggedRows.push(err.row + 2)
+    } else {
+      otherErrors.push({
+        message: err.message,
+        row: err.row,
+      })
+    }
+  })
+
+  errors.push(...otherErrors)
+
+  if (raggedRows.length > 0) {
+    const rowList = raggedRows.slice(0, 5).join(', ')
+    const suffix = raggedRows.length > 5 ? ` e mais ${raggedRows.length - 5}` : ''
+    errors.push({
+      message: `Linhas com número inconsistente de colunas: ${rowList}${suffix}`,
+    })
+  }
+
+  if (parsed.meta?.fields && parsed.meta.fields.length > 0) {
+    const headerError = validateHeaders(parsed.meta.fields)
     if (headerError) {
       errors.push({ message: headerError })
     }
