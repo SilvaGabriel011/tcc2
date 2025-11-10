@@ -30,6 +30,32 @@ export interface AnalysisError {
 }
 
 /**
+ * EN: Custom error class that preserves error codes through throw/catch
+ * PT-BR: Classe de erro customizada que preserva códigos de erro através de throw/catch
+ */
+export class AnalysisErrorException extends Error {
+  constructor(
+    public readonly stage: AnalysisStage,
+    public readonly code: string,
+    public readonly details?: unknown,
+    public readonly correlationId?: string
+  ) {
+    super(ERROR_MESSAGES[code] || ERROR_MESSAGES.UNEXPECTED_ERROR)
+    this.name = 'AnalysisErrorException'
+  }
+
+  toAnalysisError(): AnalysisError {
+    return {
+      stage: this.stage,
+      code: this.code,
+      message: this.message,
+      details: this.details,
+      correlationId: this.correlationId,
+    }
+  }
+}
+
+/**
  * EN: Error codes for each stage
  * PT-BR: Códigos de erro para cada etapa
  */
@@ -124,6 +150,13 @@ export async function safeStep<T>(
   } catch (error) {
     console.error(`[${correlationId}] [${stage}] Error:`, error)
 
+    if (error instanceof AnalysisErrorException) {
+      return {
+        ok: false,
+        error: error.toAnalysisError(),
+      }
+    }
+
     let code: string = ERROR_CODES.UNEXPECTED_ERROR
     let details: unknown = undefined
 
@@ -133,6 +166,15 @@ export async function safeStep<T>(
         details = { message: error.message }
       } else if (error.message.includes('Linhas com número inconsistente')) {
         code = ERROR_CODES.RAGGED_ROWS
+        details = { message: error.message }
+      } else if (error.message.includes('Arquivo vazio')) {
+        code = ERROR_CODES.EMPTY_FILE
+        details = { message: error.message }
+      } else if (error.message.includes('Número insuficiente')) {
+        code = ERROR_CODES.INSUFFICIENT_DATA
+        details = { message: error.message }
+      } else if (error.message.includes('Nenhuma coluna numérica')) {
+        code = ERROR_CODES.NO_NUMERIC_COLUMNS
         details = { message: error.message }
       } else if (error.message.includes('Prisma') || error.message.includes('database')) {
         code = ERROR_CODES.DATABASE_ERROR

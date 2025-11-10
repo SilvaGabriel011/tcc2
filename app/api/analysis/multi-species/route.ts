@@ -26,8 +26,9 @@ import {
 import {
   safeStep,
   generateCorrelationId,
-  createAnalysisError,
+  AnalysisErrorException,
   ERROR_CODES,
+  createAnalysisError,
 } from '@/lib/analysis-errors'
 
 /**
@@ -96,24 +97,22 @@ export async function POST(request: NextRequest) {
 
         // Validação básica dos dados
         if (!parsed.data || parsed.data.length === 0) {
-          const error = createAnalysisError(
+          throw new AnalysisErrorException(
             'validation',
             ERROR_CODES.EMPTY_FILE,
             undefined,
             correlationId
           )
-          throw new Error(error.message)
         }
 
         // Validação de pontos mínimos de dados
         if (parsed.data.length < 3) {
-          const error = createAnalysisError(
+          throw new AnalysisErrorException(
             'validation',
             ERROR_CODES.INSUFFICIENT_DATA,
             { rows: parsed.data.length },
             correlationId
           )
-          throw new Error(error.message)
         }
 
         const firstRow = parsed.data[0] as Record<string, unknown>
@@ -122,13 +121,12 @@ export async function POST(request: NextRequest) {
         )
 
         if (numericColumns.length === 0) {
-          const error = createAnalysisError(
+          throw new AnalysisErrorException(
             'validation',
             ERROR_CODES.NO_NUMERIC_COLUMNS,
             undefined,
             correlationId
           )
-          throw new Error(error.message)
         }
 
         return parsed.data
@@ -165,13 +163,12 @@ export async function POST(request: NextRequest) {
 
         // Verificar se conseguimos calcular estatísticas
         if (Object.keys(stats.means).length === 0) {
-          const error = createAnalysisError(
+          throw new AnalysisErrorException(
             'statistics',
             ERROR_CODES.STATISTICS_FAILED,
             { reason: 'Nenhuma estatística calculada' },
             correlationId
           )
-          throw new Error(error.message)
         }
 
         return stats
@@ -200,9 +197,7 @@ export async function POST(request: NextRequest) {
       `[${correlationId}] ✅ [STAGE 2/4] Estatísticas calculadas: ${Object.keys(statistics.means).length} métricas`
     )
 
-    console.log(
-      `[${correlationId}] [STAGE 3/4] Busca e comparação com dados de referência (NRC/EMBRAPA)`
-    )
+    console.log(`[${correlationId}] [STAGE 3/5] Busca de dados de referência (NRC/EMBRAPA)`)
     const referenceResult = await safeStep(
       'reference',
       () => {
@@ -214,20 +209,14 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        const references = ReferenceDataService.compareMultipleMetrics(
-          statistics.means,
-          species,
-          subtype || undefined
-        )
-
-        return references
+        return referenceData
       },
       correlationId
     )
 
     if (!referenceResult.ok) {
       console.error(
-        `[${correlationId}] ❌ [STAGE 3/4] Falha na comparação com referências:`,
+        `[${correlationId}] ❌ [STAGE 3/5] Falha ao buscar dados de referência:`,
         referenceResult.error
       )
       return NextResponse.json(
@@ -241,25 +230,59 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const references = referenceResult.data
     console.log(
-      `[${correlationId}] ✅ [STAGE 3/4] Comparação concluída: ${references.comparisons.length} métricas comparadas, status geral: ${references.overallStatus}`
+      `[${correlationId}] ✅ [STAGE 3/5] Dados de referência obtidos para ${species}${subtype ? `/${subtype}` : ''}`
     )
 
-    console.log(`[${correlationId}] [STAGE 4/4] Geração de diagnóstico e interpretação`)
+    console.log(`[${correlationId}] [STAGE 4/5] Comparação com dados de referência`)
+    const comparisonResult = await safeStep(
+      'comparison',
+      () => {
+        const references = ReferenceDataService.compareMultipleMetrics(
+          statistics.means,
+          species,
+          subtype || undefined
+        )
+
+        return references
+      },
+      correlationId
+    )
+
+    if (!comparisonResult.ok) {
+      console.error(
+        `[${correlationId}] ❌ [STAGE 4/5] Falha na comparação com referências:`,
+        comparisonResult.error
+      )
+      return NextResponse.json(
+        {
+          error: comparisonResult.error.message,
+          stage: comparisonResult.error.stage,
+          code: comparisonResult.error.code,
+          correlationId,
+        },
+        { status: 500 }
+      )
+    }
+
+    const references = comparisonResult.data
+    console.log(
+      `[${correlationId}] ✅ [STAGE 4/5] Comparação concluída: ${references.comparisons.length} métricas comparadas, status geral: ${references.overallStatus}`
+    )
+
+    console.log(`[${correlationId}] [STAGE 5/5] Geração de diagnóstico e interpretação`)
     const diagnosisResult = await safeStep(
       'diagnosis',
       () => {
         const interpretation = generateBasicInterpretation(statistics, references, species)
 
         if (!interpretation || (!interpretation.insights && !interpretation.recommendations)) {
-          const error = createAnalysisError(
+          throw new AnalysisErrorException(
             'diagnosis',
             ERROR_CODES.DIAGNOSIS_FAILED,
             undefined,
             correlationId
           )
-          throw new Error(error.message)
         }
 
         return interpretation
@@ -269,7 +292,7 @@ export async function POST(request: NextRequest) {
 
     if (!diagnosisResult.ok) {
       console.error(
-        `[${correlationId}] ❌ [STAGE 4/4] Falha na geração de diagnóstico:`,
+        `[${correlationId}] ❌ [STAGE 5/5] Falha na geração de diagnóstico:`,
         diagnosisResult.error
       )
       return NextResponse.json(
@@ -285,7 +308,7 @@ export async function POST(request: NextRequest) {
 
     const interpretation = diagnosisResult.data
     console.log(
-      `[${correlationId}] ✅ [STAGE 4/4] Diagnóstico gerado: ${interpretation.insights.length} insights, ${interpretation.recommendations.length} recomendações`
+      `[${correlationId}] ✅ [STAGE 5/5] Diagnóstico gerado: ${interpretation.insights.length} insights, ${interpretation.recommendations.length} recomendações`
     )
 
     console.log(`[${correlationId}] 🔬 Analisando correlações biologicamente relevantes...`)
