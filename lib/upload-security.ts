@@ -1,6 +1,6 @@
 /**
  * Upload Security Module
- * 
+ *
  * Provides comprehensive security checks for file uploads:
  * - MIME type verification
  * - Malicious content scanning
@@ -14,10 +14,10 @@ import crypto from 'crypto'
  * File size limits by type (in bytes)
  */
 export const FILE_SIZE_LIMITS = {
-  csv: 10 * 1024 * 1024,      // 10MB for CSV files
-  image: 5 * 1024 * 1024,      // 5MB for images
-  document: 20 * 1024 * 1024,  // 20MB for documents
-  default: 10 * 1024 * 1024    // 10MB default
+  csv: 10 * 1024 * 1024, // 10MB for CSV files
+  image: 5 * 1024 * 1024, // 5MB for images
+  document: 20 * 1024 * 1024, // 20MB for documents
+  default: 10 * 1024 * 1024, // 10MB default
 } as const
 
 /**
@@ -31,15 +31,10 @@ export const ALLOWED_MIME_TYPES = {
     'application/x-csv',
     'text/comma-separated-values',
     'text/x-comma-separated-values',
-    'application/vnd.ms-excel'
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   ],
-  image: [
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'image/gif',
-    'image/webp'
-  ]
+  image: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'],
 } as const
 
 /**
@@ -63,16 +58,19 @@ export function isAllowedMimeType(mimeType: string, fileType: 'csv' | 'image'): 
 /**
  * Check file size against limits
  */
-export function checkFileSize(size: number, fileType: keyof typeof FILE_SIZE_LIMITS = 'default'): SecurityValidationResult {
+export function checkFileSize(
+  size: number,
+  fileType: keyof typeof FILE_SIZE_LIMITS = 'default'
+): SecurityValidationResult {
   const limit = FILE_SIZE_LIMITS[fileType]
-  
+
   if (size > limit) {
     return {
       valid: false,
-      error: `File size exceeds limit. Maximum allowed: ${formatBytes(limit)}`
+      error: `File size exceeds limit. Maximum allowed: ${formatBytes(limit)}`,
     }
   }
-  
+
   return { valid: true }
 }
 
@@ -80,11 +78,13 @@ export function checkFileSize(size: number, fileType: keyof typeof FILE_SIZE_LIM
  * Format bytes to human readable string
  */
 function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 Bytes'
+  if (bytes === 0) {
+    return '0 Bytes'
+  }
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+  return `${Math.round((bytes / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`
 }
 
 /**
@@ -93,54 +93,57 @@ function formatBytes(bytes: number): string {
  */
 export function scanForMaliciousPatterns(content: string): SecurityValidationResult {
   const warnings: string[] = []
-  
+
   // Malicious patterns to detect
   const dangerousPatterns = [
     // Script injections
     { pattern: /<script[\s\S]*?<\/script>/gi, threat: 'Script tag detected' },
     { pattern: /javascript:/gi, threat: 'JavaScript protocol detected' },
     { pattern: /on\w+\s*=/gi, threat: 'Event handler detected' },
-    
+
     // Code execution attempts
     { pattern: /eval\s*\(/gi, threat: 'eval() function detected' },
     { pattern: /document\./gi, threat: 'DOM manipulation detected' },
     { pattern: /window\./gi, threat: 'Window object access detected' },
-    
+
     // CSV formula injection (Excel/Sheets)
     { pattern: /^[=+\-@]/m, threat: 'Formula injection attempt detected' },
-    
+
     // Command injection attempts
     { pattern: /;\s*(rm|del|format|mkfs|dd)\s/gi, threat: 'System command detected' },
     { pattern: /\$\(.*\)/g, threat: 'Command substitution detected' },
     { pattern: /`.*`/g, threat: 'Backtick command execution detected' },
-    
+
     // SQL injection patterns
-    { pattern: /('\s*OR\s*'1'\s*=\s*'1|--|\bUNION\b|\bDROP\b)/gi, threat: 'SQL injection pattern detected' },
-    
+    {
+      pattern: /('\s*OR\s*'1'\s*=\s*'1|--|\bUNION\b|\bDROP\b)/gi,
+      threat: 'SQL injection pattern detected',
+    },
+
     // Path traversal
     { pattern: /\.\.[\/\\]/g, threat: 'Path traversal attempt detected' },
-    
+
     // Null byte injection
-    { pattern: /\x00/g, threat: 'Null byte detected' }
+    { pattern: /\x00/g, threat: 'Null byte detected' },
   ]
-  
+
   let hasThreats = false
-  
+
   for (const { pattern, threat } of dangerousPatterns) {
     if (pattern.test(content)) {
       warnings.push(threat)
       hasThreats = true
     }
   }
-  
+
   if (hasThreats) {
     return {
       valid: false,
       error: 'Malicious content detected in file',
-      warnings
+      warnings,
     }
   }
-  
+
   return { valid: true }
 }
 
@@ -156,24 +159,27 @@ export function sanitizeFilename(filename: string): string {
   const lastDot = filename.lastIndexOf('.')
   const name = lastDot > 0 ? filename.substring(0, lastDot) : filename
   const ext = lastDot > 0 ? filename.substring(lastDot) : ''
-  
+
   // Sanitize name part
   let sanitized = name
     .toLowerCase()
-    .replace(/\s+/g, '_')                    // Replace spaces with underscore
-    .replace(/[^a-z0-9_-]/g, '')             // Remove special characters
-    .replace(/_{2,}/g, '_')                  // Replace multiple underscores
-    .replace(/^[_-]+|[_-]+$/g, '')           // Remove leading/trailing underscores
-    .substring(0, 100)                       // Limit length
-  
+    .replace(/\s+/g, '_') // Replace spaces with underscore
+    .replace(/[^a-z0-9_-]/g, '') // Remove special characters
+    .replace(/_{2,}/g, '_') // Replace multiple underscores
+    .replace(/^[_-]+|[_-]+$/g, '') // Remove leading/trailing underscores
+    .substring(0, 100) // Limit length
+
   // If name is empty after sanitization, use random name
   if (!sanitized) {
     sanitized = `file_${Date.now()}`
   }
-  
+
   // Sanitize extension
-  const sanitizedExt = ext.toLowerCase().replace(/[^a-z0-9.]/g, '').substring(0, 10)
-  
+  const sanitizedExt = ext
+    .toLowerCase()
+    .replace(/[^a-z0-9.]/g, '')
+    .substring(0, 10)
+
   return sanitized + sanitizedExt
 }
 
@@ -184,11 +190,11 @@ export function generateUniqueFilename(originalFilename: string): string {
   const sanitized = sanitizeFilename(originalFilename)
   const timestamp = Date.now()
   const randomSuffix = crypto.randomBytes(4).toString('hex')
-  
+
   const lastDot = sanitized.lastIndexOf('.')
   const name = lastDot > 0 ? sanitized.substring(0, lastDot) : sanitized
   const ext = lastDot > 0 ? sanitized.substring(lastDot) : ''
-  
+
   return `${name}_${timestamp}_${randomSuffix}${ext}`
 }
 
@@ -201,42 +207,42 @@ export async function validateUploadedFile(
   expectedType: 'csv' | 'image' = 'csv'
 ): Promise<SecurityValidationResult> {
   const warnings: string[] = []
-  
+
   // 1. Check file size
   const sizeCheck = checkFileSize(file.size, expectedType)
   if (!sizeCheck.valid) {
     return sizeCheck
   }
-  
+
   // 2. Verify MIME type
   if (!isAllowedMimeType(file.type, expectedType)) {
     return {
       valid: false,
-      error: `Invalid file type. Expected ${expectedType}, got ${file.type}`
+      error: `Invalid file type. Expected ${expectedType}, got ${file.type}`,
     }
   }
-  
+
   // 3. Sanitize filename
   const sanitizedFilename = sanitizeFilename(file.name)
-  
+
   // 4. For text-based files, scan content
   if (expectedType === 'csv') {
     try {
       const content = await file.text()
-      
+
       // Check for malicious patterns
       const scanResult = scanForMaliciousPatterns(content)
       if (!scanResult.valid) {
         return scanResult
       }
-      
+
       // Check for suspiciously large lines (potential attack)
       const lines = content.split('\n')
-      const maxLineLength = Math.max(...lines.map(l => l.length))
+      const maxLineLength = Math.max(...lines.map((l) => l.length))
       if (maxLineLength > 10000) {
         warnings.push('File contains unusually long lines')
       }
-      
+
       // Check for reasonable number of columns
       if (lines.length > 0) {
         const firstLine = lines[0]
@@ -244,23 +250,22 @@ export async function validateUploadedFile(
         if (columnCount > 1000) {
           return {
             valid: false,
-            error: 'File has too many columns (max 1000)'
+            error: 'File has too many columns (max 1000)',
           }
         }
       }
-      
     } catch {
       return {
         valid: false,
-        error: 'Failed to read file content'
+        error: 'Failed to read file content',
       }
     }
   }
-  
+
   return {
     valid: true,
     sanitizedFilename,
-    warnings: warnings.length > 0 ? warnings : undefined
+    warnings: warnings.length > 0 ? warnings : undefined,
   }
 }
 
@@ -277,20 +282,20 @@ export function quickValidateFile(
   if (!sizeCheck.valid) {
     return sizeCheck
   }
-  
+
   // Check MIME type
   if (!isAllowedMimeType(file.type, expectedType)) {
     return {
       valid: false,
-      error: `Invalid file type. Expected ${expectedType}, got ${file.type}`
+      error: `Invalid file type. Expected ${expectedType}, got ${file.type}`,
     }
   }
-  
+
   // Sanitize filename
   const sanitizedFilename = sanitizeFilename(file.name)
-  
+
   return {
     valid: true,
-    sanitizedFilename
+    sanitizedFilename,
   }
 }

@@ -1,5 +1,7 @@
 'use client'
 
+import { formatNumber } from '@/lib/format-number'
+
 interface CorrelationHeatmapProps {
   correlations: Array<{
     var1: string
@@ -17,10 +19,7 @@ interface CorrelationHeatmapProps {
  */
 export function CorrelationHeatmap({ correlations, title }: CorrelationHeatmapProps) {
   const variables = Array.from(
-    new Set([
-      ...correlations.map(c => c.var1),
-      ...correlations.map(c => c.var2)
-    ])
+    new Set([...correlations.map((c) => c.var1), ...correlations.map((c) => c.var2)])
   ).sort()
 
   const matrix: Record<string, Record<string, number>> = {}
@@ -41,30 +40,44 @@ export function CorrelationHeatmap({ correlations, title }: CorrelationHeatmapPr
   }
 
   const getColor = (value: number, significant: boolean = true) => {
-    if (value === 1.0) return '#E5E7EB' // Diagonal (self-correlation)
-    
+    if (value === 1.0) {
+      return '#E5E7EB'
+    } // Diagonal (self-correlation)
+
     const absValue = Math.abs(value)
-    
+
     if (!significant) {
       return '#F3F4F6' // Light gray for non-significant
     }
-    
+
     if (value > 0) {
-      if (absValue >= 0.7) return '#065F46' // Dark green
-      if (absValue >= 0.5) return '#059669' // Green
-      if (absValue >= 0.3) return '#10B981' // Light green
+      if (absValue >= 0.7) {
+        return '#065F46'
+      } // Dark green
+      if (absValue >= 0.5) {
+        return '#059669'
+      } // Green
+      if (absValue >= 0.3) {
+        return '#10B981'
+      } // Light green
       return '#6EE7B7' // Very light green
     } else {
-      if (absValue >= 0.7) return '#991B1B' // Dark red
-      if (absValue >= 0.5) return '#DC2626' // Red
-      if (absValue >= 0.3) return '#EF4444' // Light red
+      if (absValue >= 0.7) {
+        return '#991B1B'
+      } // Dark red
+      if (absValue >= 0.5) {
+        return '#DC2626'
+      } // Red
+      if (absValue >= 0.3) {
+        return '#EF4444'
+      } // Light red
       return '#FCA5A5' // Very light red
     }
   }
 
   const isSignificant = (var1: string, var2: string): boolean => {
     const corr = correlations.find(
-      c => (c.var1 === var1 && c.var2 === var2) || (c.var1 === var2 && c.var2 === var1)
+      (c) => (c.var1 === var1 && c.var2 === var2) || (c.var1 === var2 && c.var2 === var1)
     )
     return corr?.significant || false
   }
@@ -73,8 +86,10 @@ export function CorrelationHeatmap({ correlations, title }: CorrelationHeatmapPr
 
   return (
     <div className="w-full">
-      {title && <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-4">{title}</h4>}
-      
+      {title && (
+        <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-4">{title}</h4>
+      )}
+
       <div className="overflow-x-auto">
         <div className="inline-block min-w-full">
           <table className="border-collapse">
@@ -85,10 +100,10 @@ export function CorrelationHeatmap({ correlations, title }: CorrelationHeatmapPr
                   <th
                     key={i}
                     className="p-1 text-xs font-medium text-gray-700 dark:text-gray-300"
-                    style={{ 
+                    style={{
                       width: cellSize,
                       maxWidth: cellSize,
-                      minWidth: cellSize
+                      minWidth: cellSize,
                     }}
                   >
                     <div
@@ -96,7 +111,7 @@ export function CorrelationHeatmap({ correlations, title }: CorrelationHeatmapPr
                       style={{ width: cellSize * 1.5 }}
                       title={v}
                     >
-                      {v.length > 12 ? v.substring(0, 12) + '...' : v}
+                      {v.length > 12 ? `${v.substring(0, 12)}...` : v}
                     </div>
                   </th>
                 ))}
@@ -107,14 +122,14 @@ export function CorrelationHeatmap({ correlations, title }: CorrelationHeatmapPr
                 <tr key={i}>
                   <td className="p-1 text-xs font-medium text-gray-700 dark:text-gray-300 text-right pr-2 whitespace-nowrap">
                     <div className="overflow-hidden text-ellipsis" title={rowVar}>
-                      {rowVar.length > 15 ? rowVar.substring(0, 15) + '...' : rowVar}
+                      {rowVar.length > 15 ? `${rowVar.substring(0, 15)}...` : rowVar}
                     </div>
                   </td>
                   {variables.map((colVar, j) => {
                     const value = matrix[rowVar][colVar]
                     const significant = isSignificant(rowVar, colVar)
                     const color = getColor(value, significant)
-                    
+
                     return (
                       <td
                         key={j}
@@ -124,12 +139,12 @@ export function CorrelationHeatmap({ correlations, title }: CorrelationHeatmapPr
                           width: cellSize,
                           height: cellSize,
                           minWidth: cellSize,
-                          minHeight: cellSize
+                          minHeight: cellSize,
                         }}
-                        title={`${rowVar} vs ${colVar}\nr = ${value.toFixed(3)}${significant ? ' *' : ''}`}
+                        title={`${rowVar} vs ${colVar}\nr = ${formatNumber(value, 3)}${significant ? ' *' : ''}`}
                       >
                         <div className="flex items-center justify-center h-full text-xs font-medium text-white">
-                          {value !== 0 && value !== 1 ? value.toFixed(2) : ''}
+                          {value !== 0 && value !== 1 ? formatNumber(value, 2) : ''}
                         </div>
                       </td>
                     )

@@ -15,7 +15,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { ReferenceDataService } from '@/lib/references/species-references'
-import Papa from 'papaparse'
+import { parseFile } from '@/lib/file-parser'
 import { validateUploadedFile, generateUniqueFilename } from '@/lib/upload-security'
 import { withRateLimit } from '@/lib/rate-limit'
 import {
@@ -96,9 +96,9 @@ export async function POST(request: NextRequest) {
     })
 
     if (parsed.errors.length > 0) {
-      console.error('❌ Erros no CSV:', parsed.errors)
+      console.error('❌ Erros ao processar arquivo:', parsed.errors)
       return NextResponse.json(
-        { error: 'Erro ao processar CSV', details: parsed.errors },
+        { error: 'Erro ao processar arquivo', details: parsed.errors },
         { status: 400 }
       )
     }
