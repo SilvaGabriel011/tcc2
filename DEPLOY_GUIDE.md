@@ -123,22 +123,22 @@ Na página de deploy da Vercel, expanda **Environment Variables** e adicione:
 
 ### 5.1 Variáveis Obrigatórias
 
-| Nome | Valor | Onde conseguir |
-|------|-------|----------------|
-| `DATABASE_URL` | `postgresql://...` | Vercel Postgres ou Supabase |
-| `DIRECT_URL` | `postgresql://...` | Igual ao DATABASE_URL |
-| `NEXTAUTH_URL` | `https://seu-app.vercel.app` | Será fornecido após deploy |
-| `NEXTAUTH_SECRET` | String aleatória de 32+ caracteres | Gerar: `openssl rand -base64 32` |
-| `UPSTASH_REDIS_REST_URL` | `https://...` | [upstash.com](https://upstash.com) |
-| `UPSTASH_REDIS_REST_TOKEN` | `A...` | [upstash.com](https://upstash.com) |
+| Nome                       | Valor                              | Onde conseguir                     |
+| -------------------------- | ---------------------------------- | ---------------------------------- |
+| `DATABASE_URL`             | `postgresql://...`                 | Vercel Postgres ou Supabase        |
+| `DIRECT_URL`               | `postgresql://...`                 | Igual ao DATABASE_URL              |
+| `NEXTAUTH_URL`             | `https://seu-app.vercel.app`       | Será fornecido após deploy         |
+| `NEXTAUTH_SECRET`          | String aleatória de 32+ caracteres | Gerar: `openssl rand -base64 32`   |
+| `UPSTASH_REDIS_REST_URL`   | `https://...`                      | [upstash.com](https://upstash.com) |
+| `UPSTASH_REDIS_REST_TOKEN` | `A...`                             | [upstash.com](https://upstash.com) |
 
 ### 5.2 Variáveis Opcionais (APIs)
 
-| Nome | Valor | Onde conseguir |
-|------|-------|----------------|
-| `GOOGLE_GEMINI_API_KEY` | `AI...` | [aistudio.google.com](https://aistudio.google.com) |
-| `OPENAI_API_KEY` | `sk-...` | [platform.openai.com](https://platform.openai.com) |
-| `SERPAPI_API_KEY` | `...` | [serpapi.com](https://serpapi.com) (100 buscas grátis/mês) |
+| Nome                    | Valor    | Onde conseguir                                             |
+| ----------------------- | -------- | ---------------------------------------------------------- |
+| `GOOGLE_GEMINI_API_KEY` | `AI...`  | [aistudio.google.com](https://aistudio.google.com)         |
+| `OPENAI_API_KEY`        | `sk-...` | [platform.openai.com](https://platform.openai.com)         |
+| `SERPAPI_API_KEY`       | `...`    | [serpapi.com](https://serpapi.com) (100 buscas grátis/mês) |
 
 ### 5.3 Como conseguir cada serviço
 
@@ -180,6 +180,7 @@ Ou use um gerador online: [generate-secret.vercel.app](https://generate-secret.v
 ### 5.5 Aplicar variáveis
 
 Após adicionar todas as variáveis:
+
 1. Certifique-se de marcar **Production**, **Preview**, e **Development**
 2. Clique em **Deploy**
 
@@ -211,9 +212,11 @@ npx prisma migrate deploy
 O script `vercel-build` já executa `prisma migrate deploy` automaticamente durante o build.
 
 Verifique os logs do deploy para confirmar que as migrations foram executadas:
+
 - Vercel Dashboard → Seu Projeto → Deployments → Último deploy → Logs
 
 Procure por:
+
 ```
 ✓ prisma migrate deploy completed
 ```
@@ -283,7 +286,8 @@ npm run restore:postgresql backup/sqlite-backup-[timestamp].json
 
 **Causa**: DATABASE_URL incorreta ou banco não acessível
 
-**Solução**: 
+**Solução**:
+
 1. Verifique se DATABASE_URL está correta nas env vars
 2. Teste conexão localmente: `npx prisma db pull`
 
@@ -292,17 +296,45 @@ npm run restore:postgresql backup/sqlite-backup-[timestamp].json
 **Causa**: Migrations não foram executadas
 
 **Solução**:
+
 ```bash
 # Via Vercel CLI
 vercel env pull .env.production
 npx prisma migrate deploy
 ```
 
+### Erro: "Table 'TemporalData' does not exist" ou erro ao criar dataset
+
+**Causa**: Prisma client desatualizado ou migration de dados temporais não executada
+
+**Contexto**: A aplicação usa o modelo `TimeSeriesData` (tabela `timeseries_data`) para armazenar dados de séries temporais. Se você ver erros relacionados a `TemporalData`, significa que o Prisma client está desatualizado.
+
+**Solução**:
+
+1. **Forçar redeploy na Vercel**:
+   - Vá em Deployments → último deploy → ⋯ → Redeploy
+   - Isso irá regenerar o Prisma client e executar as migrations
+
+2. **Via Vercel CLI** (alternativa):
+
+   ```bash
+   vercel env pull .env.production
+   npx prisma generate
+   npx prisma migrate deploy
+   ```
+
+3. **Verificar logs do build**:
+   - Confirme que `prisma migrate deploy` foi executado com sucesso
+   - Procure por: `✓ Applied migration: 20251109233616_add_temporal_and_timeseries_support`
+
+**Prevenção**: O script `vercel-build` já inclui `prisma generate` e `prisma migrate deploy`. Certifique-se de que o build está usando este script.
+
 ### Build falha com erro de timeout
 
 **Causa**: Build muito longo
 
-**Solução**: 
+**Solução**:
+
 1. Verifique se `.vercelignore` está excluindo testes e docs
 2. Aumente timeout em vercel.json (Pro plan apenas)
 
@@ -330,6 +362,7 @@ npx prisma migrate deploy
 ## 🆘 Suporte
 
 Se encontrar problemas:
+
 1. Verifique os logs no Vercel Dashboard
 2. Consulte a documentação oficial
 3. Abra uma issue no repositório
