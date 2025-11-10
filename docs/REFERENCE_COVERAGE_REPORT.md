@@ -163,4 +163,3 @@ Generated: 2025-11-05T15:49:07.823Z
 - Add secondary quality metrics (marbling, tenderness, etc.)
 - Expand reproductive metrics for all species
 - Add economic indicators (feed cost, market price ranges)
-

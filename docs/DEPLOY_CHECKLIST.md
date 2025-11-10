@@ -5,9 +5,11 @@ Use este checklist para acompanhar o progresso do deploy na Vercel.
 ## 📦 Preparação (Antes do Deploy)
 
 - [ ] **Backup dos dados SQLite**
+
   ```bash
   npm run backup:sqlite
   ```
+
   - Arquivo salvo em: `backup/sqlite-backup-[timestamp].json`
 
 - [ ] **Repositório GitHub criado**
@@ -15,6 +17,7 @@ Use este checklist para acompanhar o progresso do deploy na Vercel.
   - Visibilidade: Private/Public
 
 - [ ] **Código enviado para GitHub**
+
   ```bash
   git init
   git remote add origin https://github.com/[seu-usuario]/agroinsight.git
@@ -60,6 +63,7 @@ Escolha UMA das opções:
   ```bash
   openssl rand -base64 32
   ```
+
   - Secret gerado e salvo
 
 ### Opcionais (APIs)
@@ -90,17 +94,19 @@ Escolha UMA das opções:
 - [ ] **Variáveis de ambiente configuradas**
 
 ### Essenciais
-  - [ ] `DATABASE_URL`
-  - [ ] `DIRECT_URL`
-  - [ ] `NEXTAUTH_URL` (temporário: `https://seu-app.vercel.app`)
-  - [ ] `NEXTAUTH_SECRET`
-  - [ ] `UPSTASH_REDIS_REST_URL`
-  - [ ] `UPSTASH_REDIS_REST_TOKEN`
+
+- [ ] `DATABASE_URL`
+- [ ] `DIRECT_URL`
+- [ ] `NEXTAUTH_URL` (temporário: `https://seu-app.vercel.app`)
+- [ ] `NEXTAUTH_SECRET`
+- [ ] `UPSTASH_REDIS_REST_URL`
+- [ ] `UPSTASH_REDIS_REST_TOKEN`
 
 ### Opcionais
-  - [ ] `GOOGLE_GEMINI_API_KEY`
-  - [ ] `OPENAI_API_KEY`
-  - [ ] `SERPAPI_API_KEY`
+
+- [ ] `GOOGLE_GEMINI_API_KEY`
+- [ ] `OPENAI_API_KEY`
+- [ ] `SERPAPI_API_KEY`
 
 - [ ] **Primeira tentativa de deploy**
   - Status: Success/Failed
@@ -132,9 +138,11 @@ Escolha UMA das opções:
   - `.env.production.local` criado com DATABASE_URL de produção
 
 - [ ] **Dados restaurados**
+
   ```bash
   npm run restore:postgresql backup/sqlite-backup-[timestamp].json
   ```
+
   - Usuários migrados
   - Projetos migrados
   - Datasets migrados
@@ -220,6 +228,6 @@ Parabéns! Sua aplicação AgroInsight está no ar! 🎉
 
 ---
 
-**Data do Deploy**: ___/___/______
-**Responsável**: _________________
-**Notas**: _______________________
+**Data do Deploy**: **_/_**/**\_\_**
+**Responsável**: ********\_********
+**Notas**: **********\_\_\_**********

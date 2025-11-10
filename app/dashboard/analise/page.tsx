@@ -5,9 +5,9 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useDropzone } from 'react-dropzone'
-import { 
-  Sprout, 
-  FileSpreadsheet, 
+import {
+  Sprout,
+  FileSpreadsheet,
   ArrowLeft,
   CheckCircle,
   AlertCircle,
@@ -17,7 +17,7 @@ import {
   Bird,
   Fish,
   Wheat,
-  ChevronDown
+  ChevronDown,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { validateFile, formatBytes, scanFileForThreats } from '@/lib/upload-validation'
@@ -34,21 +34,23 @@ export default function AnaliseDataPage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisResult, setAnalysisResult] = useState<{
-    id?: string;
-    name?: string;
-    data?: string;
-    totalRows?: number;
-    totalColumns?: number;
-    validRows?: number;
-    success?: boolean;
-    analysis?: { id: string; name: string; data: string };
-    message?: string;
+    id?: string
+    name?: string
+    data?: string
+    totalRows?: number
+    totalColumns?: number
+    validRows?: number
+    success?: boolean
+    analysis?: { id: string; name: string; data: string }
+    message?: string
   } | null>(null)
   const [error, setError] = useState('')
   const [warning, setWarning] = useState('')
   const [previewData, setPreviewData] = useState<Record<string, unknown>[]>([])
   const [isParsing, setIsParsing] = useState(false)
-  const [selectedSpecies, setSelectedSpecies] = useState<'bovino' | 'suino' | 'avicultura' | 'ovino' | 'caprino' | 'piscicultura' | 'forragem'>('bovino')
+  const [selectedSpecies, setSelectedSpecies] = useState<
+    'bovino' | 'suino' | 'avicultura' | 'ovino' | 'caprino' | 'piscicultura' | 'forragem'
+  >('bovino')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -70,55 +72,78 @@ export default function AnaliseDataPage() {
 
   const PigIcon = () => (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="8"/>
-      <circle cx="9" cy="10" r="1.5"/>
-      <circle cx="15" cy="10" r="1.5"/>
-      <path d="M8 15 Q12 17 16 15" strokeLinecap="round"/>
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="9" cy="10" r="1.5" />
+      <circle cx="15" cy="10" r="1.5" />
+      <path d="M8 15 Q12 17 16 15" strokeLinecap="round" />
     </svg>
   )
 
   const SheepIcon = () => (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="7"/>
-      <path d="M8 8 Q12 6 16 8" strokeLinecap="round"/>
-      <circle cx="9" cy="10" r="1"/>
-      <circle cx="15" cy="10" r="1"/>
+      <circle cx="12" cy="12" r="7" />
+      <path d="M8 8 Q12 6 16 8" strokeLinecap="round" />
+      <circle cx="9" cy="10" r="1" />
+      <circle cx="15" cy="10" r="1" />
     </svg>
   )
 
   const GoatIcon = () => (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="6"/>
-      <path d="M8 7 L8 5" strokeLinecap="round"/>
-      <path d="M16 7 L16 5" strokeLinecap="round"/>
-      <circle cx="9" cy="10" r="1"/>
-      <circle cx="15" cy="10" r="1"/>
-      <path d="M12 16 L12 18" strokeLinecap="round"/>
+      <circle cx="12" cy="12" r="6" />
+      <path d="M8 7 L8 5" strokeLinecap="round" />
+      <path d="M16 7 L16 5" strokeLinecap="round" />
+      <circle cx="9" cy="10" r="1" />
+      <circle cx="15" cy="10" r="1" />
+      <path d="M12 16 L12 18" strokeLinecap="round" />
     </svg>
   )
 
   const speciesOptions = [
-    { value: 'bovino', label: 'Bovinos', icon: <Beef className="w-5 h-5" />, color: 'text-amber-600' },
+    {
+      value: 'bovino',
+      label: 'Bovinos',
+      icon: <Beef className="w-5 h-5" />,
+      color: 'text-amber-600',
+    },
     { value: 'suino', label: 'Suínos', icon: <PigIcon />, color: 'text-pink-600' },
-    { value: 'avicultura', label: 'Aves', icon: <Bird className="w-5 h-5" />, color: 'text-orange-600' },
+    {
+      value: 'avicultura',
+      label: 'Aves',
+      icon: <Bird className="w-5 h-5" />,
+      color: 'text-orange-600',
+    },
     { value: 'ovino', label: 'Ovinos', icon: <SheepIcon />, color: 'text-gray-600' },
     { value: 'caprino', label: 'Caprinos', icon: <GoatIcon />, color: 'text-amber-700' },
-    { value: 'piscicultura', label: 'Peixes', icon: <Fish className="w-5 h-5" />, color: 'text-blue-600' },
-    { value: 'forragem', label: 'Forragem', icon: <Wheat className="w-5 h-5" />, color: 'text-green-600' }
+    {
+      value: 'piscicultura',
+      label: 'Peixes',
+      icon: <Fish className="w-5 h-5" />,
+      color: 'text-blue-600',
+    },
+    {
+      value: 'forragem',
+      label: 'Forragem',
+      icon: <Wheat className="w-5 h-5" />,
+      color: 'text-green-600',
+    },
   ]
 
-  const selectedOption = speciesOptions.find(opt => opt.value === selectedSpecies) || speciesOptions[0]
+  const selectedOption =
+    speciesOptions.find((opt) => opt.value === selectedSpecies) ?? speciesOptions[0]
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
-    if (!file) return
+    if (!file) {
+      return
+    }
 
     // Validar arquivo
     const validation = validateFile(file)
-    
+
     if (!validation.valid) {
-      setError(validation.error || 'Arquivo inválido')
-      toast.error(validation.error || 'Arquivo inválido')
+      setError(validation.error ?? 'Arquivo inválido')
+      toast.error(validation.error ?? 'Arquivo inválido')
       setUploadedFile(null)
       return
     }
@@ -126,8 +151,8 @@ export default function AnaliseDataPage() {
     // Verificar ameaças de segurança
     const securityCheck = await scanFileForThreats(file)
     if (!securityCheck.valid) {
-      setError(securityCheck.error || 'Arquivo bloqueado por segurança')
-      toast.error(securityCheck.error || 'Arquivo bloqueado por segurança')
+      setError(securityCheck.error ?? 'Arquivo bloqueado por segurança')
+      toast.error(securityCheck.error ?? 'Arquivo bloqueado por segurança')
       setUploadedFile(null)
       return
     }
@@ -136,7 +161,7 @@ export default function AnaliseDataPage() {
     setUploadedFile(file)
     setError('')
     toast.success(`Arquivo "${file.name}" carregado com sucesso!`)
-    
+
     // Mostrar avisos se houver
     if (validation.warnings && validation.warnings.length > 0) {
       setWarning(validation.warnings.join(' '))
@@ -159,42 +184,49 @@ export default function AnaliseDataPage() {
         console.error('Erro ao fazer preview:', error)
         toast.error('Erro ao visualizar arquivo')
         setIsParsing(false)
-      }
+      },
     })
   }, [])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'text/csv': ['.csv']
+    onDrop: (files) => {
+      void onDrop(files)
     },
-    multiple: false
+    accept: {
+      'text/csv': ['.csv'],
+    },
+    multiple: false,
   })
 
   const handleGenerateTestData = () => {
-    const speciesLabels = {
-      'bovino': 'Bovinos',
-      'suino': 'Suínos',
-      'avicultura': 'Aves',
-      'ovino': 'Ovinos',
-      'caprino': 'Caprinos',
-      'piscicultura': 'Peixes',
-      'forragem': 'Forragem'
+    const speciesLabels: { [key: string]: string } = {
+      bovino: 'Bovinos',
+      suino: 'Suínos',
+      avicultura: 'Aves',
+      ovino: 'Ovinos',
+      caprino: 'Caprinos',
+      piscicultura: 'Peixes',
+      forragem: 'Forragem',
     }
-    
-    const toastId = toast.loading(`Gerando dados de teste para ${speciesLabels[selectedSpecies]}...`, {
-      duration: Infinity,
-      action: {
-        label: 'Fechar',
-        onClick: () => toast.dismiss(toastId)
+
+    const toastId = toast.loading(
+      `Gerando dados de teste para ${speciesLabels[selectedSpecies]}...`,
+      {
+        duration: Infinity,
+        action: {
+          label: 'Fechar',
+          onClick: () => toast.dismiss(toastId),
+        },
       }
-    })
-    
+    )
+
     try {
       generateAndDownloadTestData(100, selectedSpecies)
-      
+
       toast.dismiss(toastId)
-      toast.success(`Arquivo de teste de ${speciesLabels[selectedSpecies]} gerado! Verifique seus downloads.`)
+      toast.success(
+        `Arquivo de teste de ${speciesLabels[selectedSpecies]} gerado! Verifique seus downloads.`
+      )
       toast.info('Agora você pode fazer upload do arquivo gerado', { duration: 5000 })
     } catch (error) {
       console.error('Erro ao gerar dados:', error)
@@ -204,11 +236,13 @@ export default function AnaliseDataPage() {
   }
 
   const handleAnalyze = async () => {
-    if (!uploadedFile) return
+    if (!uploadedFile) {
+      return
+    }
 
     setIsAnalyzing(true)
     setError('')
-    
+
     // Toast de início
     const toastId = toast.loading('Analisando arquivo...')
 
@@ -227,7 +261,7 @@ export default function AnaliseDataPage() {
         setAnalysisResult(result)
         toast.success('Análise concluída com sucesso!', { id: toastId })
       } else {
-        const errorMsg = result.error || 'Erro ao analisar arquivo'
+        const errorMsg = result.error ?? 'Erro ao analisar arquivo'
         setError(errorMsg)
         toast.error(errorMsg, { id: toastId })
       }
@@ -241,9 +275,11 @@ export default function AnaliseDataPage() {
   }
 
   if (status === 'loading') {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-    </div>
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   if (!session) {
@@ -258,7 +294,10 @@ export default function AnaliseDataPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Link href="/dashboard" className="flex items-center text-foreground/60 hover:text-foreground">
+              <Link
+                href="/dashboard"
+                className="flex items-center text-foreground/60 hover:text-foreground"
+              >
                 <ArrowLeft className="h-5 w-5 mr-2" />
                 <Sprout className="h-8 w-8 text-primary mr-2" />
                 <span className="text-xl font-bold text-foreground">AgroInsight</span>
@@ -268,7 +307,9 @@ export default function AnaliseDataPage() {
               <ThemeToggle />
               <span className="text-foreground/80">Bem-vindo, {session.user.name}</span>
               <button
-                onClick={() => router.push('/api/auth/signout')}
+                onClick={() => {
+                  void router.push('/api/auth/signout')
+                }}
                 className="text-foreground/60 hover:text-foreground"
               >
                 Sair
@@ -293,12 +334,12 @@ export default function AnaliseDataPage() {
                   <span className={`${selectedOption.color} flex-shrink-0`}>
                     {selectedOption.icon}
                   </span>
-                  <span className="flex-1 text-left font-semibold">
-                    {selectedOption.label}
-                  </span>
-                  <ChevronDown className={`w-4 h-4 text-purple-600 dark:text-purple-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                  <span className="flex-1 text-left font-semibold">{selectedOption.label}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-purple-600 dark:text-purple-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
+                  />
                 </button>
-                
+
                 {isDropdownOpen && (
                   <div className="absolute z-50 mt-2 w-full min-w-[240px] bg-card dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-800 rounded-lg shadow-xl overflow-hidden">
                     {speciesOptions.map((option) => (
@@ -314,10 +355,10 @@ export default function AnaliseDataPage() {
                             : 'hover:bg-purple-50 dark:hover:bg-purple-950/30 border-l-4 border-transparent'
                         }`}
                       >
-                        <span className={`${option.color} flex-shrink-0`}>
-                          {option.icon}
-                        </span>
-                        <span className={`font-medium ${selectedSpecies === option.value ? 'text-purple-900 dark:text-purple-100' : 'text-foreground'}`}>
+                        <span className={`${option.color} flex-shrink-0`}>{option.icon}</span>
+                        <span
+                          className={`font-medium ${selectedSpecies === option.value ? 'text-purple-900 dark:text-purple-100' : 'text-foreground'}`}
+                        >
                           {option.label}
                         </span>
                       </button>
@@ -347,7 +388,8 @@ export default function AnaliseDataPage() {
                   Análise Zootécnica Multi-Espécie
                 </h2>
                 <p className="text-muted-foreground mb-6">
-                  Selecione a espécie e categoria para análise especializada com dados científicos de referência.
+                  Selecione a espécie e categoria para análise especializada com dados científicos
+                  de referência.
                 </p>
                 <MultiSpeciesTabs>
                   {(species, subtype) => (
@@ -355,26 +397,26 @@ export default function AnaliseDataPage() {
                       species={species}
                       subtype={subtype}
                       onAnalysisComplete={(result) => {
-                        console.log('[analise:complete]', { 
+                        /* console.log('[analise:complete]', { 
                           hasAnalysis: !!result.analysis,
                           analysisId: result.analysis?.id,
                           timestamp: new Date().toISOString()
-                        })
-                        
+                        }) */
+
                         if (result.analysis) {
                           setAnalysisResult({
                             id: result.analysis.id,
                             name: result.analysis.name,
                             data: JSON.stringify(result.analysis),
-                            success: true
+                            success: true,
                           })
                           toast.success('Análise concluída com sucesso!')
-                          
-                          console.log('[analise:redirect]', { 
+
+                          /* console.log('[analise:redirect]', { 
                             analysisId: result.analysis.id,
                             targetUrl: `/dashboard/resultados?id=${result.analysis.id}`
-                          })
-                          
+                          }) */
+
                           router.push(`/dashboard/resultados?id=${result.analysis.id}`)
                         } else {
                           console.error('[analise:complete:no-analysis]', { result })
@@ -392,89 +434,94 @@ export default function AnaliseDataPage() {
                   📊 Upload de Arquivo Padrão (Análise Genérica)
                 </summary>
                 <div className="p-6 pt-0">
-                
-                <div
-                  {...getRootProps()}
-                  className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                    isDragActive 
-                      ? 'border-primary bg-primary/10' 
-                      : 'border hover:border-primary hover:bg-muted'
-                  }`}
-                >
-                  <input {...getInputProps()} />
-                  <FileSpreadsheet className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  {isDragActive ? (
-                    <p className="text-foreground">Solte o arquivo aqui...</p>
-                  ) : (
-                    <div>
-                      <p className="text-muted-foreground mb-2">
-                        Arraste e solte um arquivo CSV aqui, ou clique para selecionar
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Apenas arquivos CSV são aceitos (máx: 50MB)
-                      </p>
+                  <div
+                    {...getRootProps()}
+                    className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                      isDragActive
+                        ? 'border-primary bg-primary/10'
+                        : 'border hover:border-primary hover:bg-muted'
+                    }`}
+                  >
+                    <input {...getInputProps()} />
+                    <FileSpreadsheet className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    {isDragActive ? (
+                      <p className="text-foreground">Solte o arquivo aqui...</p>
+                    ) : (
+                      <div>
+                        <p className="text-muted-foreground mb-2">
+                          Arraste e solte um arquivo CSV aqui, ou clique para selecionar
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Apenas arquivos CSV são aceitos (máx: 50MB)
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {uploadedFile && (
+                    <div className="mt-4 p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-900">
+                      <div className="flex items-center">
+                        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
+                        <span className="text-green-800 dark:text-green-300">
+                          Arquivo selecionado: {uploadedFile.name} ({formatBytes(uploadedFile.size)}
+                          )
+                        </span>
+                      </div>
                     </div>
                   )}
-                </div>
 
-                {uploadedFile && (
-                  <div className="mt-4 p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-900">
-                    <div className="flex items-center">
-                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
-                      <span className="text-green-800 dark:text-green-300">
-                        Arquivo selecionado: {uploadedFile.name} ({formatBytes(uploadedFile.size)})
-                      </span>
+                  {warning && (
+                    <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-900">
+                      <div className="flex items-center">
+                        <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mr-2" />
+                        <span className="text-yellow-800 dark:text-yellow-300">{warning}</span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {warning && (
-                  <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-900">
-                    <div className="flex items-center">
-                      <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mr-2" />
-                      <span className="text-yellow-800 dark:text-yellow-300">{warning}</span>
+                  {error && (
+                    <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-900">
+                      <div className="flex items-center">
+                        <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mr-2" />
+                        <span className="text-red-800 dark:text-red-300">{error}</span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {error && (
-                  <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-900">
-                    <div className="flex items-center">
-                      <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mr-2" />
-                      <span className="text-red-800 dark:text-red-300">{error}</span>
+                  {/* Preview do CSV */}
+                  {isParsing && (
+                    <div className="mt-4 p-4 bg-muted rounded-lg text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                      <p className="text-sm text-muted-foreground">Gerando preview...</p>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Preview do CSV */}
-                {isParsing && (
-                  <div className="mt-4 p-4 bg-muted rounded-lg text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                    <p className="text-sm text-muted-foreground">Gerando preview...</p>
-                  </div>
-                )}
+                  {!isParsing && previewData.length > 0 && (
+                    <CSVPreview data={previewData} filename={uploadedFile?.name ?? ''} />
+                  )}
 
-                {!isParsing && previewData.length > 0 && (
-                  <CSVPreview data={previewData} filename={uploadedFile?.name || ''} />
-                )}
-
-                <button
-                  onClick={handleAnalyze}
-                  disabled={!uploadedFile || isAnalyzing}
-                  className="mt-6 w-full bg-primary hover:bg-primary/90 disabled:bg-muted-foreground text-white px-4 py-2 rounded-md font-medium transition-colors"
-                >
-                  {isAnalyzing ? 'Analisando...' : 'Analisar Dados'}
-                </button>
+                  <button
+                    onClick={() => {
+                      void handleAnalyze()
+                    }}
+                    disabled={!uploadedFile || isAnalyzing}
+                    className="mt-6 w-full bg-primary hover:bg-primary/90 disabled:bg-muted-foreground text-white px-4 py-2 rounded-md font-medium transition-colors"
+                  >
+                    {isAnalyzing ? 'Analisando...' : 'Analisar Dados'}
+                  </button>
                 </div>
               </details>
 
               {/* Informações sobre o formato esperado */}
               <div className="bg-card shadow rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-foreground mb-4">Formato de Dados Esperado</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-4">
+                  Formato de Dados Esperado
+                </h2>
                 <p className="text-muted-foreground mb-4">
-                  Sua planilha CSV deve conter colunas com dados zootécnicos. Exemplos de colunas aceitas:
+                  Sua planilha CSV deve conter colunas com dados zootécnicos. Exemplos de colunas
+                  aceitas:
                 </p>
-                
+
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <h3 className="font-medium text-foreground mb-2">Dados Básicos:</h3>
@@ -486,7 +533,7 @@ export default function AnaliseDataPage() {
                       <li>• Sexo</li>
                     </ul>
                   </div>
-                  
+
                   <div>
                     <h3 className="font-medium text-foreground mb-2">Dados Zootécnicos:</h3>
                     <ul className="text-sm text-muted-foreground space-y-1">
@@ -501,7 +548,8 @@ export default function AnaliseDataPage() {
 
                 <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
                   <p className="text-sm text-blue-800 dark:text-blue-300">
-                    <strong>Dica:</strong> Certifique-se de que a primeira linha contém os nomes das colunas e que os dados numéricos estão formatados corretamente.
+                    <strong>Dica:</strong> Certifique-se de que a primeira linha contém os nomes das
+                    colunas e que os dados numéricos estão formatados corretamente.
                   </p>
                 </div>
               </div>
@@ -524,15 +572,21 @@ export default function AnaliseDataPage() {
 
               <div className="grid md:grid-cols-3 gap-6 mb-6">
                 <div className="text-center p-4 bg-muted rounded-lg">
-                  <div className="text-2xl font-bold text-foreground">{analysisResult.totalRows || 0}</div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {analysisResult.totalRows ?? 0}
+                  </div>
                   <div className="text-sm text-muted-foreground">Total de Registros</div>
                 </div>
                 <div className="text-center p-4 bg-muted rounded-lg">
-                  <div className="text-2xl font-bold text-foreground">{analysisResult.totalColumns || 0}</div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {analysisResult.totalColumns ?? 0}
+                  </div>
                   <div className="text-sm text-muted-foreground">Colunas Identificadas</div>
                 </div>
                 <div className="text-center p-4 bg-muted rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">{analysisResult.validRows || 0}</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {analysisResult.validRows ?? 0}
+                  </div>
                   <div className="text-sm text-muted-foreground">Registros Válidos</div>
                 </div>
               </div>

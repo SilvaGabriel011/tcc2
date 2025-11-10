@@ -27,10 +27,7 @@ export async function POST(request: NextRequest) {
     const projectId = formData.get('projectId') as string
 
     if (!file || !species) {
-      return NextResponse.json(
-        { error: 'Arquivo e espécie são obrigatórios' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Arquivo e espécie são obrigatórios' }, { status: 400 })
     }
 
     // Parse CSV
@@ -38,7 +35,7 @@ export async function POST(request: NextRequest) {
     const parsed = Papa.parse(text, {
       header: true,
       dynamicTyping: true,
-      skipEmptyLines: true
+      skipEmptyLines: true,
     })
 
     if (parsed.errors.length > 0) {
@@ -59,13 +56,13 @@ export async function POST(request: NextRequest) {
 
     // Análise estatística
     const statistics = calculateStatistics(parsed.data, species)
-    
+
     // Comparação com referências
     const references = await compareWithReferences(statistics, species, subtype)
-    
+
     // Cálculos zootécnicos específicos
     const zootechnicalMetrics = calculateZootechnicalMetrics(statistics, species, subtype)
-    
+
     // Interpretação para leigos
     const interpretation = await generateInterpretation(
       statistics,
@@ -87,16 +84,16 @@ export async function POST(request: NextRequest) {
           statistics,
           references,
           zootechnicalMetrics,
-          interpretation
+          interpretation,
         }),
         metadata: JSON.stringify({
           species,
           subtype,
           totalRows: parsed.data.length,
           totalColumns: Object.keys(parsed.data[0] || {}).length,
-          analyzedAt: new Date().toISOString()
-        })
-      }
+          analyzedAt: new Date().toISOString(),
+        }),
+      },
     })
 
     return NextResponse.json({
@@ -108,16 +105,12 @@ export async function POST(request: NextRequest) {
         statistics,
         references,
         interpretation,
-        metrics: zootechnicalMetrics
-      }
+        metrics: zootechnicalMetrics,
+      },
     })
-
   } catch (error) {
     console.error('Erro na análise multi-espécie:', error)
-    return NextResponse.json(
-      { error: 'Erro ao processar análise' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro ao processar análise' }, { status: 500 })
   }
 }
 
@@ -125,23 +118,23 @@ export async function POST(request: NextRequest) {
 function validateSpeciesData(data: any[], species: string, subtype?: string) {
   const requiredColumns = getRequiredColumns(species, subtype)
   const columns = Object.keys(data[0] || {})
-  
-  const missing = requiredColumns.filter(col => !columns.includes(col))
-  
+
+  const missing = requiredColumns.filter((col) => !columns.includes(col))
+
   if (missing.length > 0) {
     return {
       valid: false,
-      errors: [`Colunas obrigatórias ausentes: ${missing.join(', ')}`]
+      errors: [`Colunas obrigatórias ausentes: ${missing.join(', ')}`],
     }
   }
-  
+
   return { valid: true }
 }
 
 function getRequiredColumns(species: string, subtype?: string) {
   const base = ['id', 'date']
-  
-  switch(species) {
+
+  switch (species) {
     case 'poultry':
       if (subtype === 'broiler') {
         return [...base, 'peso', 'idade', 'mortalidade', 'consumo_racao']
@@ -150,7 +143,7 @@ function getRequiredColumns(species: string, subtype?: string) {
         return [...base, 'producao_ovos', 'peso_ovo', 'consumo_racao']
       }
       return [...base, 'peso', 'idade']
-      
+
     case 'bovine':
       if (subtype === 'dairy') {
         return [...base, 'producao_leite', 'gordura', 'proteina', 'ccs']
@@ -159,10 +152,10 @@ function getRequiredColumns(species: string, subtype?: string) {
         return [...base, 'peso', 'gpd', 'escore_corporal']
       }
       return [...base, 'peso']
-      
+
     case 'swine':
       return [...base, 'peso', 'conversao', 'espessura_toucinho']
-      
+
     default:
       return base
   }
@@ -170,14 +163,14 @@ function getRequiredColumns(species: string, subtype?: string) {
 
 function calculateStatistics(data: any[], species: string) {
   const numericColumns = Object.keys(data[0] || {}).filter(
-    key => typeof data[0][key] === 'number'
+    (key) => typeof data[0][key] === 'number'
   )
-  
+
   const stats = {}
-  
+
   for (const col of numericColumns) {
-    const values = data.map(row => row[col]).filter(v => v !== null && !isNaN(v))
-    
+    const values = data.map((row) => row[col]).filter((v) => v !== null && !isNaN(v))
+
     stats[col] = {
       mean: mean(values),
       median: median(values),
@@ -185,58 +178,53 @@ function calculateStatistics(data: any[], species: string) {
       cv: coefficientOfVariation(values),
       min: Math.min(...values),
       max: Math.max(...values),
-      count: values.length
+      count: values.length,
     }
   }
-  
+
   return stats
 }
 
 async function compareWithReferences(stats: any, species: string, subtype?: string) {
   const comparisons = {}
-  
+
   for (const [metric, values] of Object.entries(stats)) {
     const reference = ReferenceDataService.getReference(species, subtype, metric)
-    
+
     if (reference) {
-      const validation = ReferenceDataService.validateMetric(
-        values.mean,
-        species,
-        metric,
-        subtype
-      )
-      
+      const validation = ReferenceDataService.validateMetric(values.mean, species, metric, subtype)
+
       comparisons[metric] = {
         ...values,
         reference,
         validation,
-        status: getStatus(values.mean, reference)
+        status: getStatus(values.mean, reference),
       }
     } else {
       comparisons[metric] = {
         ...values,
-        status: 'no_reference'
+        status: 'no_reference',
       }
     }
   }
-  
+
   return comparisons
 }
 
 function calculateZootechnicalMetrics(stats: any, species: string, subtype?: string) {
   const metrics = {}
-  
+
   if (species === 'poultry' && subtype === 'broiler') {
     if (stats.peso && stats.idade && stats.mortalidade && stats.conversao) {
       metrics.iep = ZootechnicalCalculations.calculateIEP({
         pesoMedio: stats.peso.mean,
         idade: stats.idade.mean,
         viabilidade: 100 - stats.mortalidade.mean,
-        conversaoAlimentar: stats.conversao.mean
+        conversaoAlimentar: stats.conversao.mean,
       })
     }
   }
-  
+
   if (stats.peso_final && stats.peso_inicial && stats.dias) {
     metrics.gpd = ZootechnicalCalculations.calculateGPD(
       stats.peso_final.mean,
@@ -244,14 +232,14 @@ function calculateZootechnicalMetrics(stats: any, species: string, subtype?: str
       stats.dias.mean
     )
   }
-  
+
   if (stats.consumo_racao && stats.ganho_peso) {
     metrics.conversao_alimentar = ZootechnicalCalculations.calculateFCR(
       stats.consumo_racao.mean,
       stats.ganho_peso.mean
     )
   }
-  
+
   return metrics
 }
 
@@ -270,17 +258,17 @@ const coefficientOfVariation = (arr: number[]) => (standardDeviation(arr) / mean
 
 function getStatus(value: number, reference: any) {
   if (!reference) return 'unknown'
-  
+
   if (reference.ideal_min && reference.ideal_max) {
     if (value >= reference.ideal_min && value <= reference.ideal_max) {
       return 'excellent'
     }
   }
-  
+
   if (value >= reference.min && value <= reference.max) {
     return 'good'
   }
-  
+
   return value < reference.min ? 'below' : 'above'
 }
 ```
@@ -293,10 +281,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { ReferenceDataService } from '@/lib/references/species-references'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { species: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { species: string } }) {
   try {
     const { species } = params
     const searchParams = request.nextUrl.searchParams
@@ -308,12 +293,12 @@ export async function GET(
       where: {
         species: { code: species },
         ...(subtype && { subtype: { code: subtype } }),
-        ...(metric && { metric })
+        ...(metric && { metric }),
       },
       include: {
         species: true,
-        subtype: true
-      }
+        subtype: true,
+      },
     })
 
     // Se não encontrar no banco, usa dados hardcoded
@@ -323,20 +308,17 @@ export async function GET(
         subtype || undefined,
         metric || undefined
       )
-      
+
       if (!hardcodedData) {
-        return NextResponse.json(
-          { error: 'Dados de referência não encontrados' },
-          { status: 404 }
-        )
+        return NextResponse.json({ error: 'Dados de referência não encontrados' }, { status: 404 })
       }
-      
+
       return NextResponse.json({
         source: 'hardcoded',
         data: hardcodedData,
         species,
         subtype,
-        metric
+        metric,
       })
     }
 
@@ -349,7 +331,7 @@ export async function GET(
         max: ref.maxValue,
         unit: ref.unit,
         source: ref.source,
-        description: ref.description
+        description: ref.description,
       }
       return acc
     }, {})
@@ -360,45 +342,38 @@ export async function GET(
       species,
       subtype,
       metric,
-      count: dbReferences.length
+      count: dbReferences.length,
     })
-
   } catch (error) {
     console.error('Erro ao buscar referências:', error)
-    return NextResponse.json(
-      { error: 'Erro ao buscar dados de referência' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro ao buscar dados de referência' }, { status: 500 })
   }
 }
 
 // POST - Adicionar novas referências
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { species: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { species: string } }) {
   try {
     const { species } = params
     const body = await request.json()
-    
+
     // Validar permissões (apenas admin)
     // ...
-    
+
     // Buscar ou criar espécie
     let speciesRecord = await prisma.animalSpecies.findUnique({
-      where: { code: species }
+      where: { code: species },
     })
-    
+
     if (!speciesRecord) {
       speciesRecord = await prisma.animalSpecies.create({
         data: {
           code: species,
           name: body.speciesName || species,
-          hasSubtypes: body.hasSubtypes || false
-        }
+          hasSubtypes: body.hasSubtypes || false,
+        },
       })
     }
-    
+
     // Criar referência
     const reference = await prisma.referenceData.create({
       data: {
@@ -410,21 +385,17 @@ export async function POST(
         maxValue: body.maxValue,
         unit: body.unit,
         source: body.source,
-        description: body.description
-      }
+        description: body.description,
+      },
     })
-    
+
     return NextResponse.json({
       success: true,
-      reference
+      reference,
     })
-    
   } catch (error) {
     console.error('Erro ao adicionar referência:', error)
-    return NextResponse.json(
-      { error: 'Erro ao adicionar referência' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro ao adicionar referência' }, { status: 500 })
   }
 }
 ```
@@ -446,16 +417,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { 
-      analysisData, 
-      species, 
-      subtype, 
+    const {
+      analysisData,
+      species,
+      subtype,
       targetAudience = 'producer',
-      detailLevel = 'medium' 
+      detailLevel = 'medium',
     } = body
 
     const interpreter = new EnhancedLaymanInterpretation()
-    
+
     // Gerar interpretação base
     const interpretation = await interpreter.interpret(
       analysisData,
@@ -463,14 +434,10 @@ export async function POST(request: NextRequest) {
       subtype,
       targetAudience
     )
-    
+
     // Adicionar insights específicos por espécie
-    const insights = generateSpeciesSpecificInsights(
-      analysisData,
-      species,
-      subtype
-    )
-    
+    const insights = generateSpeciesSpecificInsights(analysisData, species, subtype)
+
     // Gerar recomendações práticas
     const recommendations = generateRecommendations(
       analysisData,
@@ -478,44 +445,36 @@ export async function POST(request: NextRequest) {
       subtype,
       interpretation.status
     )
-    
+
     // Criar analogias visuais
-    const analogies = createVisualAnalogies(
-      analysisData,
-      species,
-      targetAudience
-    )
-    
+    const analogies = createVisualAnalogies(analysisData, species, targetAudience)
+
     return NextResponse.json({
       interpretation: {
         ...interpretation,
         insights,
         recommendations,
-        analogies
+        analogies,
       },
       metadata: {
         species,
         subtype,
         targetAudience,
         detailLevel,
-        generatedAt: new Date().toISOString()
-      }
+        generatedAt: new Date().toISOString(),
+      },
     })
-
   } catch (error) {
     console.error('Erro na interpretação:', error)
-    return NextResponse.json(
-      { error: 'Erro ao gerar interpretação' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro ao gerar interpretação' }, { status: 500 })
   }
 }
 
 // Funções auxiliares de interpretação
 function generateSpeciesSpecificInsights(data: any, species: string, subtype?: string) {
   const insights = []
-  
-  switch(species) {
+
+  switch (species) {
     case 'bovine':
       if (subtype === 'dairy') {
         // Análise de produção leiteira
@@ -525,22 +484,22 @@ function generateSpeciesSpecificInsights(data: any, species: string, subtype?: s
             title: 'Produção Abaixo do Esperado',
             message: 'Produção média de leite está abaixo do ideal para vacas em lactação',
             action: 'Revisar dieta e verificar qualidade da silagem',
-            priority: 'high'
+            priority: 'high',
           })
         }
-        
+
         if (data.ccs?.mean > 400000) {
           insights.push({
             type: 'alert',
             title: 'Alta Contagem de Células Somáticas',
             message: 'Indicativo de problemas de mastite no rebanho',
             action: 'Implementar protocolo de controle de mastite',
-            priority: 'high'
+            priority: 'high',
           })
         }
       }
       break
-      
+
     case 'poultry':
       if (subtype === 'broiler') {
         // Análise de frangos de corte
@@ -550,29 +509,29 @@ function generateSpeciesSpecificInsights(data: any, species: string, subtype?: s
             title: 'Conversão Alimentar Pode Melhorar',
             message: 'A conversão está acima do ideal para a idade',
             action: 'Verificar qualidade da ração e manejo alimentar',
-            priority: 'medium'
+            priority: 'medium',
           })
         }
-        
+
         if (data.mortalidade?.mean > 3) {
           insights.push({
             type: 'warning',
             title: 'Mortalidade Elevada',
             message: `Mortalidade de ${data.mortalidade.mean.toFixed(1)}% está acima do aceitável`,
             action: 'Revisar programa sanitário e ambiência',
-            priority: 'high'
+            priority: 'high',
           })
         }
       }
       break
   }
-  
+
   return insights
 }
 
 function generateRecommendations(data: any, species: string, subtype: string, status: string) {
   const recommendations = []
-  
+
   // Recomendações gerais baseadas no status
   if (status === 'attention') {
     recommendations.push({
@@ -581,11 +540,11 @@ function generateRecommendations(data: any, species: string, subtype: string, st
       items: [
         'Revisar programa nutricional',
         'Verificar condições sanitárias',
-        'Consultar veterinário/zootecnista'
-      ]
+        'Consultar veterinário/zootecnista',
+      ],
     })
   }
-  
+
   // Recomendações específicas por espécie
   if (species === 'bovine' && subtype === 'dairy') {
     recommendations.push({
@@ -594,11 +553,11 @@ function generateRecommendations(data: any, species: string, subtype: string, st
       items: [
         'Aumentar proteína em 2% na dieta',
         'Verificar qualidade da silagem (FDN e FDA)',
-        'Adicionar suplemento mineral específico para lactação'
-      ]
+        'Adicionar suplemento mineral específico para lactação',
+      ],
     })
   }
-  
+
   if (species === 'swine') {
     recommendations.push({
       category: 'management',
@@ -606,17 +565,17 @@ function generateRecommendations(data: any, species: string, subtype: string, st
       items: [
         'Ajustar densidade de alojamento',
         'Verificar temperatura ambiente (ideal: 18-22°C)',
-        'Implementar alimentação por fases'
-      ]
+        'Implementar alimentação por fases',
+      ],
     })
   }
-  
+
   return recommendations
 }
 
 function createVisualAnalogies(data: any, species: string, audience: string) {
   const analogies = []
-  
+
   if (audience === 'producer') {
     // Analogias práticas para produtores
     if (data.gpd?.mean) {
@@ -624,27 +583,28 @@ function createVisualAnalogies(data: any, species: string, audience: string) {
       analogies.push({
         metric: 'Ganho de Peso Diário',
         value: gpd,
-        analogy: species === 'bovine' 
-          ? `Como adicionar ${Math.round(gpd * 10)} bifes por mês`
-          : `Como adicionar ${Math.round(gpd * 1000 / 50)} grãos de milho por dia`,
-        visual: '🥩'.repeat(Math.min(5, Math.round(gpd * 2)))
+        analogy:
+          species === 'bovine'
+            ? `Como adicionar ${Math.round(gpd * 10)} bifes por mês`
+            : `Como adicionar ${Math.round((gpd * 1000) / 50)} grãos de milho por dia`,
+        visual: '🥩'.repeat(Math.min(5, Math.round(gpd * 2))),
       })
     }
-    
+
     if (data.producao_leite?.mean) {
       const leite = data.producao_leite.mean
       analogies.push({
         metric: 'Produção de Leite',
         value: leite,
         analogy: `Suficiente para ${Math.round(leite / 0.2)} copos de leite por dia`,
-        visual: '🥛'.repeat(Math.min(10, Math.round(leite / 5)))
+        visual: '🥛'.repeat(Math.min(10, Math.round(leite / 5))),
       })
     }
   } else {
     // Analogias técnicas para profissionais
     // ...
   }
-  
+
   return analogies
 }
 ```
@@ -661,19 +621,19 @@ const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Iniciando seed do banco de dados...')
-  
+
   // Criar espécies
   const species = await seedSpecies()
-  
+
   // Criar subtipos
   await seedSubtypes(species)
-  
+
   // Popular dados de referência
   await seedReferenceData(species)
-  
+
   // Popular dados de forragem
   await seedForageData()
-  
+
   console.log('✅ Seed concluído com sucesso!')
 }
 
@@ -685,21 +645,21 @@ async function seedSpecies() {
     { code: 'sheep', name: 'Ovinos', hasSubtypes: true },
     { code: 'goat', name: 'Caprinos', hasSubtypes: true },
     { code: 'forage', name: 'Forragem', hasSubtypes: false },
-    { code: 'aquaculture', name: 'Piscicultura', hasSubtypes: true }
+    { code: 'aquaculture', name: 'Piscicultura', hasSubtypes: true },
   ]
-  
+
   const species = {}
-  
+
   for (const sp of speciesData) {
     const created = await prisma.animalSpecies.upsert({
       where: { code: sp.code },
       update: {},
-      create: sp
+      create: sp,
     })
     species[sp.code] = created
     console.log(`✅ Espécie criada: ${sp.name}`)
   }
-  
+
   return species
 }
 
@@ -708,24 +668,24 @@ async function seedSubtypes(species: any) {
     { speciesCode: 'bovine', code: 'dairy', name: 'Leite' },
     { speciesCode: 'bovine', code: 'beef', name: 'Corte' },
     { speciesCode: 'bovine', code: 'dual', name: 'Dupla Aptidão' },
-    
+
     { speciesCode: 'poultry', code: 'broiler', name: 'Frango de Corte' },
     { speciesCode: 'poultry', code: 'layer', name: 'Poedeiras' },
     { speciesCode: 'poultry', code: 'breeder', name: 'Matrizes' },
-    
+
     { speciesCode: 'swine', code: 'nursery', name: 'Creche' },
     { speciesCode: 'swine', code: 'growing', name: 'Crescimento' },
     { speciesCode: 'swine', code: 'finishing', name: 'Terminação' },
-    { speciesCode: 'swine', code: 'breeding', name: 'Reprodução' }
+    { speciesCode: 'swine', code: 'breeding', name: 'Reprodução' },
   ]
-  
+
   for (const st of subtypesData) {
     await prisma.animalSubtype.create({
       data: {
         code: st.code,
         name: st.name,
-        speciesId: species[st.speciesCode].id
-      }
+        speciesId: species[st.speciesCode].id,
+      },
     })
     console.log(`  ✅ Subtipo criado: ${st.name} (${st.speciesCode})`)
   }
@@ -735,17 +695,17 @@ async function seedReferenceData(species: any) {
   // Popular dados do NRC
   for (const [speciesCode, speciesData] of Object.entries(NRC_REFERENCES)) {
     if (!species[speciesCode]) continue
-    
+
     for (const [subtypeCode, metrics] of Object.entries(speciesData as any)) {
       const subtype = await prisma.animalSubtype.findFirst({
         where: {
           code: subtypeCode,
-          speciesId: species[speciesCode].id
-        }
+          speciesId: species[speciesCode].id,
+        },
       })
-      
+
       if (!subtype) continue
-      
+
       for (const [metric, values] of Object.entries(metrics as any)) {
         await prisma.referenceData.create({
           data: {
@@ -757,13 +717,13 @@ async function seedReferenceData(species: any) {
             idealMaxValue: values.ideal_max,
             maxValue: values.max,
             unit: values.unit,
-            source: values.source || 'NRC'
-          }
+            source: values.source || 'NRC',
+          },
         })
       }
     }
   }
-  
+
   console.log('✅ Dados NRC importados')
 }
 
@@ -781,13 +741,13 @@ async function seedForageData() {
             maxValue: values.max,
             unit: values.unit,
             season: values.season,
-            source: values.source || 'EMBRAPA'
-          }
+            source: values.source || 'EMBRAPA',
+          },
         })
       }
     }
   }
-  
+
   console.log('✅ Dados de forragem importados')
 }
 

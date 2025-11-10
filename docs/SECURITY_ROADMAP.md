@@ -5,6 +5,7 @@
 ## ✅ TAREFAS CONCLUÍDAS
 
 ### ✔️ 2.1 - Implementação de CORS
+
 - **Arquivo criado**: `lib/cors.ts`
 - **Middleware atualizado**: `middleware.ts`
 - **Status**: ✅ COMPLETO
@@ -14,6 +15,7 @@
   - Origens permitidas configuráveis
 
 ### ✔️ 2.2 - Rate Limiting com Upstash
+
 - **Arquivo criado**: `lib/rate-limit.ts`
 - **Rotas protegidas**:
   - `/api/auth/signup` - 5 req/min
@@ -27,6 +29,7 @@
   - Fallback seguro se Redis não estiver disponível
 
 ### ✔️ 2.3 - Configuração de Banco de Dados (PARCIAL)
+
 - **Arquivo atualizado**: `.env.example`
 - **Status**: ⚠️ PARCIALMENTE COMPLETO
 - **Detalhes**:
@@ -41,15 +44,18 @@
 ## 🔧 TAREFAS PENDENTES - ALTA PRIORIDADE
 
 ### 🚨 3.1 - Segurança de Upload de Arquivos
+
 **Status**: ❌ NÃO INICIADO  
 **Prioridade**: CRÍTICA  
 **Arquivos a modificar**:
+
 - `lib/file-validation.ts`
 - `lib/upload-validation.ts`
 - `app/api/analise/upload/route.ts`
 - `app/api/analysis/multi-species/route.ts`
 
 **Implementação necessária**:
+
 ```typescript
 // lib/upload-security.ts
 import crypto from 'crypto'
@@ -71,10 +77,10 @@ export function scanForMaliciousPatterns(content: string): boolean {
     /on\w+\s*=/gi,
     /eval\(/gi,
     /document\./gi,
-    /window\./gi
+    /window\./gi,
   ]
-  
-  return maliciousPatterns.some(pattern => pattern.test(content))
+
+  return maliciousPatterns.some((pattern) => pattern.test(content))
 }
 
 // 3. Sanitização de nome de arquivo
@@ -87,9 +93,9 @@ export function sanitizeFilename(filename: string): string {
 
 // 4. Limite de tamanho por tipo
 export const FILE_SIZE_LIMITS = {
-  csv: 10 * 1024 * 1024,  // 10MB para CSV
-  image: 5 * 1024 * 1024,  // 5MB para imagens
-  document: 20 * 1024 * 1024 // 20MB para documentos
+  csv: 10 * 1024 * 1024, // 10MB para CSV
+  image: 5 * 1024 * 1024, // 5MB para imagens
+  document: 20 * 1024 * 1024, // 20MB para documentos
 }
 
 // 5. Processamento assíncrono
@@ -99,13 +105,14 @@ export async function processFileAsync(file: File) {
   await addToQueue('file-processing', {
     jobId,
     file,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   })
   return { jobId, status: 'processing' }
 }
 ```
 
 **Tarefas**:
+
 - [ ] Instalar `file-type` para verificação MIME real
 - [ ] Implementar verificação de padrões maliciosos
 - [ ] Adicionar sanitização de nomes de arquivo
@@ -115,12 +122,15 @@ export async function processFileAsync(file: File) {
 ---
 
 ### 📊 3.2 - Otimização de Queries com Paginação
+
 **Status**: ❌ NÃO INICIADO  
 **Prioridade**: ALTA  
 **Arquivos a modificar**:
+
 - Todas as rotas API com `findMany()`
 
 **Implementação necessária**:
+
 ```typescript
 // lib/pagination.ts
 export interface PaginationParams {
@@ -151,20 +161,22 @@ export async function paginate<T>(
   const page = Math.max(1, params.page || 1)
   const limit = Math.min(100, Math.max(1, params.limit || 20))
   const skip = (page - 1) * limit
-  
+
   const [data, total] = await Promise.all([
     model.findMany({
       where,
       include,
       skip,
       take: limit,
-      orderBy: params.sortBy ? {
-        [params.sortBy]: params.sortOrder || 'desc'
-      } : undefined
+      orderBy: params.sortBy
+        ? {
+            [params.sortBy]: params.sortOrder || 'desc',
+          }
+        : undefined,
     }),
-    model.count({ where })
+    model.count({ where }),
   ])
-  
+
   return {
     data,
     meta: {
@@ -173,13 +185,14 @@ export async function paginate<T>(
       limit,
       totalPages: Math.ceil(total / limit),
       hasNext: page * limit < total,
-      hasPrev: page > 1
-    }
+      hasPrev: page > 1,
+    },
   }
 }
 ```
 
 **Rotas a atualizar**:
+
 - [ ] `/api/referencias/search` - Adicionar paginação
 - [ ] `/api/reference/species` - Limitar resultados
 - [ ] `/api/analysis/multi-species` - Paginar histórico
@@ -188,13 +201,16 @@ export async function paginate<T>(
 ---
 
 ### 💾 3.3 - Implementação Adequada de Cache
+
 **Status**: ❌ NÃO INICIADO  
 **Prioridade**: MÉDIA  
 **Arquivos a modificar**:
+
 - `lib/cache.ts`
 - Todas as rotas GET públicas
 
 **Implementação necessária**:
+
 ```typescript
 // lib/cache-manager.ts
 import { Redis } from '@upstash/redis'
@@ -208,25 +224,25 @@ interface CacheConfig {
 class CacheManager {
   private redis: Redis | null
   private version: string
-  
+
   constructor() {
     this.version = process.env.CACHE_VERSION || '1'
     this.redis = this.initRedis()
   }
-  
+
   private initRedis() {
     if (!process.env.UPSTASH_REDIS_REST_URL) {
       return null
     }
     return new Redis({
       url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!
+      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
     })
   }
-  
+
   async get<T>(key: string): Promise<T | null> {
     if (!this.redis) return null
-    
+
     const versionedKey = `${this.version}:${key}`
     try {
       const data = await this.redis.get(versionedKey)
@@ -236,20 +252,16 @@ class CacheManager {
       return null
     }
   }
-  
-  async set(
-    key: string, 
-    value: any, 
-    config: CacheConfig = {}
-  ): Promise<void> {
+
+  async set(key: string, value: any, config: CacheConfig = {}): Promise<void> {
     if (!this.redis) return
-    
+
     const versionedKey = `${this.version}:${key}`
     const ttl = config.ttl || 3600 // Default 1 hour
-    
+
     try {
       await this.redis.setex(versionedKey, ttl, JSON.stringify(value))
-      
+
       // Store tags for invalidation
       if (config.tags) {
         for (const tag of config.tags) {
@@ -261,10 +273,10 @@ class CacheManager {
       console.error('Cache set error:', error)
     }
   }
-  
+
   async invalidate(key: string): Promise<void> {
     if (!this.redis) return
-    
+
     const versionedKey = `${this.version}:${key}`
     try {
       await this.redis.del(versionedKey)
@@ -272,10 +284,10 @@ class CacheManager {
       console.error('Cache invalidate error:', error)
     }
   }
-  
+
   async invalidateTag(tag: string): Promise<void> {
     if (!this.redis) return
-    
+
     try {
       const keys = await this.redis.smembers(`tag:${tag}`)
       if (keys.length > 0) {
@@ -292,6 +304,7 @@ export const cacheManager = new CacheManager()
 ```
 
 **Implementar cache em**:
+
 - [ ] `/api/reference/[species]/data` - Cache de dados de referência
 - [ ] `/api/referencias/search` - Cache de buscas frequentes
 - [ ] Dados estáticos que raramente mudam
@@ -301,16 +314,19 @@ export const cacheManager = new CacheManager()
 ## 📝 TAREFAS PENDENTES - MÉDIA PRIORIDADE
 
 ### 🧪 4.2 - Testes Automatizados
+
 **Status**: ❌ NÃO INICIADO  
 **Prioridade**: MÉDIA
 
 **Setup necessário**:
+
 ```bash
 npm install --save-dev @testing-library/react @testing-library/jest-dom jest-environment-jsdom
 npm install --save-dev @types/jest supertest msw
 ```
 
 **Configuração Jest** (`jest.config.js`):
+
 ```javascript
 const nextJest = require('next/jest')
 
@@ -324,10 +340,7 @@ const customJestConfig = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
-  testMatch: [
-    '**/__tests__/**/*.test.[jt]s?(x)',
-    '**/?(*.)+(spec|test).[jt]s?(x)'
-  ],
+  testMatch: ['**/__tests__/**/*.test.[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
   collectCoverageFrom: [
     'app/**/*.{js,jsx,ts,tsx}',
     'lib/**/*.{js,jsx,ts,tsx}',
@@ -339,15 +352,16 @@ const customJestConfig = {
       branches: 50,
       functions: 50,
       lines: 50,
-      statements: 50
-    }
-  }
+      statements: 50,
+    },
+  },
 }
 
 module.exports = createJestConfig(customJestConfig)
 ```
 
 **Testes prioritários a criar**:
+
 ```typescript
 // __tests__/api/auth/signup.test.ts
 import { POST } from '@/app/api/auth/signup/route'
@@ -357,44 +371,44 @@ describe('/api/auth/signup', () => {
   beforeEach(async () => {
     await prisma.user.deleteMany()
   })
-  
+
   test('should create user with valid data', async () => {
     const request = new Request('http://localhost/api/auth/signup', {
       method: 'POST',
       body: JSON.stringify({
         name: 'Test User',
         email: 'test@test.com',
-        password: '123456'
-      })
+        password: '123456',
+      }),
     })
-    
+
     const response = await POST(request)
     const data = await response.json()
-    
+
     expect(response.status).toBe(201)
     expect(data.success).toBe(true)
     expect(data.user.email).toBe('test@test.com')
   })
-  
+
   test('should reject duplicate email', async () => {
     // Create first user
     await prisma.user.create({
       data: {
         name: 'Existing',
         email: 'test@test.com',
-        password: 'hashed'
-      }
+        password: 'hashed',
+      },
     })
-    
+
     const request = new Request('http://localhost/api/auth/signup', {
       method: 'POST',
       body: JSON.stringify({
         name: 'Test User',
         email: 'test@test.com',
-        password: '123456'
-      })
+        password: '123456',
+      }),
     })
-    
+
     const response = await POST(request)
     expect(response.status).toBe(400)
   })
@@ -402,6 +416,7 @@ describe('/api/auth/signup', () => {
 ```
 
 **Testes a implementar**:
+
 - [ ] Auth: signup, login, forgot-password, reset-password
 - [ ] Upload: validação de arquivo, limites de tamanho
 - [ ] Rate Limiting: verificar se limites funcionam
@@ -411,15 +426,18 @@ describe('/api/auth/signup', () => {
 ---
 
 ### 📚 4.3 - Documentação API OpenAPI
+
 **Status**: ❌ NÃO INICIADO  
 **Prioridade**: BAIXA
 
 **Setup**:
+
 ```bash
 npm install --save-dev @apidevtools/swagger-cli swagger-ui-react
 ```
 
 **Criar** `openapi.yaml`:
+
 ```yaml
 openapi: 3.0.0
 info:
@@ -439,7 +457,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      
+
   schemas:
     Error:
       type: object
@@ -450,7 +468,7 @@ components:
           type: string
         details:
           type: object
-          
+
     User:
       type: object
       properties:
@@ -514,6 +532,7 @@ paths:
 ```
 
 **Criar rota para Swagger UI**:
+
 ```typescript
 // app/api/docs/route.ts
 import { NextResponse } from 'next/server'
@@ -522,10 +541,8 @@ import yaml from 'js-yaml'
 import fs from 'fs'
 
 export async function GET() {
-  const spec = yaml.load(
-    fs.readFileSync('./openapi.yaml', 'utf8')
-  )
-  
+  const spec = yaml.load(fs.readFileSync('./openapi.yaml', 'utf8'))
+
   return NextResponse.json(spec)
 }
 ```
@@ -535,19 +552,24 @@ export async function GET() {
 ## 🎯 TAREFAS PENDENTES - BAIXA PRIORIDADE
 
 ### 🔄 5.1 - Migração de Dados Estruturados
+
 **Status**: ❌ NÃO INICIADO  
 **Detalhes**: Migrar campos JSON para colunas estruturadas no banco de dados
 
 ### 📊 5.2 - Monitoring & Observability
+
 **Status**: ❌ NÃO INICIADO  
 **Ferramentas sugeridas**:
+
 - Sentry para error tracking
 - Datadog ou New Relic para APM
 - Grafana + Prometheus para métricas
 
 ### 🚀 5.3 - CI/CD Pipeline
+
 **Status**: ❌ NÃO INICIADO  
 **GitHub Actions** (`.github/workflows/ci.yml`):
+
 ```yaml
 name: CI/CD Pipeline
 
@@ -560,31 +582,31 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
-          
+
       - name: Install dependencies
         run: npm ci
-        
+
       - name: Run linter
         run: npm run lint
-        
+
       - name: Type check
         run: npm run type-check
-        
+
       - name: Run tests
         run: npm test -- --coverage
-        
+
       - name: Build application
         run: npm run build
-        
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
@@ -594,23 +616,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Run security audit
         run: npm audit --audit-level=high
-        
+
       - name: Check for secrets
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          
+
   deploy:
     needs: [test, security]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:
@@ -650,19 +672,23 @@ jobs:
 ## 📌 NOTAS IMPORTANTES
 
 ### Segurança
+
 - Rate limiting implementado mas precisa de Redis configurado
 - CORS implementado mas origens permitidas devem ser revisadas em produção
 - Console.logs ainda presentes - substituir por logger condicional
 
 ### Performance
+
 - Queries sem paginação podem causar problemas com datasets grandes
 - Cache básico implementado mas precisa melhorias
 
 ### Manutenibilidade
+
 - Testes ausentes tornam refatoração arriscada
 - Documentação API incompleta dificulta integração
 
 ### Para a Próxima Iteração
+
 1. Focar primeiro em completar tarefas de alta prioridade (3.1, 3.2, 3.3)
 2. Implementar testes básicos antes de fazer grandes mudanças
 3. Revisar todas as variáveis de ambiente antes do deploy
@@ -697,4 +723,4 @@ npm run build
 
 ---
 
-*Este roadmap deve ser atualizado conforme as tarefas são completadas. Última atualização: 05/11/2024*
+_Este roadmap deve ser atualizado conforme as tarefas são completadas. Última atualização: 05/11/2024_

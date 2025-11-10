@@ -13,12 +13,12 @@
 
 2. Verifique se TODAS estas variáveis existem:
 
-| Variável | Valor |
-|----------|-------|
-| `NEXTAUTH_SECRET` | `rPzwnruatfYJSDcTzzNLRvfy0T0N89vC0i4bc11LlaM=` |
-| `NEXTAUTH_URL` | `https://[seu-app].vercel.app` (URL real do seu app) |
-| `DATABASE_URL` | `postgresql://...` (da Vercel Postgres ou Supabase) |
-| `DIRECT_URL` | `postgresql://...` (mesmo que DATABASE_URL) |
+| Variável          | Valor                                                |
+| ----------------- | ---------------------------------------------------- |
+| `NEXTAUTH_SECRET` | `rPzwnruatfYJSDcTzzNLRvfy0T0N89vC0i4bc11LlaM=`       |
+| `NEXTAUTH_URL`    | `https://[seu-app].vercel.app` (URL real do seu app) |
+| `DATABASE_URL`    | `postgresql://...` (da Vercel Postgres ou Supabase)  |
+| `DIRECT_URL`      | `postgresql://...` (mesmo que DATABASE_URL)          |
 
 **Se DATABASE_URL não existir:**
 
@@ -47,11 +47,13 @@ O banco está vazio! Você precisa criar os usuários.
 1. Copie a `DATABASE_URL` de produção do Vercel
 
 2. Cole temporariamente no arquivo `.env` local:
+
    ```env
    DATABASE_URL="sua-database-url-de-producao"
    ```
 
 3. Execute o script:
+
    ```bash
    npx tsx scripts/seed-production.ts
    ```
@@ -70,7 +72,7 @@ Após seguir todos os passos:
 
 ✅ Cadastro de novos usuários funciona  
 ✅ Login com credenciais demo funciona  
-✅ Dashboard carrega normalmente  
+✅ Dashboard carrega normalmente
 
 ---
 

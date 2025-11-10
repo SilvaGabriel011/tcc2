@@ -2,19 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { gerarDiagnosticoLocal } from '@/lib/diagnostico-local'
+import { generateDiagnostico } from '@/lib/diagnostico-generator'
 import { getCache, setCache } from '@/lib/multi-level-cache'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { analysisId: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { analysisId: string } }) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
@@ -26,9 +23,9 @@ export async function GET(
       where: {
         id: analysisId,
         project: {
-          ownerId: session.user.id
-        }
-      }
+          ownerId: session.user.id,
+        },
+      },
     })
 
     if (!analysis) {
@@ -36,64 +33,75 @@ export async function GET(
     }
 
     const cacheKey = `diagnostico:${analysisId}`
-    const cachedDiagnostico = await getCache<{
-      diagnostico: string;
-      geradoEm: string;
-      metodo: string;
-    }>(cacheKey)
+    interface DiagnosticoCache {
+      summary: string
+      recommendations: string[]
+      strengths: string[]
+      alerts: string[]
+      insights: Record<string, unknown>
+      metadata: Record<string, unknown>
+    }
+    const cachedDiagnostico = await getCache<DiagnosticoCache>(cacheKey)
 
     if (cachedDiagnostico) {
       return NextResponse.json({
         success: true,
-        diagnostico: cachedDiagnostico.diagnostico,
-        geradoEm: cachedDiagnostico.geradoEm,
-        metodo: cachedDiagnostico.metodo,
-        cached: true
+        diagnostico: cachedDiagnostico,
+        cached: true,
       })
     }
 
     const data = JSON.parse(analysis.data)
     const metadata = analysis.metadata ? JSON.parse(analysis.metadata) : {}
 
-    console.log('🔍 Gerando diagnóstico local (baseado em regras)...')
-    console.log('📊 Total de variáveis:', Object.keys(data.numericStats || {}).length)
+    console.log('🔍 Gerando diagnóstico avançado...')
+    console.log(
+      '📊 Total de variáveis:',
+      Object.keys(data.numericStats || data.statistics || {}).length
+    )
 
-    // Gerar diagnóstico com regras baseadas em literatura zootécnica
-    const diagnostico = gerarDiagnosticoLocal(
-      data.numericStats || {},
-      data.categoricalStats || {},
-      analysis.name,
-      metadata.totalRows || 0
+    // Gerar diagnóstico com o novo sistema avançado
+    const diagnosticoData = {
+      species: metadata.species || 'unknown',
+      subtype: metadata.subtype,
+      statistics: data.statistics || { numericStats: data.numericStats },
+      references: data.references || {},
+      correlations: data.correlations,
+      metadata,
+    }
+
+    const diagnosticoResult = generateDiagnostico(
+      diagnosticoData as Parameters<typeof generateDiagnostico>[0]
     )
 
     console.log('✅ Diagnóstico gerado com sucesso')
 
-    // Preparar resposta
+    // Preparar resposta no formato esperado pelo frontend
     const response = {
-      diagnostico,
+      ...diagnosticoResult,
+      diagnostico: `Diagnóstico gerado para ${analysis.name}`,
       geradoEm: new Date().toISOString(),
-      metodo: 'Análise baseada em referências zootécnicas (EMBRAPA, NRC)'
+      metodo: 'Análise Estatística Avançada com IA',
     }
 
     // 💾 MULTI-LEVEL CACHE: Salvar no cache (L1 + L2, 24 horas = 86400s)
-    await setCache(cacheKey, response, { 
-      ttl: 86400, 
-      tags: ['diagnostic', `analysis:${analysisId}`] 
+    await setCache(cacheKey, response, {
+      ttl: 86400,
+      tags: ['diagnostic', `analysis:${analysisId}`],
     })
 
     return NextResponse.json({
       success: true,
       ...response,
-      cached: false
+      cached: false,
     })
-
   } catch (error) {
     console.error('❌ Erro ao gerar diagnóstico:', error)
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Erro ao gerar diagnóstico. Tente novamente.',
-        details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+        details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined,
       },
       { status: 500 }
     )

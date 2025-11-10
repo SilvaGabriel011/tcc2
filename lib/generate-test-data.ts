@@ -3,6 +3,8 @@
  * Cria planilhas CSV com dados realistas para demonstração
  */
 
+import { normalizeSpeciesId } from './species-mapping'
+
 export type Species =
   | 'bovino'
   | 'suino'
@@ -11,6 +13,13 @@ export type Species =
   | 'caprino'
   | 'piscicultura'
   | 'forragem'
+  | 'bovine'
+  | 'swine'
+  | 'poultry'
+  | 'sheep'
+  | 'goat'
+  | 'aquaculture'
+  | 'forage'
 
 export interface TestDataConfig {
   rows: number
@@ -46,9 +55,12 @@ const FORRAGEM_TIPOS = [
 
 const SEXO = ['Macho', 'Fêmea']
 const ESTADOS = ['MT', 'MS', 'GO', 'SP', 'MG', 'RS', 'PR', 'BA']
-const BOVINO_CATEGORIAS = ['Bezerro', 'Recria', 'Terminação', 'Reprodução']
-const SUINO_CATEGORIAS = ['Leitão', 'Crescimento', 'Terminação', 'Reprodução']
+const BOVINO_CATEGORIAS = ['Bezerro', 'Recria', 'Terminação', 'Leiteira', 'Reprodutor']
+const SUINO_CATEGORIAS = ['Leitão', 'Crescimento', 'Terminação', 'Reprodutor']
 const AVE_CATEGORIAS = ['Inicial', 'Crescimento', 'Terminação', 'Postura']
+const OVINO_CATEGORIAS = ['Cordeiro', 'Borrego', 'Adulto', 'Matriz']
+const CAPRINO_CATEGORIAS = ['Cabrito', 'Jovem', 'Adulto', 'Matriz']
+const PEIXE_CATEGORIAS = ['Alevino', 'Juvenil', 'Adulto', 'Reprodutor']
 const MESES = [
   'Janeiro',
   'Fevereiro',
@@ -120,7 +132,10 @@ export function generateTestData(
     rng = null
   }
 
-  switch (config.species) {
+  // Normalize species ID to backend format
+  const normalizedSpecies = normalizeSpeciesId(config.species)
+
+  switch (normalizedSpecies) {
     case 'bovino':
       return generateBovinoData(config)
     case 'suino':
@@ -169,14 +184,16 @@ function generateBovinoData(config: TestDataConfig): Record<string, unknown>[] {
       pesoAtual = sexo === 'Macho' ? randomBetween(700, 900, 1) : randomBetween(450, 550, 1)
     }
 
-    const idadeMeses =
-      categoria === 'Bezerro'
-        ? randomBetween(3, 8, 0)
-        : categoria === 'Recria'
-          ? randomBetween(8, 18, 0)
-          : categoria === 'Terminação'
-            ? randomBetween(18, 30, 0)
-            : randomBetween(30, 72, 0)
+    let idadeMeses: number
+    if (categoria === 'Bezerro') {
+      idadeMeses = randomBetween(3, 8, 0)
+    } else if (categoria === 'Recria') {
+      idadeMeses = randomBetween(8, 18, 0)
+    } else if (categoria === 'Terminação') {
+      idadeMeses = randomBetween(18, 30, 0)
+    } else {
+      idadeMeses = randomBetween(30, 72, 0)
+    }
 
     const row: Record<string, unknown> = {
       ID: `BOV${String(i).padStart(5, '0')}`,
@@ -193,14 +210,17 @@ function generateBovinoData(config: TestDataConfig): Record<string, unknown>[] {
 
     if (config.includeNumeric) {
       row.ANO = possiblyNull(randomBetween(2023, 2025, 0), missingProb)
-      row.PESO_NASCIMENTO_KG = possiblyNull(pesoNasc, missingProb)
-      row.PESO_DESMAME_KG = possiblyNull(pesoDesmame, missingProb)
-      row.PESO_ATUAL_KG = possiblyNull(pesoAtual, missingProb)
-      row.IDADE_MESES = possiblyNull(idadeMeses, missingProb)
-      row.GPD = possiblyNull(randomBetween(0.6, 1.3, 3), missingProb)
-      row.CA = possiblyNull(randomBetween(6, 10, 2), missingProb)
-      row.RENDIMENTO_CARCACA = possiblyNull(randomBetween(48, 56, 1), missingProb)
-      row.ESCORE_CORPORAL = possiblyNull(randomBetween(2.5, 4.5, 1), missingProb)
+      row.peso_nascimento = possiblyNull(pesoNasc, missingProb)
+      row.peso_desmame = possiblyNull(pesoDesmame, missingProb)
+      row.peso = possiblyNull(pesoAtual, missingProb)
+      row.idade_meses = possiblyNull(idadeMeses, missingProb)
+      row.gpd = possiblyNull(randomBetween(0.8, 1.4, 3), missingProb)
+      row.conversao = possiblyNull(randomBetween(5.5, 8.5, 2), missingProb)
+      row.rendimento_carcaca = possiblyNull(randomBetween(50, 58, 1), missingProb)
+      row.escore_corporal = possiblyNull(randomBetween(3, 4, 1), missingProb)
+      row.mortalidade = possiblyNull(randomBetween(0.5, 3.5, 2), missingProb)
+      row.producao_leite =
+        categoria === 'Leiteira' ? possiblyNull(randomBetween(25, 40, 1), missingProb) : null
     }
 
     data.push(row)
@@ -249,12 +269,13 @@ function generateSuinoData(config: TestDataConfig): Record<string, unknown>[] {
 
     if (config.includeNumeric) {
       row.ANO = possiblyNull(randomBetween(2023, 2025, 0), missingProb)
-      row.PESO_ATUAL_KG = possiblyNull(pesoAtual, missingProb)
-      row.IDADE_DIAS = possiblyNull(idadeDias, missingProb)
-      row.GPD = possiblyNull(randomBetween(0.7, 1.1, 3), missingProb)
-      row.CA = possiblyNull(randomBetween(2.2, 3.5, 2), missingProb)
-      row.RENDIMENTO_CARCACA = possiblyNull(randomBetween(75, 82, 1), missingProb)
-      row.ESPESSURA_TOUCINHO_MM = possiblyNull(randomBetween(10, 20, 1), missingProb)
+      row.peso = possiblyNull(pesoAtual, missingProb)
+      row.idade_dias = possiblyNull(idadeDias, missingProb)
+      row.gpd = possiblyNull(randomBetween(0.75, 1.05, 3), missingProb)
+      row.conversao = possiblyNull(randomBetween(2.5, 3.2, 2), missingProb)
+      row.rendimento_carcaca = possiblyNull(randomBetween(76, 82, 1), missingProb)
+      row.espessura_toucinho = possiblyNull(randomBetween(12, 18, 1), missingProb)
+      row.mortalidade = possiblyNull(randomBetween(1, 4, 2), missingProb)
     }
 
     data.push(row)
@@ -303,14 +324,15 @@ function generateAviculturaData(config: TestDataConfig): Record<string, unknown>
 
     if (config.includeNumeric) {
       row.ANO = possiblyNull(randomBetween(2023, 2025, 0), missingProb)
-      row.PESO_ATUAL_KG = possiblyNull(pesoAtual, missingProb)
-      row.IDADE_DIAS = possiblyNull(idadeDias, missingProb)
-      row.GPD = possiblyNull(randomBetween(0.05, 0.08, 3), missingProb)
-      row.CA = possiblyNull(randomBetween(1.6, 2.2, 2), missingProb)
-      row.MORTALIDADE_PERCENT = possiblyNull(randomBetween(1, 5, 1), missingProb)
-      if (categoria === 'Postura') {
-        row.PRODUCAO_OVOS_DIA = possiblyNull(randomBetween(0.85, 0.95, 2), missingProb)
-      }
+      row.peso = possiblyNull(pesoAtual, missingProb) // Em kg
+      row.idade_dias = possiblyNull(idadeDias, missingProb)
+      row.gpd = possiblyNull(randomBetween(0.045, 0.065, 3), missingProb) // kg/dia
+      row.conversao = possiblyNull(randomBetween(1.6, 2.0, 2), missingProb)
+      row.mortalidade = possiblyNull(randomBetween(2, 6, 1), missingProb)
+      row.viabilidade = possiblyNull(randomBetween(94, 98, 1), missingProb)
+      row.iep = possiblyNull(randomBetween(320, 380, 0), missingProb) // Índice de Eficiência Produtiva
+      row.producao_ovos =
+        categoria === 'Postura' ? possiblyNull(randomBetween(280, 320, 0), missingProb) : null
     }
 
     data.push(row)
@@ -326,9 +348,18 @@ function generateOvinoData(config: TestDataConfig): Record<string, unknown>[] {
   for (let i = 1; i <= config.rows; i++) {
     const sexo = randomChoice(SEXO)
     const raca = randomChoice(OVINO_RACAS)
+    const categoria = randomChoice(OVINO_CATEGORIAS)
 
-    const pesoAtual = sexo === 'Macho' ? randomBetween(60, 100, 1) : randomBetween(40, 70, 1)
-    const idadeMeses = randomBetween(6, 36, 0)
+    let pesoAtual = 45
+    if (categoria === 'Cordeiro') {
+      pesoAtual = randomBetween(25, 35, 1)
+    } else if (categoria === 'Borrego') {
+      pesoAtual = randomBetween(35, 45, 1)
+    } else if (categoria === 'Adulto') {
+      pesoAtual = randomBetween(45, 70, 1)
+    } else {
+      pesoAtual = randomBetween(40, 55, 1)
+    }
 
     const row: Record<string, unknown> = {
       ID: `OVI${String(i).padStart(5, '0')}`,
@@ -338,17 +369,22 @@ function generateOvinoData(config: TestDataConfig): Record<string, unknown>[] {
     if (config.includeCategorical) {
       row.RACA = possiblyNull(raca, missingProb)
       row.SEXO = possiblyNull(sexo, missingProb)
+      row.CATEGORIA = possiblyNull(categoria, missingProb)
       row.ESTADO = possiblyNull(randomChoice(ESTADOS), missingProb)
       row.MES = possiblyNull(randomChoice(MESES), missingProb)
     }
 
     if (config.includeNumeric) {
       row.ANO = possiblyNull(randomBetween(2023, 2025, 0), missingProb)
-      row.PESO_ATUAL_KG = possiblyNull(pesoAtual, missingProb)
-      row.IDADE_MESES = possiblyNull(idadeMeses, missingProb)
-      row.GPD = possiblyNull(randomBetween(0.15, 0.35, 3), missingProb)
-      row.RENDIMENTO_CARCACA = possiblyNull(randomBetween(45, 52, 1), missingProb)
-      row.ESCORE_CORPORAL = possiblyNull(randomBetween(2.0, 4.0, 1), missingProb)
+      row.peso = possiblyNull(pesoAtual, missingProb)
+      row.idade_meses = possiblyNull(randomBetween(6, 36, 0), missingProb)
+      row.gpd = possiblyNull(randomBetween(0.15, 0.28, 3), missingProb)
+      row.conversao = possiblyNull(randomBetween(4.5, 6.5, 2), missingProb)
+      row.rendimento_carcaca = possiblyNull(randomBetween(44, 50, 1), missingProb)
+      row.mortalidade = possiblyNull(randomBetween(2, 6, 1), missingProb)
+      row.prolificidade =
+        categoria === 'Matriz' ? possiblyNull(randomBetween(1.2, 1.8, 2), missingProb) : null
+      row.producao_la = possiblyNull(randomBetween(2, 5, 1), missingProb) // kg/ano
     }
 
     data.push(row)
@@ -364,9 +400,18 @@ function generateCaprinoData(config: TestDataConfig): Record<string, unknown>[] 
   for (let i = 1; i <= config.rows; i++) {
     const sexo = randomChoice(SEXO)
     const raca = randomChoice(CAPRINO_RACAS)
+    const categoria = randomChoice(CAPRINO_CATEGORIAS)
 
-    const pesoAtual = sexo === 'Macho' ? randomBetween(50, 80, 1) : randomBetween(35, 60, 1)
-    const idadeMeses = randomBetween(6, 36, 0)
+    let pesoAtual = 40
+    if (categoria === 'Cabrito') {
+      pesoAtual = randomBetween(15, 25, 1)
+    } else if (categoria === 'Jovem') {
+      pesoAtual = randomBetween(25, 40, 1)
+    } else if (categoria === 'Adulto') {
+      pesoAtual = randomBetween(40, 65, 1)
+    } else {
+      pesoAtual = randomBetween(35, 50, 1)
+    }
 
     const row: Record<string, unknown> = {
       ID: `CAP${String(i).padStart(5, '0')}`,
@@ -376,17 +421,23 @@ function generateCaprinoData(config: TestDataConfig): Record<string, unknown>[] 
     if (config.includeCategorical) {
       row.RACA = possiblyNull(raca, missingProb)
       row.SEXO = possiblyNull(sexo, missingProb)
+      row.CATEGORIA = possiblyNull(categoria, missingProb)
       row.ESTADO = possiblyNull(randomChoice(ESTADOS), missingProb)
       row.MES = possiblyNull(randomChoice(MESES), missingProb)
     }
 
     if (config.includeNumeric) {
       row.ANO = possiblyNull(randomBetween(2023, 2025, 0), missingProb)
-      row.PESO_ATUAL_KG = possiblyNull(pesoAtual, missingProb)
-      row.IDADE_MESES = possiblyNull(idadeMeses, missingProb)
-      row.GPD = possiblyNull(randomBetween(0.12, 0.3, 3), missingProb)
-      row.RENDIMENTO_CARCACA = possiblyNull(randomBetween(42, 50, 1), missingProb)
-      row.PRODUCAO_LEITE_DIA_L = possiblyNull(randomBetween(1.5, 4.0, 2), missingProb)
+      row.peso = possiblyNull(pesoAtual, missingProb)
+      row.idade_meses = possiblyNull(randomBetween(6, 36, 0), missingProb)
+      row.gpd = possiblyNull(randomBetween(0.12, 0.22, 3), missingProb)
+      row.conversao = possiblyNull(randomBetween(5, 7, 2), missingProb)
+      row.rendimento_carcaca = possiblyNull(randomBetween(42, 48, 1), missingProb)
+      row.mortalidade = possiblyNull(randomBetween(3, 7, 1), missingProb)
+      row.prolificidade =
+        categoria === 'Matriz' ? possiblyNull(randomBetween(1.5, 2.2, 2), missingProb) : null
+      row.producao_leite =
+        categoria === 'Matriz' ? possiblyNull(randomBetween(1.5, 3.5, 2), missingProb) : null
     }
 
     data.push(row)
@@ -401,29 +452,42 @@ function generatePisciculturaData(config: TestDataConfig): Record<string, unknow
 
   for (let i = 1; i <= config.rows; i++) {
     const especie = randomChoice(PEIXE_ESPECIES)
+    const categoria = randomChoice(PEIXE_CATEGORIAS)
 
-    const pesoAtual = randomBetween(0.5, 2.5, 2)
-    const idadeDias = randomBetween(90, 240, 0)
+    let pesoAtual = 1
+    if (categoria === 'Alevino') {
+      pesoAtual = randomBetween(0.005, 0.03, 3)
+    } else if (categoria === 'Juvenil') {
+      pesoAtual = randomBetween(0.1, 0.5, 2)
+    } else if (categoria === 'Adulto') {
+      pesoAtual = randomBetween(0.8, 2.5, 2)
+    } else {
+      pesoAtual = randomBetween(2, 4, 2)
+    }
 
     const row: Record<string, unknown> = {
       ID: `PEI${String(i).padStart(5, '0')}`,
-      TANQUE: `T${String(Math.ceil(i / 50)).padStart(3, '0')}`,
+      TANQUE: `T${String(Math.ceil(i / 50)).padStart(2, '0')}`,
     }
 
     if (config.includeCategorical) {
       row.ESPECIE = possiblyNull(especie, missingProb)
+      row.CATEGORIA = possiblyNull(categoria, missingProb)
       row.ESTADO = possiblyNull(randomChoice(ESTADOS), missingProb)
       row.MES = possiblyNull(randomChoice(MESES), missingProb)
     }
 
     if (config.includeNumeric) {
       row.ANO = possiblyNull(randomBetween(2023, 2025, 0), missingProb)
-      row.PESO_ATUAL_KG = possiblyNull(pesoAtual, missingProb)
-      row.IDADE_DIAS = possiblyNull(idadeDias, missingProb)
-      row.GPD = possiblyNull(randomBetween(0.008, 0.015, 4), missingProb)
-      row.CA = possiblyNull(randomBetween(1.2, 2.0, 2), missingProb)
-      row.TEMPERATURA_AGUA_C = possiblyNull(randomBetween(24, 30, 1), missingProb)
-      row.OXIGENIO_DISSOLVIDO_MG_L = possiblyNull(randomBetween(4.5, 7.5, 1), missingProb)
+      row.peso = possiblyNull(pesoAtual, missingProb)
+      row.idade_dias = possiblyNull(randomBetween(30, 240, 0), missingProb)
+      row.gpd = possiblyNull(randomBetween(0.003, 0.015, 4), missingProb) // kg/dia
+      row.conversao = possiblyNull(randomBetween(1.2, 2.0, 2), missingProb)
+      row.mortalidade = possiblyNull(randomBetween(3, 10, 1), missingProb)
+      row.biomassa_kg_ha = possiblyNull(randomBetween(2000, 8000, 0), missingProb)
+      row.oxigenio_mg_l = possiblyNull(randomBetween(4, 7, 1), missingProb)
+      row.ph_agua = possiblyNull(randomBetween(6.5, 8.5, 1), missingProb)
+      row.temperatura_agua = possiblyNull(randomBetween(24, 30, 1), missingProb)
     }
 
     data.push(row)
@@ -454,11 +518,14 @@ function generateForragemData(config: TestDataConfig): Record<string, unknown>[]
 
     if (config.includeNumeric) {
       row.ANO = possiblyNull(randomBetween(2023, 2025, 0), missingProb)
-      row.BIOMASSA_SECA_KG_HA = possiblyNull(randomBetween(2000, 7000, 0), missingProb)
-      row.ALTURA_CM = possiblyNull(randomBetween(20, 80, 1), missingProb)
-      row.PROTEINA_BRUTA_PERCENT = possiblyNull(randomBetween(7, 15, 1), missingProb)
-      row.FDN_PERCENT = possiblyNull(randomBetween(55, 75, 1), missingProb)
-      row.DIGESTIBILIDADE_PERCENT = possiblyNull(randomBetween(50, 70, 1), missingProb)
+      row.biomassa_kg_ha = possiblyNull(randomBetween(3000, 8000, 0), missingProb)
+      row.altura_cm = possiblyNull(randomBetween(25, 80, 1), missingProb)
+      row.proteina_bruta = possiblyNull(randomBetween(8, 16, 1), missingProb) // %
+      row.fdn = possiblyNull(randomBetween(55, 72, 1), missingProb) // % fibra detergente neutro
+      row.fda = possiblyNull(randomBetween(30, 45, 1), missingProb) // % fibra detergente ácido
+      row.digestibilidade = possiblyNull(randomBetween(55, 75, 1), missingProb) // %
+      row.materia_seca = possiblyNull(randomBetween(20, 35, 1), missingProb) // %
+      row.producao_anual = possiblyNull(randomBetween(15000, 40000, 0), missingProb) // kg/ha/ano
     }
 
     data.push(row)
@@ -530,16 +597,20 @@ export function generateAndDownloadTestData(rows: number = 100, species: Species
     includeMissing: true,
   })
 
+  // Normalize species ID for label lookup
+  const normalizedSpecies = normalizeSpeciesId(species)
+
   const csv = convertToCSV(data)
-  const speciesLabel = {
-    bovino: 'bovinos',
-    suino: 'suinos',
-    avicultura: 'aves',
-    ovino: 'ovinos',
-    caprino: 'caprinos',
-    piscicultura: 'peixes',
-    forragem: 'forragem',
-  }[species]
+  const speciesLabel =
+    {
+      bovino: 'bovinos',
+      suino: 'suinos',
+      avicultura: 'aves',
+      ovino: 'ovinos',
+      caprino: 'caprinos',
+      piscicultura: 'peixes',
+      forragem: 'forragem',
+    }[normalizedSpecies] ?? normalizedSpecies
 
   const filename = `dados_teste_${speciesLabel}_${rows}_registros_${new Date().toISOString().split('T')[0]}.csv`
 

@@ -18,6 +18,8 @@ import { ReferenceDataService } from '@/lib/references/species-references'
 import { parseFile } from '@/lib/file-parser'
 import { validateUploadedFile, generateUniqueFilename } from '@/lib/upload-security'
 import { withRateLimit } from '@/lib/rate-limit'
+import { normalizeSpeciesId } from '@/lib/species-mapping'
+import { analyzeDataset } from '@/lib/dataAnalysis'
 import {
   analyzeCorrelations,
   proposeCorrelations,
@@ -63,10 +65,20 @@ export async function POST(request: NextRequest) {
     console.log('🔍 [DEBUG] Step 2: Parsing form data')
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const species = formData.get('species') as string
+    const rawSpecies = formData.get('species') as string
     const subtype = formData.get('subtype') as string | null
     const projectId = formData.get('projectId') as string
-    console.log('✅ [DEBUG] Form data parsed:', { species, subtype, hasFile: !!file, projectId })
+
+    // Normalize species ID from frontend format to backend format
+    const species = normalizeSpeciesId(rawSpecies)
+
+    console.log('✅ [DEBUG] Form data parsed:', {
+      rawSpecies,
+      species,
+      subtype,
+      hasFile: !!file,
+      projectId,
+    })
 
     if (!file || !species) {
       console.error('❌ [DEBUG] Missing file or species')
@@ -183,7 +195,18 @@ export async function POST(request: NextRequest) {
       recommendations: interpretation.recommendations.length,
     })
 
-    console.log('🔍 [DEBUG] Step 8: Analyzing correlations')
+    console.log('🔍 [DEBUG] Step 8: Performing full data analysis')
+    // Análise completa dos dados usando o sistema de análise
+    const fullAnalysis = analyzeDataset(parsed.data as Record<string, unknown>[])
+
+    console.log('✅ [DEBUG] Data analysis complete:', {
+      numericVars: Object.keys(fullAnalysis.numericStats || {}).length,
+      categoricalVars: Object.keys(fullAnalysis.categoricalStats || {}).length,
+      totalRows: fullAnalysis.totalRows,
+      totalColumns: fullAnalysis.totalColumns,
+    })
+
+    console.log('🔍 [DEBUG] Step 9: Analyzing correlations')
     // Análise de correlações
     console.log('🔬 Analisando correlações biologicamente relevantes...')
     const correlationReport = analyzeCorrelations(
@@ -274,7 +297,11 @@ export async function POST(request: NextRequest) {
         status: 'VALIDATED',
         data: JSON.stringify({
           raw: parsed.data.slice(0, 100), // Limitar dados brutos para economia de espaço
+          rawData: parsed.data.slice(0, 100), // Para gráficos
           statistics,
+          numericStats: statistics.numericStats || fullAnalysis.numericStats, // Formato correto para StatsTable
+          categoricalStats: fullAnalysis.categoricalStats, // Análise categórica
+          variablesInfo: fullAnalysis.variablesInfo, // Informação sobre variáveis
           references,
           interpretation,
           correlations: {
@@ -371,6 +398,23 @@ function calculateBasicStatistics(data: Record<string, number>[]) {
     counts: {} as Record<string, number>,
   }
 
+  // Também criar formato para StatsTable
+  interface NumericStat {
+    mean: number
+    median: number
+    stdDev: number
+    cv: number
+    q1: number
+    q3: number
+    min: number
+    max: number
+    count?: number
+    validCount?: number
+    missingCount?: number
+    outliers?: number[]
+  }
+  const numericStats: Record<string, NumericStat> = {}
+
   for (const col of numericColumns) {
     const values = data.map((row) => row[col]).filter((v): v is number => v !== null && !isNaN(v))
 
@@ -385,6 +429,13 @@ function calculateBasicStatistics(data: Record<string, number>[]) {
       const stdDev = Math.sqrt(variance)
       const cv = mean === 0 ? 0 : (stdDev / mean) * 100
 
+      // Quartis
+      const q1Index = Math.floor(sorted.length * 0.25)
+      const q3Index = Math.floor(sorted.length * 0.75)
+      const q1 = sorted[q1Index]
+      const q3 = sorted[q3Index]
+
+      // Formato antigo (para compatibilidade)
       stats.means[col] = Number(mean.toFixed(2))
       stats.medians[col] = Number(median.toFixed(2))
       stats.stdDevs[col] = Number(stdDev.toFixed(2))
@@ -392,10 +443,25 @@ function calculateBasicStatistics(data: Record<string, number>[]) {
       stats.mins[col] = Math.min(...values)
       stats.maxs[col] = Math.max(...values)
       stats.counts[col] = values.length
+
+      // Formato novo (para StatsTable)
+      numericStats[col] = {
+        mean: Number(mean.toFixed(2)),
+        median: Number(median.toFixed(2)),
+        stdDev: Number(stdDev.toFixed(2)),
+        cv: Number(cv.toFixed(1)),
+        min: Math.min(...values),
+        max: Math.max(...values),
+        q1: Number(q1.toFixed(2)),
+        q3: Number(q3.toFixed(2)),
+        validCount: values.length,
+        missingCount: data.length - values.length,
+        outliers: [], // TODO: calcular outliers se necessário
+      }
     }
   }
 
-  return stats
+  return { ...stats, numericStats }
 }
 
 /**

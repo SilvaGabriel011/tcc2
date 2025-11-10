@@ -3,16 +3,19 @@
 ## Usuários de Teste
 
 ### Demo (Usuário Padrão)
+
 - **Email**: `demo@agroinsight.com`
 - **Senha**: `demo123`
 - **Função**: USER
 
 ### Admin (Administrador)
+
 - **Email**: `admin@agroinsight.com`
 - **Senha**: `admin123`
 - **Função**: ADMIN
 
 ### Pesquisador (Usuário com Projeto)
+
 - **Email**: `researcher@agroinsight.com`
 - **Senha**: `user123`
 - **Função**: USER

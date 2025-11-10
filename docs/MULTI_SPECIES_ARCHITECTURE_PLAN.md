@@ -1,6 +1,7 @@
 # 🐮 Plano de Arquitetura - Sistema de Análise Zootécnica Multi-Espécie
 
 ## 📋 Resumo Executivo
+
 Sistema completo para análise de dados zootécnicos de múltiplas espécies (aves, suínos, bovinos, caprinos, ovinos, forragem e piscicultura) com dados de referência científicos (NRC/EMBRAPA) e interpretação robusta para leigos.
 
 ## 🎯 Objetivos Principais
@@ -13,6 +14,7 @@ Sistema completo para análise de dados zootécnicos de múltiplas espécies (av
 ## 🏗️ Arquitetura do Sistema
 
 ### Estrutura de Pastas
+
 ```
 components/analysis/
 ├── MultiSpeciesTabs.tsx      # Sistema de abas principal
@@ -99,38 +101,48 @@ model ForageReference {
 ## 🐄 Espécies e Métricas
 
 ### AVES
+
 **Frango de Corte**
+
 - Peso 42 dias: 2.5-2.8kg (ideal)
 - Conversão alimentar: 1.6-1.8 (ideal)
 - Mortalidade: <3% (aceitável)
 - IEP: 320-380 (excelente)
 
 **Poedeiras**
+
 - Produção: 85-92% (ideal)
 - Peso ovo: 58-63g (ideal)
 - Conversão/dúzia: 1.5-1.7kg (ideal)
 
 ### SUÍNOS
+
 **Terminação**
+
 - GPD: 0.85-1.0kg/dia (ideal)
 - Conversão: 2.5-2.8 (ideal)
 - Espessura toucinho: 12-16mm (ideal)
 - Carne magra: 56-60% (ideal)
 
 ### BOVINOS
+
 **Leite**
+
 - Produção: 20-30L/dia (ideal)
 - Proteína: 3.0-3.4% (ideal)
 - Gordura: 3.5-4.0% (ideal)
 - ECC: 3.0-3.5 (ideal)
 
 **Corte**
+
 - GPD: 1.0-1.4kg/dia (ideal)
 - Rendimento: 52-58% (ideal)
 - AOL: 75-90cm² (ideal)
 
 ### FORRAGEM
+
 **Brachiaria brizantha**
+
 - Biomassa: 4500kg/ha (ideal águas)
 - Proteína bruta: 10% (ideal)
 - FDN: 62% (ideal)
@@ -139,6 +151,7 @@ model ForageReference {
 ## 💻 Componentes Principais
 
 ### 1. MultiSpeciesTabs.tsx
+
 ```typescript
 export const SPECIES_CONFIGS = [
   {
@@ -166,49 +179,50 @@ export const SPECIES_CONFIGS = [
 ```
 
 ### 2. ReferenceService
+
 ```typescript
 class ReferenceService {
   async compareWithReferences(data, species, subtype) {
     const references = await this.getReferenceData(species, subtype)
-    return references.map(ref => ({
+    return references.map((ref) => ({
       metric: ref.metric,
       value: data[ref.metric],
       status: this.evaluateStatus(data[ref.metric], ref),
-      reference: ref
+      reference: ref,
     }))
   }
-  
+
   evaluateStatus(value, ref) {
-    if (value >= ref.idealMinValue && value <= ref.idealMaxValue) 
-      return 'excellent'
-    if (value >= ref.minValue && value <= ref.maxValue) 
-      return 'good'
+    if (value >= ref.idealMinValue && value <= ref.idealMaxValue) return 'excellent'
+    if (value >= ref.minValue && value <= ref.maxValue) return 'good'
     return 'attention'
   }
 }
 ```
 
 ### 3. EnhancedLaymanInterpretation
+
 ```typescript
 class EnhancedLaymanInterpretation {
   analogies = {
     poultry: {
-      gpd: val => `Ganhando ${val}g/dia, como adicionar ${Math.round(val/50)} grãos de milho extras`,
-      mortalidade: val => `${val}% significa perder ${Math.round(val*10)} aves a cada 1000`
+      gpd: (val) =>
+        `Ganhando ${val}g/dia, como adicionar ${Math.round(val / 50)} grãos de milho extras`,
+      mortalidade: (val) => `${val}% significa perder ${Math.round(val * 10)} aves a cada 1000`,
     },
     bovine: {
-      gpd: val => `Ganhando ${val}kg/dia = ${Math.round(val*10)} bifes a mais por mês`,
-      producao_leite: val => `${val}L/dia = ${Math.round(val/0.2)} copos de leite`
-    }
+      gpd: (val) => `Ganhando ${val}kg/dia = ${Math.round(val * 10)} bifes a mais por mês`,
+      producao_leite: (val) => `${val}L/dia = ${Math.round(val / 0.2)} copos de leite`,
+    },
   }
-  
+
   generateActionableInsights(result, species) {
     const insights = []
     if (species === 'bovine' && result.producao_leite < 20) {
       insights.push({
         priority: 'high',
         action: 'Revisar dieta',
-        suggestion: 'Aumentar proteína em 2% e verificar silagem'
+        suggestion: 'Aumentar proteína em 2% e verificar silagem',
       })
     }
     return insights
@@ -219,15 +233,20 @@ class EnhancedLaymanInterpretation {
 ## 📡 APIs
 
 ### GET /api/reference/species
+
 Lista todas as espécies disponíveis com subtipos
 
 ### GET /api/reference/[species]/data
+
 Retorna dados de referência para a espécie
 
 ### POST /api/analysis/multi-species
+
 ```json
 {
-  "data": { /* métricas */ },
+  "data": {
+    /* métricas */
+  },
   "species": "bovine",
   "subtype": "dairy",
   "options": {
@@ -237,11 +256,13 @@ Retorna dados de referência para a espécie
 ```
 
 ### POST /api/interpretation/enhanced
+
 Gera interpretação robusta com analogias
 
 ## 🚀 Implementação Por Fases
 
 ### FASE 1: Infraestrutura (Semana 1-2)
+
 ```bash
 # 1. Atualizar banco de dados
 npx prisma migrate dev --name add_multi_species
@@ -256,24 +277,28 @@ mkdir app/api/reference app/api/analysis/multi-species
 ```
 
 ### FASE 2: Interface (Semana 3-4)
+
 - [ ] Implementar MultiSpeciesTabs
 - [ ] Criar formulários adaptáveis
 - [ ] Adicionar seleção de subtipos
 - [ ] Integrar com upload existente
 
 ### FASE 3: Análise (Semana 5-6)
+
 - [ ] Motor de análise por espécie
 - [ ] Comparação com referências
 - [ ] Geração de diagnósticos
 - [ ] Gráficos comparativos
 
 ### FASE 4: Interpretação (Semana 7-8)
+
 - [ ] Sistema de analogias
 - [ ] Insights acionáveis
 - [ ] Múltiplos níveis de detalhe
 - [ ] Adaptação por público
 
 ### FASE 5: IA Opcional (Semana 9-10)
+
 - [ ] Avaliar modelos apropriados
 - [ ] Implementar híbrido regras+IA
 - [ ] Validar qualidade
@@ -286,7 +311,7 @@ class HybridAnalysisEngine {
   async analyze(data, options) {
     // Sempre começar com regras
     const ruleResult = await this.ruleEngine.analyze(data)
-    
+
     // IA apenas se habilitada
     if (options.useAI && this.aiAvailable) {
       try {
@@ -296,7 +321,7 @@ class HybridAnalysisEngine {
         return ruleResult // Fallback automático
       }
     }
-    
+
     return ruleResult
   }
 }
@@ -305,6 +330,7 @@ class HybridAnalysisEngine {
 ## 🧪 Testes
 
 ### Unitários
+
 ```typescript
 describe('ReferenceService', () => {
   it('should return correct bovine dairy references', async () => {
@@ -312,13 +338,14 @@ describe('ReferenceService', () => {
     expect(refs).toContainEqual({
       metric: 'producao_leite',
       idealMinValue: 20,
-      idealMaxValue: 30
+      idealMaxValue: 30,
     })
   })
 })
 ```
 
 ### Integração
+
 - Fluxo completo por espécie
 - Performance com múltiplas abas
 - Cache de referências
@@ -327,11 +354,13 @@ describe('ReferenceService', () => {
 ## 📊 Métricas de Sucesso
 
 **Técnicas**
+
 - Tempo análise < 3s
 - Cobertura referências > 80%
 - Precisão diagnósticos > 90%
 
 **Negócio**
+
 - Aumento 50% no uso
 - Redução 30% dúvidas
 - Satisfação > 4.5/5
@@ -346,12 +375,14 @@ describe('ReferenceService', () => {
 ## 📝 Clean Code
 
 **SOLID**
+
 - Single Responsibility por serviço
 - Open/Closed para novas espécies
 - Interface Segregation específica
 - Dependency Inversion com abstrações
 
 **Padrões**
+
 - Strategy: Diferentes espécies
 - Factory: Criação analisadores
 - Observer: Atualizações análise
@@ -379,6 +410,7 @@ npm run start
 ## 📚 Documentação Adicional
 
 Para implementação detalhada, criar arquivos:
+
 - `MULTI_SPECIES_COMPONENTS.md` - Código dos componentes
 - `REFERENCE_DATA_FULL.md` - Todos dados NRC/EMBRAPA
 - `INTERPRETATION_RULES.md` - Regras de interpretação

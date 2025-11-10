@@ -8,9 +8,9 @@
 
 import { useState, useEffect } from 'react'
 import { Tabs } from '@/components/tabs'
-import { 
-  Bird, Beef, Fish, Wheat, Activity, ChevronDown, 
-  Info, TrendingUp, AlertCircle, CheckCircle 
+import {
+  Bird, Beef, Fish, Wheat, Activity, ChevronDown,
+  Info, TrendingUp, AlertCircle, CheckCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -159,11 +159,11 @@ interface SpeciesUploadFormProps {
   onAnalysis: (result: any) => void
 }
 
-export function SpeciesUploadForm({ 
-  species, 
-  subtype, 
-  referenceData, 
-  onAnalysis 
+export function SpeciesUploadForm({
+  species,
+  subtype,
+  referenceData,
+  onAnalysis
 }: SpeciesUploadFormProps) {
   const [file, setFile] = useState<File | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -174,7 +174,7 @@ export function SpeciesUploadForm({
     if (!file) return
 
     setFile(file)
-    
+
     // Preview das primeiras linhas
     const reader = new FileReader()
     reader.onload = (e) => {
@@ -227,12 +227,12 @@ export function SpeciesUploadForm({
   // Validações específicas por espécie
   const getRequiredColumns = () => {
     const base = ['id', 'date']
-    
+
     switch(species) {
       case 'poultry':
         return [...base, 'peso', 'idade', 'mortalidade']
       case 'bovine':
-        return subtype === 'dairy' 
+        return subtype === 'dairy'
           ? [...base, 'producao_leite', 'gordura', 'proteina']
           : [...base, 'peso', 'gpd', 'escore_corporal']
       case 'swine':
@@ -255,7 +255,7 @@ export function SpeciesUploadForm({
         `}
       >
         <input {...getInputProps()} />
-        
+
         <div className="flex flex-col items-center gap-4">
           {file ? (
             <>
@@ -382,7 +382,7 @@ export function PoultryAnalysis({ data, subtype, references }: PoultryAnalysisPr
   // Componente de Card de Métrica
   const MetricCard = ({ title, value, unit, reference, trend }) => {
     const status = getStatus(value, reference)
-    
+
     return (
       <Card className="p-4">
         <div className="flex justify-between items-start mb-2">
@@ -391,17 +391,17 @@ export function PoultryAnalysis({ data, subtype, references }: PoultryAnalysisPr
             {status}
           </Badge>
         </div>
-        
+
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-bold">{value}</span>
           <span className="text-sm text-muted-foreground">{unit}</span>
           {trend && <TrendIcon trend={trend} />}
         </div>
-        
+
         {reference && (
           <div className="mt-2">
-            <Progress 
-              value={getProgressValue(value, reference)} 
+            <Progress
+              value={getProgressValue(value, reference)}
               className="h-2"
             />
             <p className="text-xs text-muted-foreground mt-1">
@@ -463,26 +463,26 @@ export function PoultryAnalysis({ data, subtype, references }: PoultryAnalysisPr
 // Funções auxiliares
 function getStatus(value: number, reference: any) {
   if (!reference) return 'unknown'
-  
+
   if (reference.idealMin && reference.idealMax) {
     if (value >= reference.idealMin && value <= reference.idealMax) {
       return 'excellent'
     }
   }
-  
+
   if (value >= reference.min && value <= reference.max) {
     return 'good'
   }
-  
+
   return 'attention'
 }
 
 function getProgressValue(value: number, reference: any) {
   if (!reference) return 0
-  
+
   const range = reference.max - reference.min
   const progress = ((value - reference.min) / range) * 100
-  
+
   return Math.max(0, Math.min(100, progress))
 }
 
