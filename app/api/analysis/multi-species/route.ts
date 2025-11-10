@@ -28,7 +28,7 @@ import {
   generateCorrelationId,
   AnalysisErrorException,
   ERROR_CODES,
-  createAnalysisError,
+  createAnalysisError as _createAnalysisError,
 } from '@/lib/analysis-errors'
 
 /**
@@ -127,25 +127,7 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        const firstRow = parsed.data[0] as Record<string, unknown>
-        const numericColumns = Object.keys(firstRow).filter(
-          (key) => typeof firstRow[key] === 'number'
-        )
-
-    console.log('🔍 [DEBUG] Step 4: Parsing CSV')
-    // Parse CSV
-    const text = await file.text()
-    const parsed = Papa.parse(text, {
-      header: true,
-      dynamicTyping: true,
-      skipEmptyLines: true,
-    })
-    console.log('✅ [DEBUG] CSV parsed:', {
-      rows: parsed.data.length,
-      errors: parsed.errors.length,
-    })
-
-        return parsed.data
+        return parsed
       },
       correlationId
     )
@@ -165,6 +147,8 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    const parsed = parseResult.data
 
     // Validação básica dos dados
     if (!parsed.data || parsed.data.length === 0) {
@@ -217,15 +201,7 @@ export async function POST(request: NextRequest) {
       significant: correlationReport.significantCorrelations,
     })
 
-    console.log(`[${correlationId}] 🔬 Analisando correlações biologicamente relevantes...`)
-    const correlationReport = analyzeCorrelations(data as Record<string, unknown>[], species, {
-      maxCorrelations: 20,
-      minRelevanceScore: 5,
-      minDataPoints: 10,
-      significanceLevel: 0.05,
-    })
-
-    const rows = (data ?? []) as Array<Record<string, unknown>>
+    const rows = (parsed.data ?? []) as Array<Record<string, unknown>>
     const firstRow = rows[0] ?? {}
     const availableColumns = Object.keys(firstRow)
 
@@ -315,28 +291,11 @@ export async function POST(request: NextRequest) {
           totalColumns: Object.keys(parsed.data[0] || {}).length,
           analyzedAt: new Date().toISOString(),
           version: '2.0',
+          correlationId,
         }),
       },
-      correlationId
-    )
+    })
 
-    if (!persistenceResult.ok) {
-      console.error(
-        `[${correlationId}] ❌ [PERSISTENCE] Falha ao salvar análise:`,
-        persistenceResult.error
-      )
-      return NextResponse.json(
-        {
-          error: persistenceResult.error.message,
-          stage: persistenceResult.error.stage,
-          code: persistenceResult.error.code,
-          correlationId,
-        },
-        { status: 500 }
-      )
-    }
-
-    const analysis = persistenceResult.data
     console.log(`[${correlationId}] ✅ [PERSISTENCE] Análise salva com ID: ${analysis.id}`)
 
     console.log('✅ [DEBUG] Analysis saved with ID:', analysis.id)
