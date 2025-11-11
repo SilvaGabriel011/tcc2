@@ -76,6 +76,12 @@ interface DiagnosticoResult {
   fontes: string[]
 }
 
+const EMPTY_CORRELATIONS: Correlations = {
+  report: {
+    topCorrelations: [],
+  },
+}
+
 /**
  * Gera diagnóstico baseado nos dados reais da análise
  */
@@ -88,7 +94,7 @@ export function generateDiagnostico(data: DiagnosticoData): DiagnosticoResult {
   // Identificar pontos fortes e de atenção
   const { pontosFortes, pontosAtencao } = identifyStrengthsAndWeaknesses(
     analiseNumericas,
-    correlations,
+    correlations ?? EMPTY_CORRELATIONS,
     species
   )
 
