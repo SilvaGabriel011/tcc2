@@ -1,7 +1,7 @@
 /**
  * EN: LaymanTab - Main component for Layman Visualization Tab
  * PT-BR: LaymanTab - Componente principal para Aba de Visualização Leiga
- * 
+ *
  * EN: Displays analysis data in an intuitive, accessible format using:
  *     - Color-coded visualizations (red/yellow/green)
  *     - Simple language
@@ -28,7 +28,9 @@ import { toast } from 'sonner'
 import type { LaymanViewResponse, EntityType } from '@/lib/layman/types'
 
 // Helper function to map entity type to species
-function getSpeciesFromEntityType(entityType: EntityType): 'bovine' | 'swine' | 'poultry' | 'sheep' | 'goat' | 'fish' {
+function getSpeciesFromEntityType(
+  entityType: EntityType
+): 'bovine' | 'swine' | 'poultry' | 'sheep' | 'goat' | 'fish' {
   switch (entityType) {
     case 'gado':
     case 'bovine':
@@ -67,21 +69,21 @@ export function LaymanTab({ analysisData, entityType }: LaymanTabProps) {
 
         // Convert analysis data to evaluation request
         const request = laymanService.convertAnalysisToEvaluation(analysisData, entityType)
-        
+
         // Evaluate metrics
         const result = await laymanService.evaluateMetrics(request)
-        
+
         // Convert EvaluationResponse to LaymanViewResponse by adding legend
         const laymanView: LaymanViewResponse = {
           ...result,
           legend: [
             { color: 'red', meaning: 'Ruim — ação necessária' },
             { color: 'yellow', meaning: 'Ok — monitorar' },
-            { color: 'green', meaning: 'Ótimo — sem ação' }
+            { color: 'green', meaning: 'Ótimo — sem ação' },
           ],
-          technical_view_url: null
+          technical_view_url: null,
         }
-        
+
         setEvaluation(laymanView)
       } catch (err) {
         console.error('Error evaluating data:', err)
@@ -93,7 +95,7 @@ export function LaymanTab({ analysisData, entityType }: LaymanTabProps) {
     }
 
     if (analysisData) {
-      evaluateData()
+      void evaluateData()
     }
   }, [analysisData, entityType])
 
@@ -150,10 +152,19 @@ export function LaymanTab({ analysisData, entityType }: LaymanTabProps) {
             Interpretação simplificada e universal dos dados
           </p>
         </div>
-        <LaymanToggle 
-          mode={viewMode} 
-          onChange={setViewMode}
-        />
+        <LaymanToggle mode={viewMode} onChange={setViewMode} />
+      </div>
+
+      {/* Production Warning Card */}
+      <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-4 border border-amber-200 dark:border-amber-900">
+        <div className="flex items-start">
+          <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 mr-3 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-amber-800 dark:text-amber-300">
+            <p className="font-medium">
+              Sistema ainda em produção, isso é apenas um esboço do produto final
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Color Legend */}
@@ -182,11 +193,7 @@ export function LaymanTab({ analysisData, entityType }: LaymanTabProps) {
         {/* Right: Metric Cards */}
         <div className="space-y-4">
           {evaluation.metric_summaries.map((metric) => (
-            <MetricCard
-              key={metric.metric_key}
-              metric={metric}
-              viewMode={viewMode}
-            />
+            <MetricCard key={metric.metric_key} metric={metric} viewMode={viewMode} />
           ))}
         </div>
       </div>
@@ -197,9 +204,7 @@ export function LaymanTab({ analysisData, entityType }: LaymanTabProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <Info className="h-5 w-5 text-muted-foreground mr-2" />
-              <span className="text-sm text-foreground">
-                Quer ver mais detalhes técnicos?
-              </span>
+              <span className="text-sm text-foreground">Quer ver mais detalhes técnicos?</span>
             </div>
             <button
               onClick={() => setViewMode('technical')}
@@ -219,16 +224,16 @@ export function LaymanTab({ analysisData, entityType }: LaymanTabProps) {
             <p className="font-medium mb-1">Como Interpretar:</p>
             <ul className="space-y-1 list-disc list-inside">
               <li>
-                <strong className="text-green-700 dark:text-green-400">Verde</strong>: 
-                Excelente! Continue assim.
+                <strong className="text-green-700 dark:text-green-400">Verde</strong>: Excelente!
+                Continue assim.
               </li>
               <li>
-                <strong className="text-amber-700 dark:text-amber-400">Amarelo</strong>: 
-                Está ok, mas monitore de perto.
+                <strong className="text-amber-700 dark:text-amber-400">Amarelo</strong>: Está ok,
+                mas monitore de perto.
               </li>
               <li>
-                <strong className="text-red-700 dark:text-red-400">Vermelho</strong>: 
-                Precisa de atenção imediata!
+                <strong className="text-red-700 dark:text-red-400">Vermelho</strong>: Precisa de
+                atenção imediata!
               </li>
             </ul>
           </div>
