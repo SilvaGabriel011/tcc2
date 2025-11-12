@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Loader2, CheckCircle, XCircle, Clock, Minimize2 } from 'lucide-react'
 import { ANALYSIS_STEPS, AnalysisProgress } from '@/lib/progress/types'
 
@@ -15,6 +15,7 @@ export function AnalysisProgressDrawer({ analysisId, onComplete, onError, onMini
   const [progress, setProgress] = useState<AnalysisProgress | null>(null)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [isMinimized, setIsMinimized] = useState(false)
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const fetchProgress = async () => {
@@ -32,8 +33,16 @@ export function AnalysisProgressDrawer({ analysisId, onComplete, onError, onMini
         setProgress(data)
 
         if (data.status === 'completed') {
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current)
+            intervalRef.current = null
+          }
           onComplete(analysisId)
         } else if (data.status === 'error') {
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current)
+            intervalRef.current = null
+          }
           onError(data.error?.message ?? 'Erro na análise')
         }
       } catch (error) {
@@ -43,11 +52,16 @@ export function AnalysisProgressDrawer({ analysisId, onComplete, onError, onMini
 
     void fetchProgress()
 
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       void fetchProgress()
     }, 1000)
 
-    return () => clearInterval(interval)
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
   }, [analysisId, onComplete, onError])
 
   useEffect(() => {
