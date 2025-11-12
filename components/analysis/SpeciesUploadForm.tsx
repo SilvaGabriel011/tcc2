@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { AnalysisProgressDrawer } from './AnalysisProgressDrawer'
 
 interface AnalysisResult {
   success: boolean
@@ -23,78 +24,98 @@ interface SpeciesUploadFormProps {
   onAnalysisComplete?: (result: AnalysisResult) => void
 }
 
-export function SpeciesUploadForm({ 
-  species, 
-  subtype, 
+export function SpeciesUploadForm({
+  species,
+  subtype,
   projectId,
-  onAnalysisComplete 
+  onAnalysisComplete,
 }: SpeciesUploadFormProps) {
   const [file, setFile] = useState<File | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [preview, setPreview] = useState<string[][]>([])
+  const [showProgressDrawer, setShowProgressDrawer] = useState(false)
+  const [currentAnalysisId, setCurrentAnalysisId] = useState<string | null>(null)
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const uploadedFile = acceptedFiles[0]
-    if (!uploadedFile) return
+    if (!uploadedFile) {
+      return
+    }
 
     setFile(uploadedFile)
-    
+
     // Preview das primeiras linhas
     const reader = new FileReader()
     reader.onload = (e) => {
       const text = e.target?.result as string
       const lines = text.split('\n').slice(0, 5)
-      setPreview(lines.map(line => line.split(',')))
+      setPreview(lines.map((line) => line.split(',')))
     }
     reader.readAsText(uploadedFile.slice(0, 1024))
   }, [])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
+    onDrop: (files) => {
+      void onDrop(files)
+    },
     accept: {
       'text/csv': ['.csv'],
       'application/vnd.ms-excel': ['.xls'],
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
     },
-    maxFiles: 1
+    maxFiles: 1,
   })
 
   const handleAnalyze = async () => {
-    if (!file) return
+    if (!file) {
+      return
+    }
+
+    const analysisId = crypto.randomUUID()
 
     console.log('[analise:start]', {
+      analysisId,
       fileName: file.name,
       fileSize: file.size,
       species,
       subtype,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     })
 
     setIsAnalyzing(true)
-    const toastId = toast.loading('Analisando arquivo...')
+    setCurrentAnalysisId(analysisId)
+    setShowProgressDrawer(true)
+
+    const toastId = toast.loading('Iniciando análise...')
 
     const formData = new FormData()
     formData.append('file', file)
     formData.append('species', species)
-    if (subtype) formData.append('subtype', subtype)
-    if (projectId) formData.append('projectId', projectId)
+    formData.append('analysisId', analysisId)
+    if (subtype) {
+      formData.append('subtype', subtype)
+    }
+    if (projectId) {
+      formData.append('projectId', projectId)
+    }
 
     try {
-      console.log('[analise:api:request]', { 
+      console.log('[analise:api:request]', {
         endpoint: '/api/analysis/multi-species',
+        analysisId,
         species,
-        subtype
+        subtype,
       })
 
       const response = await fetch('/api/analysis/multi-species', {
         method: 'POST',
-        body: formData
+        body: formData,
       })
 
       console.log('[analise:api:response]', {
         status: response.status,
         ok: response.ok,
-        statusText: response.statusText
+        statusText: response.statusText,
       })
 
       const result = await response.json()
@@ -103,28 +124,31 @@ export function SpeciesUploadForm({
         success: result.success,
         hasAnalysis: !!result.analysis,
         analysisId: result.analysis?.id,
-        error: result.error
+        error: result.error,
       })
 
       if (response.ok && result.success) {
-        toast.success('Análise concluída com sucesso!', { id: toastId })
-        onAnalysisComplete?.(result)
+        toast.dismiss(toastId)
       } else {
         const errorMsg = result.error || 'Erro na análise'
-        console.error('[analise:api:error]', { 
+        console.error('[analise:api:error]', {
           status: response.status,
           error: errorMsg,
-          result
+          result,
         })
         toast.error(errorMsg, { id: toastId })
+        setShowProgressDrawer(false)
         throw new Error(errorMsg)
       }
     } catch (error) {
       console.error('[analise:error]', {
         error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
       })
-      toast.error('Erro ao processar arquivo. Verifique o console para mais detalhes.', { id: toastId })
+      toast.error('Erro ao processar arquivo. Verifique o console para mais detalhes.', {
+        id: toastId,
+      })
+      setShowProgressDrawer(false)
     } finally {
       setIsAnalyzing(false)
     }
@@ -133,17 +157,25 @@ export function SpeciesUploadForm({
   // Obter colunas requeridas baseado na espécie
   const getRequiredColumns = () => {
     const base = ['id', 'date']
-    
-    switch(species) {
+
+    switch (species) {
       case 'poultry':
         if (subtype === 'broiler') {
           return [...base, 'peso', 'idade', 'mortalidade', 'consumo_racao']
         }
         if (subtype === 'layer') {
-          return [...base, 'producao_ovos', 'peso_ovo', 'consumo_racao', 'massa_ovos', 'conversao_duzia', 'mortalidade']
+          return [
+            ...base,
+            'producao_ovos',
+            'peso_ovo',
+            'consumo_racao',
+            'massa_ovos',
+            'conversao_duzia',
+            'mortalidade',
+          ]
         }
         return [...base, 'peso', 'idade']
-        
+
       case 'bovine':
         if (subtype === 'dairy') {
           return [...base, 'producao_leite', 'gordura_leite', 'proteina_leite', 'celulas_somaticas']
@@ -152,7 +184,7 @@ export function SpeciesUploadForm({
           return [...base, 'peso_vivo', 'gpd', 'escore_corporal']
         }
         return [...base, 'peso_vivo']
-        
+
       case 'swine':
         if (subtype === 'finishing') {
           return [...base, 'peso', 'conversao', 'espessura_toucinho']
@@ -161,17 +193,25 @@ export function SpeciesUploadForm({
           return [...base, 'peso_desmame', 'gpd_creche', 'conversao_creche']
         }
         return [...base, 'peso', 'conversao']
-        
+
       case 'sheep':
       case 'goat':
         return [...base, 'peso', 'gpd', 'escore_corporal']
-        
+
       case 'aquaculture':
         return [...base, 'peso', 'conversao_alimentar', 'oxigenio_dissolvido', 'temperatura']
-        
+
       case 'forage':
-        return ['parcela', 'biomassa_kg_ha', 'altura_cm', 'cobertura_solo', 'proteina_bruta', 'fdn', 'fda']
-        
+        return [
+          'parcela',
+          'biomassa_kg_ha',
+          'altura_cm',
+          'cobertura_solo',
+          'proteina_bruta',
+          'fdn',
+          'fda',
+        ]
+
       default:
         return base
     }
@@ -185,14 +225,14 @@ export function SpeciesUploadForm({
       sheep: 'Ovinos',
       goat: 'Caprinos',
       aquaculture: 'Piscicultura',
-      forage: 'Forragem'
+      forage: 'Forragem',
     }
     return names[species] || species
   }
-  
+
   // Obter exemplos de dados baseado na espécie e subtipo
   const getDataExamples = () => {
-    switch(species) {
+    switch (species) {
       case 'poultry':
         if (subtype === 'layer') {
           return {
@@ -202,8 +242,8 @@ export function SpeciesUploadForm({
               'peso_ovo: 58-63g',
               'conversao_duzia: 1.5-1.7 kg/dz',
               'massa_ovos: 50-55 g/ave/dia',
-              'mortalidade: <1%/mês'
-            ]
+              'mortalidade: <1%/mês',
+            ],
           }
         }
         if (subtype === 'broiler') {
@@ -213,8 +253,8 @@ export function SpeciesUploadForm({
               'peso_42d: 2600-2900g',
               'conversao: 1.6-1.75 kg/kg',
               'mortalidade: <3.5%',
-              'gpd: 60-70 g/dia'
-            ]
+              'gpd: 60-70 g/dia',
+            ],
           }
         }
         break
@@ -226,8 +266,8 @@ export function SpeciesUploadForm({
               'producao_leite: 25-35 L/dia',
               'gordura_leite: 3.5-4.0%',
               'proteina_leite: 3.0-3.4%',
-              'celulas_somaticas: <200.000 cel/mL'
-            ]
+              'celulas_somaticas: <200.000 cel/mL',
+            ],
           }
         }
         if (subtype === 'beef') {
@@ -237,8 +277,8 @@ export function SpeciesUploadForm({
               'gpd: 1.0-1.5 kg/dia',
               'peso_vivo: variável',
               'escore_corporal: 3.0-3.5',
-              'conversao: 6-8 kg/kg'
-            ]
+              'conversao: 6-8 kg/kg',
+            ],
           }
         }
         break
@@ -249,8 +289,8 @@ export function SpeciesUploadForm({
             'biomassa_seca: 2000-7000 kg/ha',
             'proteina_bruta: 8-16%',
             'altura: 20-40cm',
-            'cobertura_solo: >80%'
-          ]
+            'cobertura_solo: >80%',
+          ],
         }
       case 'swine':
         if (subtype === 'finishing') {
@@ -260,8 +300,8 @@ export function SpeciesUploadForm({
               'peso_final: 110-130kg',
               'conversao: 2.5-2.8 kg/kg',
               'espessura_toucinho: 12-16mm',
-              'gpd: 850-1000 g/dia'
-            ]
+              'gpd: 850-1000 g/dia',
+            ],
           }
         }
         if (subtype === 'nursery') {
@@ -271,8 +311,8 @@ export function SpeciesUploadForm({
               'peso_desmame: 6-8kg',
               'gpd_creche: 400-500 g/dia',
               'conversao_creche: 1.4-1.6 kg/kg',
-              'mortalidade: <2%'
-            ]
+              'mortalidade: <2%',
+            ],
           }
         }
         break
@@ -284,8 +324,8 @@ export function SpeciesUploadForm({
             'gpd: 150-250 g/dia',
             'escore_corporal: 3.0-3.5',
             'peso_abate: 35-45kg',
-            'conversao: 4-6 kg/kg'
-          ]
+            'conversao: 4-6 kg/kg',
+          ],
         }
       case 'aquaculture':
         return {
@@ -294,8 +334,8 @@ export function SpeciesUploadForm({
             'conversao_alimentar: 1.2-1.8',
             'oxigenio_dissolvido: >5 mg/L',
             'temperatura: 26-30°C',
-            'densidade: 5-15 peixes/m³'
-          ]
+            'densidade: 5-15 peixes/m³',
+          ],
         }
       default:
         return null
@@ -312,22 +352,22 @@ export function SpeciesUploadForm({
           border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
           transition-all duration-200
           dark:bg-gray-900 dark:border-gray-700
-          ${isDragActive ? 
-            'border-primary bg-primary/5 dark:bg-primary/10' : 
-            'border-border hover:border-primary/50 dark:hover:border-primary/50'}
+          ${
+            isDragActive
+              ? 'border-primary bg-primary/5 dark:bg-primary/10'
+              : 'border-border hover:border-primary/50 dark:hover:border-primary/50'
+          }
           ${file ? 'bg-green-50 dark:bg-green-950/20 border-green-500 dark:border-green-600' : ''}
         `}
       >
         <input {...getInputProps()} />
-        
+
         <div className="flex flex-col items-center gap-4">
           {file ? (
             <>
               <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-500" />
               <div>
-                <p className="font-medium text-foreground dark:text-gray-200">
-                  {file.name}
-                </p>
+                <p className="font-medium text-foreground dark:text-gray-200">{file.name}</p>
                 <p className="text-sm text-muted-foreground dark:text-gray-400">
                   {(file.size / 1024).toFixed(1)} KB
                 </p>
@@ -364,7 +404,7 @@ export function SpeciesUploadForm({
           </div>
         </div>
       </div>
-      
+
       {/* Exemplos de Dados Dinâmicos */}
       {getDataExamples() && (
         <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-lg border border-green-200 dark:border-green-900">
@@ -394,16 +434,17 @@ export function SpeciesUploadForm({
           <table className="text-sm w-full">
             <tbody>
               {preview.map((row, i) => (
-                <tr key={i} className={i === 0 ? 'font-semibold border-b dark:border-gray-700' : ''}>
+                <tr
+                  key={i}
+                  className={i === 0 ? 'font-semibold border-b dark:border-gray-700' : ''}
+                >
                   {row.slice(0, 5).map((cell, j) => (
                     <td key={j} className="px-2 py-1 text-foreground dark:text-gray-200">
                       {cell}
                     </td>
                   ))}
                   {row.length > 5 && (
-                    <td className="px-2 py-1 text-muted-foreground dark:text-gray-400">
-                      ...
-                    </td>
+                    <td className="px-2 py-1 text-muted-foreground dark:text-gray-400">...</td>
                   )}
                 </tr>
               ))}
@@ -414,15 +455,18 @@ export function SpeciesUploadForm({
 
       {/* Botão de Análise */}
       <button
-        onClick={handleAnalyze}
+        onClick={() => {
+          void handleAnalyze()
+        }}
         disabled={!file || isAnalyzing}
         className={`
           w-full py-3 px-4 rounded-lg font-medium
           transition-all duration-200
           flex items-center justify-center gap-2
-          ${!file || isAnalyzing ? 
-            'bg-muted text-muted-foreground cursor-not-allowed dark:bg-gray-800 dark:text-gray-500' : 
-            'bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-primary dark:text-white dark:hover:bg-primary/90'
+          ${
+            !file || isAnalyzing
+              ? 'bg-muted text-muted-foreground cursor-not-allowed dark:bg-gray-800 dark:text-gray-500'
+              : 'bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-primary dark:text-white dark:hover:bg-primary/90'
           }
         `}
       >
@@ -432,11 +476,29 @@ export function SpeciesUploadForm({
             Analisando dados de {getSpeciesName()}...
           </>
         ) : (
-          <>
-            Analisar Dados
-          </>
+          <>Analisar Dados</>
         )}
       </button>
+
+      {showProgressDrawer && currentAnalysisId && (
+        <AnalysisProgressDrawer
+          analysisId={currentAnalysisId}
+          onComplete={(id) => {
+            setShowProgressDrawer(false)
+            toast.success('Análise concluída!')
+            if (onAnalysisComplete) {
+              onAnalysisComplete({ success: true, analysis: { id, name: '', species, subtype } })
+            }
+          }}
+          onError={(error) => {
+            setShowProgressDrawer(false)
+            toast.error(error)
+          }}
+          onMinimize={() => {
+            toast.info('Análise continua em segundo plano')
+          }}
+        />
+      )}
     </div>
   )
 }
