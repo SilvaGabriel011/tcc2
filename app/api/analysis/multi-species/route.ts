@@ -32,6 +32,9 @@ import {
   ERROR_CODES,
   createAnalysisError as _createAnalysisError,
 } from '@/lib/analysis-errors'
+import { setProgress } from '@/lib/progress/server'
+
+export const maxDuration = 60
 
 /**
  * EN: POST handler for multi-species data analysis
@@ -48,6 +51,8 @@ export async function POST(request: NextRequest) {
 
   const correlationId = generateCorrelationId()
   console.log(`[${correlationId}] 📊 Iniciando análise multi-espécie`)
+
+  let analysisId: string | null = null
 
   try {
     console.log('🔍 [DEBUG] Step 1: Getting session')
@@ -68,6 +73,24 @@ export async function POST(request: NextRequest) {
     const rawSpecies = formData.get('species') as string
     const subtype = formData.get('subtype') as string | null
     const projectId = formData.get('projectId') as string
+    analysisId = formData.get('analysisId') as string | null
+
+    if (!analysisId) {
+      analysisId = `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    }
+
+    await setProgress(
+      analysisId,
+      {
+        step: 'UPLOAD',
+        percent: 5,
+        message: 'Iniciando análise...',
+        status: 'running',
+        startedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      true
+    )
 
     // Normalize species ID from frontend format to backend format
     const species = normalizeSpeciesId(rawSpecies)
@@ -86,10 +109,23 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🔍 [DEBUG] Step 3: Security validation')
-    // Security validation
     const securityCheck = await validateUploadedFile(file, 'csv')
     if (!securityCheck.valid) {
       console.warn(`[${correlationId}] 🚫 Security check failed:`, securityCheck.error)
+      await setProgress(
+        analysisId,
+        {
+          step: 'UPLOAD',
+          percent: 5,
+          message: 'Erro na validação de segurança',
+          status: 'error',
+          error: {
+            message: securityCheck.error || 'Falha na validação de segurança',
+            details: securityCheck.warnings?.join('; '),
+          },
+        },
+        true
+      )
       return NextResponse.json(
         {
           error: securityCheck.error,
@@ -106,6 +142,12 @@ export async function POST(request: NextRequest) {
       species,
       subtype,
       filename: file.name,
+    })
+
+    await setProgress(analysisId, {
+      step: 'PARSE',
+      percent: 15,
+      message: 'Lendo arquivo CSV...',
     })
 
     console.log(`[${correlationId}] [STAGE 1/4] Análise de dados (parsing e validação)`)
@@ -149,6 +191,20 @@ export async function POST(request: NextRequest) {
         `[${correlationId}] ❌ [STAGE 1/4] Falha na análise de dados:`,
         parseResult.error
       )
+      await setProgress(
+        analysisId,
+        {
+          step: 'PARSE',
+          percent: 15,
+          message: 'Erro ao ler arquivo',
+          status: 'error',
+          error: {
+            message: parseResult.error.message,
+            details: `Stage: ${parseResult.error.stage}, Code: ${parseResult.error.code}`,
+          },
+        },
+        true
+      )
       return NextResponse.json(
         {
           error: parseResult.error.message,
@@ -162,21 +218,52 @@ export async function POST(request: NextRequest) {
 
     const parsed = parseResult.data
 
-    // Validação básica dos dados
+    await setProgress(analysisId, {
+      step: 'VALIDATE',
+      percent: 25,
+      message: 'Validando dados...',
+      counters: {
+        total: parsed.data?.length || 0,
+      },
+    })
+
     if (!parsed.data || parsed.data.length === 0) {
       console.error('❌ [DEBUG] Empty data')
+      await setProgress(
+        analysisId,
+        {
+          step: 'VALIDATE',
+          percent: 25,
+          message: 'Arquivo vazio',
+          status: 'error',
+          error: {
+            message: 'Arquivo vazio ou sem dados válidos',
+          },
+        },
+        true
+      )
       return NextResponse.json({ error: 'Arquivo vazio ou sem dados válidos' }, { status: 400 })
     }
 
     console.log('🔍 [DEBUG] Step 5: Calculating statistics')
-    // Análise estatística básica
+    await setProgress(analysisId, {
+      step: 'STATS',
+      percent: 55,
+      message: 'Calculando estatísticas...',
+    })
+
     const statistics = calculateBasicStatistics(parsed.data as Record<string, number>[])
     console.log('✅ [DEBUG] Statistics calculated:', {
       numericColumns: Object.keys(statistics.means).length,
     })
 
     console.log('🔍 [DEBUG] Step 6: Comparing with references')
-    // Comparação com referências
+    await setProgress(analysisId, {
+      step: 'REFERENCES',
+      percent: 85,
+      message: 'Comparando com referências científicas...',
+    })
+
     const references = ReferenceDataService.compareMultipleMetrics(
       statistics.means,
       species,
@@ -188,7 +275,6 @@ export async function POST(request: NextRequest) {
     })
 
     console.log('🔍 [DEBUG] Step 7: Generating interpretation')
-    // Interpretação
     const interpretation = generateBasicInterpretation(statistics, references, species)
     console.log('✅ [DEBUG] Interpretation generated:', {
       insights: interpretation.insights.length,
@@ -196,7 +282,6 @@ export async function POST(request: NextRequest) {
     })
 
     console.log('🔍 [DEBUG] Step 8: Performing full data analysis')
-    // Análise completa dos dados usando o sistema de análise
     const fullAnalysis = analyzeDataset(parsed.data as Record<string, unknown>[])
 
     console.log('✅ [DEBUG] Data analysis complete:', {
@@ -207,7 +292,12 @@ export async function POST(request: NextRequest) {
     })
 
     console.log('🔍 [DEBUG] Step 9: Analyzing correlations')
-    // Análise de correlações
+    await setProgress(analysisId, {
+      step: 'CORRELATIONS',
+      percent: 75,
+      message: 'Analisando correlações...',
+    })
+
     console.log('🔬 Analisando correlações biologicamente relevantes...')
     const correlationReport = analyzeCorrelations(
       parsed.data as Record<string, unknown>[],
@@ -280,6 +370,12 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🔍 [DEBUG] Step 10: Saving to database')
+    await setProgress(analysisId, {
+      step: 'SAVE',
+      percent: 98,
+      message: 'Salvando resultados...',
+    })
+
     console.log('🔍 [DEBUG] Dataset info:', {
       projectId: finalProjectId,
       species,
@@ -288,7 +384,6 @@ export async function POST(request: NextRequest) {
       secureFilename,
     })
 
-    // Salvar no banco de dados
     const analysis = await prisma.dataset.create({
       data: {
         projectId: finalProjectId,
@@ -327,6 +422,17 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ [DEBUG] Analysis saved with ID:', analysis.id)
 
+    await setProgress(
+      analysisId,
+      {
+        step: 'DONE',
+        percent: 100,
+        message: 'Análise concluída!',
+        status: 'completed',
+      },
+      true
+    )
+
     console.log('🔍 [DEBUG] Step 11: Preparing response')
     const topCorrelations = (correlationReport.topCorrelations ?? []).slice(0, 5)
     console.log('✅ [DEBUG] Response prepared, returning to client')
@@ -354,6 +460,22 @@ export async function POST(request: NextRequest) {
       correlationId,
     })
   } catch (error) {
+    if (analysisId) {
+      await setProgress(
+        analysisId,
+        {
+          step: 'UPLOAD',
+          percent: 0,
+          message: 'Erro ao processar análise',
+          status: 'error',
+          error: {
+            message: error instanceof Error ? error.message : 'Erro desconhecido',
+            details: error instanceof Error ? error.stack : undefined,
+          },
+        },
+        true
+      )
+    }
     console.error('❌ [DEBUG] Error in multi-species analysis:', error)
     console.error('❌ [DEBUG] Error details:', {
       message: error instanceof Error ? error.message : String(error),
