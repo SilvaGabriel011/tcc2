@@ -27,7 +27,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { ReferenceSearchService } from '@/services/references'
+import { referenceService } from '@/services/references'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -91,9 +91,8 @@ export async function POST(request: NextRequest) {
       sources: source === 'all' ? undefined : [source]
     }
 
-    // Step 4: Use the new ReferenceSearchService
+    // Step 4: Use the singleton ReferenceSearchService instance
     try {
-      const referenceService = new ReferenceSearchService()
       const searchResult = await referenceService.search(query, searchOptions)
       
       console.log(`✅ Found ${searchResult.articles.length} articles from ${searchResult.sources.join(', ')}`);
