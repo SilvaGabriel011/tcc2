@@ -18,7 +18,6 @@
 
 import { useState, useEffect } from 'react'
 import { AlertCircle, Info } from 'lucide-react'
-import * as Dialog from '@radix-ui/react-dialog'
 import { LaymanToggle } from './LaymanToggle'
 import { AnimalSilhouette } from './AnimalSilhouettes'
 import { ForagePanel } from './ForagePanel'
@@ -61,7 +60,6 @@ export function LaymanTab({ analysisData, entityType }: LaymanTabProps) {
   const [evaluation, setEvaluation] = useState<LaymanViewResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [showDevModal, setShowDevModal] = useState(true)
 
   useEffect(() => {
     async function evaluateData() {
@@ -145,121 +143,90 @@ export function LaymanTab({ analysisData, entityType }: LaymanTabProps) {
   }
 
   return (
-    <>
-      {/* Development Modal */}
-      <Dialog.Root open={showDevModal} onOpenChange={setShowDevModal}>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md z-50 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-start mb-4">
-              <Info className="h-6 w-6 text-blue-600 dark:text-blue-400 mr-3 mt-0.5 flex-shrink-0" />
-              <div>
-                <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  Funcionalidade em Desenvolvimento
-                </Dialog.Title>
-                <Dialog.Description className="text-sm text-gray-700 dark:text-gray-300">
-                  A visualização leiga ainda está em fase de desenvolvimento. Algumas
-                  funcionalidades podem não estar completas ou podem apresentar comportamento
-                  inesperado.
-                </Dialog.Description>
-              </div>
-            </div>
-            <div className="flex justify-end mt-6">
-              <Dialog.Close asChild>
-                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors">
-                  Entendi
-                </button>
-              </Dialog.Close>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
+    <div className="space-y-6">
+      {/* Header with Toggle */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Visualização Leiga</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Interpretação simplificada e universal dos dados
+          </p>
+        </div>
+        <LaymanToggle mode={viewMode} onChange={setViewMode} />
+      </div>
 
-      <div className="space-y-6">
-        {/* Header with Toggle */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Visualização Leiga</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Interpretação simplificada e universal dos dados
-            </p>
-          </div>
-          <LaymanToggle mode={viewMode} onChange={setViewMode} />
+      {/* Color Legend */}
+      <ColorLegend />
+
+      {/* Main Visualization */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Left: Silhouette/Image */}
+        <div>
+          {entityType === 'forragem' ? (
+            <ForagePanel
+              color={evaluation.final_color}
+              label={evaluation.short_label}
+              annotation={evaluation.annotation}
+            />
+          ) : (
+            <AnimalSilhouette
+              species={getSpeciesFromEntityType(entityType)}
+              color={evaluation.final_color}
+              label={evaluation.short_label}
+              annotation={evaluation.annotation}
+            />
+          )}
         </div>
 
-        {/* Color Legend */}
-        <ColorLegend />
+        {/* Right: Metric Cards */}
+        <div className="space-y-4">
+          {evaluation.metric_summaries.map((metric) => (
+            <MetricCard key={metric.metric_key} metric={metric} viewMode={viewMode} />
+          ))}
+        </div>
+      </div>
 
-        {/* Main Visualization */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Left: Silhouette/Image */}
-          <div>
-            {entityType === 'forragem' ? (
-              <ForagePanel
-                color={evaluation.final_color}
-                label={evaluation.short_label}
-                annotation={evaluation.annotation}
-              />
-            ) : (
-              <AnimalSilhouette
-                species={getSpeciesFromEntityType(entityType)}
-                color={evaluation.final_color}
-                label={evaluation.short_label}
-                annotation={evaluation.annotation}
-              />
-            )}
-          </div>
-
-          {/* Right: Metric Cards */}
-          <div className="space-y-4">
-            {evaluation.metric_summaries.map((metric) => (
-              <MetricCard key={metric.metric_key} metric={metric} viewMode={viewMode} />
-            ))}
+      {/* Technical View Link (if in layman mode) */}
+      {viewMode === 'layman' && evaluation.technical_view_url && (
+        <div className="bg-muted/50 rounded-lg p-4 border border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Info className="h-5 w-5 text-muted-foreground mr-2" />
+              <span className="text-sm text-foreground">Quer ver mais detalhes técnicos?</span>
+            </div>
+            <button
+              onClick={() => setViewMode('technical')}
+              className="text-sm text-primary hover:text-primary/80 font-medium"
+            >
+              Ver Versão Técnica →
+            </button>
           </div>
         </div>
+      )}
 
-        {/* Technical View Link (if in layman mode) */}
-        {viewMode === 'layman' && evaluation.technical_view_url && (
-          <div className="bg-muted/50 rounded-lg p-4 border border-border">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Info className="h-5 w-5 text-muted-foreground mr-2" />
-                <span className="text-sm text-foreground">Quer ver mais detalhes técnicos?</span>
-              </div>
-              <button
-                onClick={() => setViewMode('technical')}
-                className="text-sm text-primary hover:text-primary/80 font-medium"
-              >
-                Ver Versão Técnica →
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Info Box */}
-        <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-900">
-          <div className="flex items-start">
-            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-blue-800 dark:text-blue-300">
-              <p className="font-medium mb-1">Como Interpretar:</p>
-              <ul className="space-y-1 list-disc list-inside">
-                <li>
-                  <strong className="text-green-700 dark:text-green-400">Verde</strong>: Excelente!
-                  Continue assim.
-                </li>
-                <li>
-                  <strong className="text-amber-700 dark:text-amber-400">Amarelo</strong>: Está ok,
-                  mas monitore de perto.
-                </li>
-                <li>
-                  <strong className="text-red-700 dark:text-red-400">Vermelho</strong>: Precisa de
-                  atenção imediata!
-                </li>
-              </ul>
-            </div>
+      {/* Info Box */}
+      <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-900">
+        <div className="flex items-start">
+          <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-blue-800 dark:text-blue-300">
+            <p className="font-medium mb-1">Como Interpretar:</p>
+            <ul className="space-y-1 list-disc list-inside">
+              <li>
+                <strong className="text-green-700 dark:text-green-400">Verde</strong>: Excelente!
+                Continue assim.
+              </li>
+              <li>
+                <strong className="text-amber-700 dark:text-amber-400">Amarelo</strong>: Está ok,
+                mas monitore de perto.
+              </li>
+              <li>
+                <strong className="text-red-700 dark:text-red-400">Vermelho</strong>: Precisa de
+                atenção imediata!
+              </li>
+            </ul>
           </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }
