@@ -129,6 +129,17 @@ export function SpeciesUploadForm({
 
       if (response.ok && result.success) {
         toast.dismiss(toastId)
+
+        if (onAnalysisComplete && result.analysis) {
+          console.log('[analise:immediate-callback]', {
+            analysisId: result.analysis.id,
+            hasCallback: !!onAnalysisComplete,
+          })
+          onAnalysisComplete({
+            success: true,
+            analysis: result.analysis,
+          })
+        }
       } else {
         const errorMsg = result.error || 'Erro na análise'
         console.error('[analise:api:error]', {
