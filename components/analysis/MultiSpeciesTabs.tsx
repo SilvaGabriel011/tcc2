@@ -49,6 +49,19 @@ const GoatIcon = () => (
   </svg>
 )
 
+const BeeIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <ellipse cx="12" cy="12" rx="5" ry="6" />
+    <path d="M7 10 L5 8" strokeLinecap="round" />
+    <path d="M17 10 L19 8" strokeLinecap="round" />
+    <path d="M7 9 L17 9" strokeLinecap="round" />
+    <path d="M7 12 L17 12" strokeLinecap="round" />
+    <path d="M7 15 L17 15" strokeLinecap="round" />
+    <circle cx="10" cy="10" r="0.5" fill="currentColor" />
+    <circle cx="14" cy="10" r="0.5" fill="currentColor" />
+  </svg>
+)
+
 interface AnimalSubtype {
   id: string
   name: string
@@ -185,6 +198,29 @@ export const SPECIES_CONFIGS: SpeciesConfig[] = [
       { id: 'mixed', name: 'Misto', code: 'mixed', description: 'Consórcio de forrageiras' },
     ],
     description: 'Análise de produção e qualidade de pastagens e forragens para nutrição animal',
+  },
+  {
+    id: 'bees',
+    name: 'Abelhas',
+    code: 'bees',
+    icon: <BeeIcon />,
+    color: 'yellow',
+    subtypes: [
+      {
+        id: 'apis_mellifera',
+        name: 'Apis mellifera',
+        code: 'apis_mellifera',
+        description: 'Abelhas africanizadas e europeias',
+      },
+      {
+        id: 'abelhas_nativas',
+        name: 'Abelhas Nativas',
+        code: 'abelhas_nativas',
+        description: 'Meliponíneos - abelhas sem ferrão',
+      },
+    ],
+    description:
+      'Análise completa para apicultura e meliponicultura com métricas de produção, sanidade e qualidade',
   },
 ]
 

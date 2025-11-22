@@ -15,7 +15,6 @@ import {
   Legend,
   ResponsiveContainer,
   ComposedChart,
-  Line,
 } from 'recharts'
 import { NumericStats, CategoricalStats } from '@/lib/dataAnalysis'
 import { useThemeColors, formatNumber } from '@/lib/ui/theme'
@@ -127,13 +126,6 @@ export function BoxPlotChart({
             stackId="a"
             fill={colors.muted}
             name="Máximo"
-          />
-          <Line
-            type="monotone"
-            dataKey="mean"
-            stroke={colors.success}
-            strokeWidth={3}
-            name="Média"
           />
         </ComposedChart>
       </ResponsiveContainer>
