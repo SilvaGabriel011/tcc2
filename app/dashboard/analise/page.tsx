@@ -24,7 +24,7 @@ import { validateFile, formatBytes, scanFileForThreats } from '@/lib/upload-vali
 import { toast } from 'sonner'
 import { CSVPreview } from '@/components/csv-preview'
 import Papa from 'papaparse'
-import { generateAndDownloadTestData } from '@/lib/generate-test-data'
+import { generateAndDownloadTestData, type Species } from '@/lib/generate-test-data'
 import { MultiSpeciesTabs } from '@/components/analysis/MultiSpeciesTabs'
 import { SpeciesUploadForm } from '@/components/analysis/SpeciesUploadForm'
 
@@ -48,9 +48,7 @@ export default function AnaliseDataPage() {
   const [warning, setWarning] = useState('')
   const [previewData, setPreviewData] = useState<Record<string, unknown>[]>([])
   const [isParsing, setIsParsing] = useState(false)
-  const [selectedSpecies, setSelectedSpecies] = useState<
-    'bovino' | 'suino' | 'avicultura' | 'ovino' | 'caprino' | 'piscicultura' | 'forragem'
-  >('bovino')
+  const [selectedSpecies, setSelectedSpecies] = useState<Species>('bovino')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 

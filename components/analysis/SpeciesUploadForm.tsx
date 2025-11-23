@@ -5,7 +5,7 @@ import { useDropzone } from 'react-dropzone'
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, Loader2, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { AnalysisProgressDrawer } from './AnalysisProgressDrawer'
-import { generateAndDownloadTestData } from '@/lib/generate-test-data'
+import { generateAndDownloadTestData, type Species } from '@/lib/generate-test-data'
 
 interface AnalysisResult {
   success: boolean
@@ -19,7 +19,7 @@ interface AnalysisResult {
 }
 
 interface SpeciesUploadFormProps {
-  species: string
+  species: Species
   subtype?: string
   projectId?: string
   onAnalysisComplete?: (result: AnalysisResult) => void
