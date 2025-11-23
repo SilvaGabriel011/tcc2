@@ -994,14 +994,14 @@ function ResultadosContent() {
                                   </div>
                                 )}
 
-                              {/* BoxPlot - Distribuição das Variáveis */}
+                              {/* Gráfico de Caixa - Distribuição das Variáveis */}
                               {analysisData.numericStats &&
                                 Object.keys(analysisData.numericStats).length > 0 && (
                                   <div className="bg-card shadow rounded-lg p-6">
                                     <div className="flex items-center mb-4">
                                       <Activity className="h-5 w-5 text-green-600 mr-2" />
                                       <h3 className="text-lg font-semibold text-foreground">
-                                        Distribuição das Variáveis (BoxPlot)
+                                        Gráfico de Caixa (BoxPlot) - Distribuição das Variáveis
                                       </h3>
                                     </div>
                                     <BoxPlotChart data={analysisData.numericStats} />
@@ -1317,7 +1317,26 @@ function ResultadosContent() {
                                         )}
                                       </div>
                                     </div>
-                                  ) : null
+                                  ) : (
+                                    <div className="bg-card shadow rounded-lg p-8 text-center">
+                                      <GitCompare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                                      <h3 className="text-lg font-medium text-foreground mb-2">
+                                        📊 Análise de Correlações
+                                      </h3>
+                                      <p className="text-muted-foreground mb-4">
+                                        Nenhuma correlação forte foi encontrada entre as variáveis
+                                        analisadas neste conjunto de dados.
+                                      </p>
+                                      <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-900 max-w-2xl mx-auto">
+                                        <p className="text-sm text-blue-800 dark:text-blue-400">
+                                          💡 <strong>Dica:</strong> Correlações são mais evidentes
+                                          com datasets maiores (&gt;30 registros) e quando há
+                                          variáveis relacionadas biologicamente (ex: peso × consumo
+                                          de ração, produção de leite × proteína).
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )
                                 })()}
                             </>
                           ),

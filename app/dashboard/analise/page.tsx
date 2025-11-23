@@ -369,10 +369,10 @@ export default function AnaliseDataPage() {
               <button
                 onClick={handleGenerateTestData}
                 className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
-                title="Gera uma planilha CSV com dados fictícios para demonstração"
+                title="Gera um arquivo CSV com dados fictícios para você testar o sistema"
               >
                 <Beaker className="h-4 w-4" />
-                <span>Gerar Dados para Teste</span>
+                <span>🧪 Gerar CSV de Exemplo</span>
               </button>
             </div>
           </div>
