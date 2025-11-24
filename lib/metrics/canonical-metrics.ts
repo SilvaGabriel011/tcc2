@@ -1,18 +1,18 @@
 /**
  * Sistema de Métricas Canônicas
- * 
+ *
  * Define métricas padronizadas com aliases, unidades aceitas e regras de validação.
  * Permite mapeamento automático de colunas do usuário para métricas conhecidas.
  */
 
 export interface CanonicalMetric {
-  key: string                    // Chave canônica (ex: 'gpd')
-  aliases: string[]              // Aliases (ex: ['gmd', 'ganho_diario', 'daily_gain'])
-  unit: string                   // Unidade padrão (ex: 'kg/dia')
-  acceptedUnits: string[]        // Unidades aceitas (ex: ['kg/dia', 'g/dia', 'lb/day'])
-  species: string[]              // Espécies aplicáveis
-  category: string               // Categoria (peso, performance, reprodução, etc.)
-  description: string            // Descrição
+  key: string // Chave canônica (ex: 'gpd')
+  aliases: string[] // Aliases (ex: ['gmd', 'ganho_diario', 'daily_gain'])
+  unit: string // Unidade padrão (ex: 'kg/dia')
+  acceptedUnits: string[] // Unidades aceitas (ex: ['kg/dia', 'g/dia', 'lb/day'])
+  species: string[] // Espécies aplicáveis
+  category: string // Categoria (peso, performance, reprodução, etc.)
+  description: string // Descrição
   validationRules?: {
     min?: number
     max?: number
@@ -23,7 +23,14 @@ export interface CanonicalMetric {
 export const CANONICAL_METRICS: CanonicalMetric[] = [
   {
     key: 'gpd',
-    aliases: ['gmd', 'ganho_diario', 'ganho_peso_diario', 'daily_gain', 'adg', 'average_daily_gain'],
+    aliases: [
+      'gmd',
+      'ganho_diario',
+      'ganho_peso_diario',
+      'daily_gain',
+      'adg',
+      'average_daily_gain',
+    ],
     unit: 'kg/dia',
     acceptedUnits: ['kg/dia', 'kg/day', 'g/dia', 'g/day', 'lb/day'],
     species: ['bovine', 'swine', 'sheep', 'goat', 'aquaculture'],
@@ -32,8 +39,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0,
       max: 3,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'conversao_alimentar',
@@ -46,8 +53,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0.5,
       max: 20,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'mortalidade',
@@ -60,10 +67,10 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0,
       max: 100,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
-  
+
   {
     key: 'peso',
     aliases: ['weight', 'peso_vivo', 'live_weight', 'body_weight'],
@@ -75,8 +82,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0,
       max: 1500,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'peso_nascimento',
@@ -89,8 +96,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0.5,
       max: 60,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'peso_desmame',
@@ -103,8 +110,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 5,
       max: 350,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'peso_abate',
@@ -117,10 +124,10 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 10,
       max: 800,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
-  
+
   {
     key: 'producao_leite',
     aliases: ['milk_production', 'leite', 'milk_yield', 'producao_leiteira'],
@@ -132,8 +139,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0,
       max: 80,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'proteina_leite',
@@ -146,8 +153,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 2,
       max: 5,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'gordura_leite',
@@ -160,8 +167,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 2,
       max: 6,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'celulas_somaticas',
@@ -174,10 +181,10 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0,
       max: 2000000,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
-  
+
   {
     key: 'rendimento_carcaca',
     aliases: ['carcass_yield', 'rendimento', 'dressing_percentage'],
@@ -189,8 +196,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 40,
       max: 80,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'area_olho_lombo',
@@ -203,8 +210,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 30,
       max: 150,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'espessura_gordura',
@@ -217,10 +224,10 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0,
       max: 30,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
-  
+
   {
     key: 'intervalo_partos',
     aliases: ['calving_interval', 'intervalo_entre_partos', 'farrowing_interval'],
@@ -232,8 +239,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 200,
       max: 600,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'leitoes_nascidos_vivos',
@@ -246,8 +253,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0,
       max: 20,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'taxa_concepcao',
@@ -260,10 +267,10 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0,
       max: 100,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
-  
+
   {
     key: 'iep',
     aliases: ['epi', 'production_efficiency_index', 'indice_eficiencia'],
@@ -275,8 +282,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0,
       max: 500,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'producao_ovos',
@@ -289,8 +296,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0,
       max: 100,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'peso_ovo',
@@ -303,10 +310,10 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 40,
       max: 80,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
-  
+
   {
     key: 'oxigenio_dissolvido',
     aliases: ['dissolved_oxygen', 'od', 'do', 'oxigenio'],
@@ -318,8 +325,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0,
       max: 15,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'temperatura',
@@ -331,8 +338,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     description: 'Temperatura',
     validationRules: {
       min: -10,
-      max: 50
-    }
+      max: 50,
+    },
   },
   {
     key: 'ph',
@@ -345,8 +352,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 4,
       max: 11,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'densidade_estocagem',
@@ -359,10 +366,10 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0,
       max: 50,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
-  
+
   {
     key: 'biomassa_seca',
     aliases: ['dry_matter', 'biomassa', 'dm', 'materia_seca'],
@@ -374,8 +381,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0,
       max: 15000,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'proteina_bruta',
@@ -388,8 +395,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 0,
       max: 30,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'fdn',
@@ -402,8 +409,8 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 30,
       max: 85,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
   {
     key: 'digestibilidade',
@@ -416,10 +423,10 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 30,
       max: 90,
-      mustBePositive: true
-    }
+      mustBePositive: true,
+    },
   },
-  
+
   {
     key: 'escore_corporal',
     aliases: ['bcs', 'body_condition_score', 'ecc', 'condicao_corporal'],
@@ -431,39 +438,309 @@ export const CANONICAL_METRICS: CanonicalMetric[] = [
     validationRules: {
       min: 1,
       max: 9,
-      mustBePositive: true
-    }
-  }
+      mustBePositive: true,
+    },
+  },
+
+  // ABELHAS - Métricas de Apicultura
+  {
+    key: 'producao_mel_colmeia_ano',
+    aliases: ['producao_mel', 'mel_colmeia', 'honey_production', 'mel_ano'],
+    unit: 'kg/colmeia/ano',
+    acceptedUnits: ['kg/colmeia/ano', 'kg/hive/year', 'kg/ano'],
+    species: ['bees'],
+    category: 'producao',
+    description: 'Produção de Mel por Colmeia por Ano',
+    validationRules: {
+      min: 0,
+      max: 100,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'producao_propolis_colmeia_ano',
+    aliases: ['producao_propolis', 'propolis', 'propolis_production'],
+    unit: 'g/colmeia/ano',
+    acceptedUnits: ['g/colmeia/ano', 'g/hive/year', 'kg/colmeia/ano'],
+    species: ['bees'],
+    category: 'producao',
+    description: 'Produção de Própolis por Colmeia por Ano',
+    validationRules: {
+      min: 0,
+      max: 500,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'producao_polen_colmeia_ano',
+    aliases: ['producao_polen', 'polen', 'pollen_production'],
+    unit: 'kg/colmeia/ano',
+    acceptedUnits: ['kg/colmeia/ano', 'g/colmeia/ano', 'kg/hive/year'],
+    species: ['bees'],
+    category: 'producao',
+    description: 'Produção de Pólen por Colmeia por Ano',
+    validationRules: {
+      min: 0,
+      max: 10,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'producao_cera_colmeia_ano',
+    aliases: ['producao_cera', 'cera', 'wax_production'],
+    unit: 'kg/colmeia/ano',
+    acceptedUnits: ['kg/colmeia/ano', 'g/colmeia/ano', 'kg/hive/year'],
+    species: ['bees'],
+    category: 'producao',
+    description: 'Produção de Cera por Colmeia por Ano',
+    validationRules: {
+      min: 0,
+      max: 5,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'producao_geleia_real_colmeia_ano',
+    aliases: ['producao_geleia', 'geleia_real', 'royal_jelly', 'geleia'],
+    unit: 'g/colmeia/ano',
+    acceptedUnits: ['g/colmeia/ano', 'g/hive/year', 'kg/colmeia/ano'],
+    species: ['bees'],
+    category: 'producao',
+    description: 'Produção de Geleia Real por Colmeia por Ano',
+    validationRules: {
+      min: 0,
+      max: 1000,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'populacao_abelhas_colmeia',
+    aliases: ['populacao_abelhas', 'populacao', 'bee_population', 'abelhas'],
+    unit: 'abelhas',
+    acceptedUnits: ['abelhas', 'bees', 'individuos'],
+    species: ['bees'],
+    category: 'populacao',
+    description: 'População de Abelhas por Colmeia',
+    validationRules: {
+      min: 500,
+      max: 80000,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'quadros_cria',
+    aliases: ['cria', 'brood_frames', 'quadros_de_cria'],
+    unit: 'quadros',
+    acceptedUnits: ['quadros', 'frames', 'unidades'],
+    species: ['bees'],
+    category: 'manejo',
+    description: 'Número de Quadros de Cria',
+    validationRules: {
+      min: 0,
+      max: 20,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'quadros_mel',
+    aliases: ['mel_quadros', 'honey_frames', 'quadros_de_mel'],
+    unit: 'quadros',
+    acceptedUnits: ['quadros', 'frames', 'unidades'],
+    species: ['bees'],
+    category: 'manejo',
+    description: 'Número de Quadros de Mel',
+    validationRules: {
+      min: 0,
+      max: 20,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'taxa_enxameacao',
+    aliases: ['enxameacao', 'swarming_rate', 'taxa_enxame'],
+    unit: '%',
+    acceptedUnits: ['%', 'percent', 'decimal'],
+    species: ['bees'],
+    category: 'comportamento',
+    description: 'Taxa de Enxameação',
+    validationRules: {
+      min: 0,
+      max: 100,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'mortalidade_colmeias',
+    aliases: ['mortalidade', 'mortality_rate', 'perda_colmeias'],
+    unit: '%/ano',
+    acceptedUnits: ['%/ano', '%', 'percent'],
+    species: ['bees'],
+    category: 'sanidade',
+    description: 'Taxa de Mortalidade de Colmeias',
+    validationRules: {
+      min: 0,
+      max: 100,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'umidade_mel',
+    aliases: ['umidade', 'moisture', 'humidity_honey'],
+    unit: '%',
+    acceptedUnits: ['%', 'percent', 'decimal'],
+    species: ['bees'],
+    category: 'qualidade',
+    description: 'Umidade do Mel',
+    validationRules: {
+      min: 10,
+      max: 40,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'acidez_mel',
+    aliases: ['acidez', 'acidity', 'acidez_livre'],
+    unit: 'meq/kg',
+    acceptedUnits: ['meq/kg', 'mEq/kg'],
+    species: ['bees'],
+    category: 'qualidade',
+    description: 'Acidez do Mel',
+    validationRules: {
+      min: 0,
+      max: 100,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'hidroximetilfurfural',
+    aliases: ['hmf', 'hydroxymethylfurfural', 'hidroximetilfurfural_hmf'],
+    unit: 'mg/kg',
+    acceptedUnits: ['mg/kg', 'ppm'],
+    species: ['bees'],
+    category: 'qualidade',
+    description: 'Hidroximetilfurfural (HMF)',
+    validationRules: {
+      min: 0,
+      max: 80,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'atividade_diastatica',
+    aliases: ['diastase', 'diastatic_activity', 'atividade_diastase'],
+    unit: 'unidades Gothe',
+    acceptedUnits: ['unidades Gothe', 'Gothe', 'unidades'],
+    species: ['bees'],
+    category: 'qualidade',
+    description: 'Atividade Diastásica',
+    validationRules: {
+      min: 0,
+      max: 50,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'taxa_postura_rainha',
+    aliases: ['postura_rainha', 'egg_laying', 'ovos_dia', 'postura'],
+    unit: 'ovos/dia',
+    acceptedUnits: ['ovos/dia', 'eggs/day', 'ovos'],
+    species: ['bees'],
+    category: 'reproducao',
+    description: 'Taxa de Postura da Rainha',
+    validationRules: {
+      min: 0,
+      max: 3000,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'longevidade_rainha',
+    aliases: ['idade_rainha', 'queen_age', 'longevidade'],
+    unit: 'anos',
+    acceptedUnits: ['anos', 'years', 'meses'],
+    species: ['bees'],
+    category: 'reproducao',
+    description: 'Longevidade da Rainha',
+    validationRules: {
+      min: 0,
+      max: 5,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'taxa_fecundacao_rainha',
+    aliases: ['fecundacao_rainha', 'mating_success', 'fecundacao'],
+    unit: '%',
+    acceptedUnits: ['%', 'percent', 'decimal'],
+    species: ['bees'],
+    category: 'reproducao',
+    description: 'Taxa de Fecundação da Rainha',
+    validationRules: {
+      min: 0,
+      max: 100,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'defensividade',
+    aliases: ['agressividade', 'defensive_behavior', 'comportamento_defensivo'],
+    unit: 'escala 1-5',
+    acceptedUnits: ['escala 1-5', 'pontos', 'score'],
+    species: ['bees'],
+    category: 'comportamento',
+    description: 'Defensividade',
+    validationRules: {
+      min: 1,
+      max: 5,
+      mustBePositive: true,
+    },
+  },
+  {
+    key: 'higienicidade',
+    aliases: ['comportamento_higienico', 'hygienic_behavior', 'higiene'],
+    unit: '%',
+    acceptedUnits: ['%', 'percent', 'decimal'],
+    species: ['bees'],
+    category: 'comportamento',
+    description: 'Comportamento Higiênico',
+    validationRules: {
+      min: 0,
+      max: 100,
+      mustBePositive: true,
+    },
+  },
 ]
 
 /**
  * Resolve uma coluna do usuário para uma métrica canônica
  */
 export function resolveMetric(columnName: string, species?: string): CanonicalMetric | null {
-  const normalized = columnName.toLowerCase().trim()
-    .replace(/[_\s-]+/g, '_')  // Normalizar separadores
+  const normalized = columnName
+    .toLowerCase()
+    .trim()
+    .replace(/[_\s-]+/g, '_') // Normalizar separadores
     .replace(/[áàâã]/g, 'a')
     .replace(/[éèê]/g, 'e')
     .replace(/[íì]/g, 'i')
     .replace(/[óòôõ]/g, 'o')
     .replace(/[úù]/g, 'u')
     .replace(/ç/g, 'c')
-  
-  let metric = CANONICAL_METRICS.find(m => m.key === normalized)
-  
+
+  let metric = CANONICAL_METRICS.find((m) => m.key === normalized)
+
   if (!metric) {
-    metric = CANONICAL_METRICS.find(m => 
-      m.aliases.some(alias => {
+    metric = CANONICAL_METRICS.find((m) =>
+      m.aliases.some((alias) => {
         const normalizedAlias = alias.toLowerCase().replace(/[_\s-]+/g, '_')
         return normalized.includes(normalizedAlias) || normalizedAlias.includes(normalized)
       })
     )
   }
-  
+
   if (metric && species && !metric.species.includes(species)) {
     return null
   }
-  
+
   return metric || null
 }
 
@@ -471,43 +748,43 @@ export function resolveMetric(columnName: string, species?: string): CanonicalMe
  * Conversões de unidades
  */
 const UNIT_CONVERSIONS: Record<string, Record<string, number>> = {
-  'g': { 'kg': 0.001, 'lb': 0.00220462, 'arroba': 0.00003333 },
-  'kg': { 'g': 1000, 'lb': 2.20462, 'arroba': 0.03333 },
-  'lb': { 'kg': 0.453592, 'g': 453.592, 'arroba': 0.01512 },
-  'arroba': { 'kg': 30, 'g': 30000, 'lb': 66.1387 },
-  
+  g: { kg: 0.001, lb: 0.00220462, arroba: 0.00003333 },
+  kg: { g: 1000, lb: 2.20462, arroba: 0.03333 },
+  lb: { kg: 0.453592, g: 453.592, arroba: 0.01512 },
+  arroba: { kg: 30, g: 30000, lb: 66.1387 },
+
   'g/dia': { 'kg/dia': 0.001, 'g/day': 1, 'kg/day': 0.001, 'lb/day': 0.00220462 },
   'kg/dia': { 'g/dia': 1000, 'kg/day': 1, 'g/day': 1000, 'lb/day': 2.20462 },
   'g/day': { 'kg/day': 0.001, 'g/dia': 1, 'kg/dia': 0.001 },
   'kg/day': { 'g/day': 1000, 'kg/dia': 1, 'g/dia': 1000 },
-  
+
   'L/dia': { 'L/day': 1, 'kg/dia': 1.03, 'kg/day': 1.03 },
   'L/day': { 'L/dia': 1, 'kg/day': 1.03, 'kg/dia': 1.03 },
-  
-  '°C': { 'C': 1 },
-  'C': { '°C': 1 },
-  
-  '%': { 'percent': 1, 'decimal': 0.01 },
-  'percent': { '%': 1, 'decimal': 0.01 },
-  'decimal': { '%': 100, 'percent': 100 },
-  
-  'cm²': { 'cm2': 1, 'in²': 0.155, 'in2': 0.155 },
-  'cm2': { 'cm²': 1, 'in2': 0.155, 'in²': 0.155 },
-  'in²': { 'in2': 1, 'cm²': 6.4516, 'cm2': 6.4516 },
-  'in2': { 'in²': 1, 'cm2': 6.4516, 'cm²': 6.4516 },
-  
-  'mm': { 'cm': 0.1, 'in': 0.0393701 },
-  'cm': { 'mm': 10, 'in': 0.393701 },
-  'in': { 'cm': 2.54, 'mm': 25.4 },
-  
-  'dias': { 'days': 1, 'meses': 0.0333, 'months': 0.0333 },
-  'days': { 'dias': 1, 'months': 0.0333, 'meses': 0.0333 },
-  'meses': { 'months': 1, 'dias': 30, 'days': 30 },
-  'months': { 'meses': 1, 'days': 30, 'dias': 30 },
-  
+
+  '°C': { C: 1 },
+  C: { '°C': 1 },
+
+  '%': { percent: 1, decimal: 0.01 },
+  percent: { '%': 1, decimal: 0.01 },
+  decimal: { '%': 100, percent: 100 },
+
+  'cm²': { cm2: 1, 'in²': 0.155, in2: 0.155 },
+  cm2: { 'cm²': 1, in2: 0.155, 'in²': 0.155 },
+  'in²': { in2: 1, 'cm²': 6.4516, cm2: 6.4516 },
+  in2: { 'in²': 1, cm2: 6.4516, 'cm²': 6.4516 },
+
+  mm: { cm: 0.1, in: 0.0393701 },
+  cm: { mm: 10, in: 0.393701 },
+  in: { cm: 2.54, mm: 25.4 },
+
+  dias: { days: 1, meses: 0.0333, months: 0.0333 },
+  days: { dias: 1, months: 0.0333, meses: 0.0333 },
+  meses: { months: 1, dias: 30, days: 30 },
+  months: { meses: 1, days: 30, dias: 30 },
+
   'kg/ha': { 't/ha': 0.001, 'ton/ha': 0.001 },
   't/ha': { 'kg/ha': 1000, 'ton/ha': 1 },
-  'ton/ha': { 'kg/ha': 1000, 't/ha': 1 }
+  'ton/ha': { 'kg/ha': 1000, 't/ha': 1 },
 }
 
 /**
@@ -517,21 +794,23 @@ export function convertUnit(value: number, fromUnit: string, toUnit: string): nu
   const normalizeUnit = (unit: string) => unit.toLowerCase().trim()
   const from = normalizeUnit(fromUnit)
   const to = normalizeUnit(toUnit)
-  
-  if (from === to) return value
-  
+
+  if (from === to) {
+    return value
+  }
+
   const conversions = UNIT_CONVERSIONS[from]
   if (!conversions) {
     console.warn(`Conversão não encontrada para unidade: ${fromUnit}`)
     return value
   }
-  
+
   const factor = conversions[to]
   if (factor === undefined) {
     console.warn(`Conversão não encontrada de ${fromUnit} para ${toUnit}`)
     return value
   }
-  
+
   return value * factor
 }
 
@@ -543,25 +822,25 @@ export function validateMetricValue(
   metric: CanonicalMetric
 ): { valid: boolean; errors: string[] } {
   const errors: string[] = []
-  
+
   if (!metric.validationRules) {
     return { valid: true, errors: [] }
   }
-  
+
   const rules = metric.validationRules
-  
+
   if (rules.mustBePositive && value < 0) {
     errors.push(`${metric.description} deve ser positivo`)
   }
-  
+
   if (rules.min !== undefined && value < rules.min) {
     errors.push(`${metric.description} abaixo do mínimo (${rules.min} ${metric.unit})`)
   }
-  
+
   if (rules.max !== undefined && value > rules.max) {
     errors.push(`${metric.description} acima do máximo (${rules.max} ${metric.unit})`)
   }
-  
+
   return { valid: errors.length === 0, errors }
 }
 
@@ -569,12 +848,12 @@ export function validateMetricValue(
  * Obtém métricas disponíveis para uma espécie
  */
 export function getMetricsForSpecies(species: string): CanonicalMetric[] {
-  return CANONICAL_METRICS.filter(m => m.species.includes(species))
+  return CANONICAL_METRICS.filter((m) => m.species.includes(species))
 }
 
 /**
  * Obtém métricas por categoria
  */
 export function getMetricsByCategory(category: string): CanonicalMetric[] {
-  return CANONICAL_METRICS.filter(m => m.category === category)
+  return CANONICAL_METRICS.filter((m) => m.category === category)
 }
