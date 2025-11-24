@@ -13,6 +13,7 @@ export type Species =
   | 'caprino'
   | 'piscicultura'
   | 'forragem'
+  | 'abelhas'
   | 'bovine'
   | 'swine'
   | 'poultry'
@@ -20,6 +21,7 @@ export type Species =
   | 'goat'
   | 'aquaculture'
   | 'forage'
+  | 'bees'
 
 export interface TestDataConfig {
   rows: number
@@ -52,6 +54,16 @@ const FORRAGEM_TIPOS = [
   'Cynodon dactylon',
   'Pennisetum purpureum',
 ]
+const ABELHA_RACAS = [
+  'Apis mellifera',
+  'Apis mellifera scutellata',
+  'Apis mellifera ligustica',
+  'Apis mellifera carnica',
+  'Jataí',
+  'Mandaçaia',
+  'Uruçu',
+]
+const ABELHA_CATEGORIAS = ['Produção', 'Reprodução', 'Desenvolvimento', 'Manutenção']
 
 const SEXO = ['Macho', 'Fêmea']
 const ESTADOS = ['MT', 'MS', 'GO', 'SP', 'MG', 'RS', 'PR', 'BA']
@@ -150,6 +162,8 @@ export function generateTestData(
       return generatePisciculturaData(config)
     case 'forragem':
       return generateForragemData(config)
+    case 'abelhas':
+      return generateBeesData(config)
     default:
       return generateBovinoData(config)
   }
@@ -534,6 +548,93 @@ function generateForragemData(config: TestDataConfig): Record<string, unknown>[]
   return data
 }
 
+function generateBeesData(config: TestDataConfig): Record<string, unknown>[] {
+  const data: Record<string, unknown>[] = []
+  const missingProb = config.includeMissing ? 0.05 : 0
+
+  for (let i = 1; i <= config.rows; i++) {
+    const raca = randomChoice(ABELHA_RACAS)
+    const categoria = randomChoice(ABELHA_CATEGORIAS)
+
+    const row: Record<string, unknown> = {
+      ID: `ABE${String(i).padStart(5, '0')}`,
+      COLMEIA: `C${String(i).padStart(4, '0')}`,
+    }
+
+    if (config.includeCategorical) {
+      row.RACA = possiblyNull(raca, missingProb)
+      row.CATEGORIA = possiblyNull(categoria, missingProb)
+      row.ESTADO = possiblyNull(randomChoice(ESTADOS), missingProb)
+      row.MES = possiblyNull(randomChoice(MESES), missingProb)
+    }
+
+    if (config.includeNumeric) {
+      row.ANO = possiblyNull(randomBetween(2023, 2025, 0), missingProb)
+
+      // Produção de mel (kg/colmeia/ano) - métrica principal
+      row.producao_mel_colmeia_ano = possiblyNull(randomBetween(15, 60, 1), missingProb)
+
+      // Produção de própolis (g/colmeia/ano)
+      row.producao_propolis_colmeia_ano = possiblyNull(randomBetween(50, 300, 0), missingProb)
+
+      // Produção de pólen (kg/colmeia/ano)
+      row.producao_polen_colmeia_ano = possiblyNull(randomBetween(1, 8, 1), missingProb)
+
+      // Produção de cera (kg/colmeia/ano)
+      row.producao_cera_colmeia_ano = possiblyNull(randomBetween(0.5, 3, 1), missingProb)
+
+      // Produção de geleia real (g/colmeia/ano)
+      row.producao_geleia_real_colmeia_ano = possiblyNull(randomBetween(100, 600, 0), missingProb)
+
+      // População de abelhas por colmeia
+      row.populacao_abelhas_colmeia = possiblyNull(randomBetween(20000, 80000, 0), missingProb)
+
+      // Quadros de cria
+      row.quadros_cria = possiblyNull(randomBetween(4, 10, 0), missingProb)
+
+      // Quadros de mel
+      row.quadros_mel = possiblyNull(randomBetween(3, 12, 0), missingProb)
+
+      // Taxa de enxameação (%)
+      row.taxa_enxameacao = possiblyNull(randomBetween(5, 25, 1), missingProb)
+
+      // Mortalidade de colmeias (%/ano)
+      row.mortalidade_colmeias = possiblyNull(randomBetween(5, 20, 1), missingProb)
+
+      // Qualidade do mel - Umidade (%)
+      row.umidade_mel = possiblyNull(randomBetween(15, 20, 1), missingProb)
+
+      // Qualidade do mel - Acidez (meq/kg)
+      row.acidez_mel = possiblyNull(randomBetween(10, 40, 1), missingProb)
+
+      // Qualidade do mel - HMF (mg/kg)
+      row.hidroximetilfurfural = possiblyNull(randomBetween(5, 30, 1), missingProb)
+
+      // Qualidade do mel - Atividade diastática (unidades Gothe)
+      row.atividade_diastatica = possiblyNull(randomBetween(8, 30, 1), missingProb)
+
+      // Taxa de postura da rainha (ovos/dia)
+      row.taxa_postura_rainha = possiblyNull(randomBetween(1000, 2500, 0), missingProb)
+
+      // Longevidade da rainha (anos)
+      row.longevidade_rainha = possiblyNull(randomBetween(1, 5, 1), missingProb)
+
+      // Taxa de fecundação da rainha (%)
+      row.taxa_fecundacao_rainha = possiblyNull(randomBetween(70, 95, 1), missingProb)
+
+      // Defensividade (escala 1-5)
+      row.defensividade = possiblyNull(randomBetween(1, 5, 0), missingProb)
+
+      // Higienicidade (%)
+      row.higienicidade = possiblyNull(randomBetween(60, 95, 1), missingProb)
+    }
+
+    data.push(row)
+  }
+
+  return data
+}
+
 /**
  * Converte array de objetos para CSV
  */
@@ -610,6 +711,7 @@ export function generateAndDownloadTestData(rows: number = 100, species: Species
       caprino: 'caprinos',
       piscicultura: 'peixes',
       forragem: 'forragem',
+      abelhas: 'abelhas',
     }[normalizedSpecies] ?? normalizedSpecies
 
   const filename = `dados_teste_${speciesLabel}_${rows}_registros_${new Date().toISOString().split('T')[0]}.csv`
