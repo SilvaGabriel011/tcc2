@@ -17,6 +17,7 @@ export const SPECIES_MAP = {
   goat: 'caprino',
   aquaculture: 'piscicultura',
   forage: 'forragem',
+  bees: 'abelhas',
 } as const
 
 export const SPECIES_MAP_REVERSE = {
@@ -28,6 +29,7 @@ export const SPECIES_MAP_REVERSE = {
   caprino: 'goat',
   piscicultura: 'aquaculture',
   forragem: 'forage',
+  abelhas: 'bees',
 } as const
 
 export type FrontendSpeciesId = keyof typeof SPECIES_MAP
