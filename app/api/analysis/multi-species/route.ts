@@ -33,6 +33,7 @@ import {
   createAnalysisError as _createAnalysisError,
 } from '@/lib/analysis-errors'
 import { setProgress } from '@/lib/progress/server'
+import { invalidateCacheTag } from '@/lib/multi-level-cache'
 
 export const maxDuration = 60
 
@@ -421,6 +422,11 @@ export async function POST(request: NextRequest) {
     console.log(`[${correlationId}] ✅ [PERSISTENCE] Análise salva com ID: ${analysis.id}`)
 
     console.log('✅ [DEBUG] Analysis saved with ID:', analysis.id)
+
+    // Invalidate cache so new analysis appears immediately in history
+    await invalidateCacheTag('analysis')
+    await invalidateCacheTag(`user:${session.user.id}`)
+    console.log('🗑️ [DEBUG] Cache invalidated for user:', session.user.id)
 
     await setProgress(
       analysisId,
