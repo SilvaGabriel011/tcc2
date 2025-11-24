@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
@@ -19,21 +19,21 @@ export async function GET(request: NextRequest) {
     const cacheKey = `resultados:${session.user.id}`
     const cachedResults = await getCache<{
       analyses: Array<{
-        id: string;
-        name: string;
-        filename: string;
-        data: string;
-        metadata: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-      }>;
+        id: string
+        name: string
+        filename: string
+        data: string
+        metadata: string | null
+        createdAt: Date
+        updatedAt: Date
+      }>
     }>(cacheKey)
 
     if (cachedResults) {
       return NextResponse.json({
         success: true,
         analyses: cachedResults.analyses,
-        cached: true
+        cached: true,
       })
     }
 
@@ -48,11 +48,11 @@ export async function GET(request: NextRequest) {
         where: {
           status: 'VALIDATED',
           project: {
-            ownerId: session.user.id
-          }
+            ownerId: session.user.id,
+          },
         },
         orderBy: {
-          createdAt: 'desc'
+          createdAt: 'desc',
         },
         select: {
           id: true,
@@ -66,28 +66,28 @@ export async function GET(request: NextRequest) {
           project: {
             select: {
               name: true,
-              id: true
-            }
-          }
+              id: true,
+            },
+          },
         },
         skip,
-        take
+        take,
       }),
       prisma.dataset.count({
         where: {
           status: 'VALIDATED',
           project: {
-            ownerId: session.user.id
-          }
-        }
-      })
+            ownerId: session.user.id,
+          },
+        },
+      }),
     ])
 
     // 💾 MULTI-LEVEL CACHE: Salvar no cache (L1 + L2, 5 minutos = 300s)
     const resultToCache = { analyses }
-    await setCache(cacheKey, resultToCache, { 
-      ttl: 300, 
-      tags: ['analysis', `user:${session.user.id}`] 
+    await setCache(cacheKey, resultToCache, {
+      ttl: 300,
+      tags: ['analysis', `user:${session.user.id}`],
     })
 
     // Build paginated response
@@ -95,15 +95,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      ...paginatedResponse,
-      cached: false
+      analyses: paginatedResponse.data,
+      meta: paginatedResponse.meta,
+      cached: false,
     })
-
   } catch (error) {
     console.error('Erro ao buscar análises:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }
