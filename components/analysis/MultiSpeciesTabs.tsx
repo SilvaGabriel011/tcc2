@@ -15,6 +15,7 @@ import { useState, useEffect } from 'react'
 import { Tabs } from '@/components/tabs'
 import { Bird, Beef, Fish, Wheat, Activity, ChevronDown, Info, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import type { Species } from '@/lib/generate-test-data'
 
 /**
  * EN: Custom icon for swine species
@@ -236,12 +237,12 @@ interface ReferenceData {
 }
 
 interface MultiSpeciesTabsProps {
-  onSpeciesChange?: (species: string, subtype?: string) => void
-  children?: (species: string, subtype?: string, referenceData?: ReferenceData) => React.ReactNode
+  onSpeciesChange?: (species: Species, subtype?: string) => void
+  children?: (species: Species, subtype?: string, referenceData?: ReferenceData) => React.ReactNode
 }
 
 export function MultiSpeciesTabs({ onSpeciesChange, children }: MultiSpeciesTabsProps) {
-  const [selectedSpecies, setSelectedSpecies] = useState('bovine')
+  const [selectedSpecies, setSelectedSpecies] = useState<Species>('bovine')
   const [selectedSubtype, setSelectedSubtype] = useState<string>('dairy')
   const [referenceData, setReferenceData] = useState<ReferenceData | null>(null)
   const [loading, setLoading] = useState(false)
@@ -309,7 +310,7 @@ export function MultiSpeciesTabs({ onSpeciesChange, children }: MultiSpeciesTabs
   }
 
   const handleSpeciesTabChange = (speciesId: string) => {
-    setSelectedSpecies(speciesId)
+    setSelectedSpecies(speciesId as Species)
   }
 
   const tabs = SPECIES_CONFIGS.map((species) => {
@@ -439,7 +440,7 @@ export function MultiSpeciesTabs({ onSpeciesChange, children }: MultiSpeciesTabs
           {/* Área de Conteúdo Dinâmico */}
           <div className="mt-6">
             {children ? (
-              children(species.id, selectedSubtype, referenceData ?? undefined)
+              children(species.id as Species, selectedSubtype, referenceData ?? undefined)
             ) : (
               <div className="text-center py-12 bg-card dark:bg-gray-800 rounded-lg border dark:border-gray-700">
                 <Activity className="w-12 h-12 mx-auto text-muted-foreground dark:text-gray-400 mb-4" />

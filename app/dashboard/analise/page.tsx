@@ -24,7 +24,7 @@ import { validateFile, formatBytes, scanFileForThreats } from '@/lib/upload-vali
 import { toast } from 'sonner'
 import { CSVPreview } from '@/components/csv-preview'
 import Papa from 'papaparse'
-import { generateAndDownloadTestData } from '@/lib/generate-test-data'
+import { generateAndDownloadTestData, type Species } from '@/lib/generate-test-data'
 import { MultiSpeciesTabs } from '@/components/analysis/MultiSpeciesTabs'
 import { SpeciesUploadForm } from '@/components/analysis/SpeciesUploadForm'
 
@@ -48,9 +48,7 @@ export default function AnaliseDataPage() {
   const [warning, setWarning] = useState('')
   const [previewData, setPreviewData] = useState<Record<string, unknown>[]>([])
   const [isParsing, setIsParsing] = useState(false)
-  const [selectedSpecies, setSelectedSpecies] = useState<
-    'bovino' | 'suino' | 'avicultura' | 'ovino' | 'caprino' | 'piscicultura' | 'forragem'
-  >('bovino')
+  const [selectedSpecies, setSelectedSpecies] = useState<Species>('bovino')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -369,10 +367,10 @@ export default function AnaliseDataPage() {
               <button
                 onClick={handleGenerateTestData}
                 className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
-                title="Gera uma planilha CSV com dados fictícios para demonstração"
+                title="Gera um arquivo CSV com dados fictícios para você testar o sistema"
               >
                 <Beaker className="h-4 w-4" />
-                <span>Gerar Dados para Teste</span>
+                <span>🧪 Gerar CSV de Exemplo</span>
               </button>
             </div>
           </div>

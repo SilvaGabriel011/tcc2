@@ -2,9 +2,10 @@
 
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, Loader2, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { AnalysisProgressDrawer } from './AnalysisProgressDrawer'
+import { generateAndDownloadTestData, type Species } from '@/lib/generate-test-data'
 
 interface AnalysisResult {
   success: boolean
@@ -18,7 +19,7 @@ interface AnalysisResult {
 }
 
 interface SpeciesUploadFormProps {
-  species: string
+  species: Species
   subtype?: string
   projectId?: string
   onAnalysisComplete?: (result: AnalysisResult) => void
@@ -241,6 +242,16 @@ export function SpeciesUploadForm({
     return names[species] || species
   }
 
+  const handleDownloadExample = () => {
+    try {
+      generateAndDownloadTestData(10, species)
+      toast.success(`CSV de exemplo de ${getSpeciesName()} baixado com sucesso!`)
+    } catch (error) {
+      console.error('Erro ao gerar CSV de exemplo:', error)
+      toast.error('Erro ao gerar arquivo de exemplo')
+    }
+  }
+
   // Obter exemplos de dados baseado na espécie e subtipo
   const getDataExamples = () => {
     switch (species) {
@@ -356,6 +367,30 @@ export function SpeciesUploadForm({
 
   return (
     <div className="space-y-6">
+      {/* Antes de Começar */}
+      <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-900">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="font-medium text-blue-900 dark:text-blue-300 mb-2">Antes de Começar</p>
+            <p className="text-sm text-blue-800 dark:text-blue-400 mb-3">
+              Não sabe como estruturar seu arquivo? Baixe um exemplo com 10 linhas de dados
+              fictícios para {getSpeciesName()}.
+            </p>
+            <button
+              onClick={handleDownloadExample}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              <Download className="w-4 h-4" />
+              Baixar CSV de Exemplo
+            </button>
+            <p className="text-xs text-blue-700 dark:text-blue-400 mt-2">
+              💡 Tamanho máximo: 50MB | Encoding: UTF-8
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Dropzone */}
       <div
         {...getRootProps()}
