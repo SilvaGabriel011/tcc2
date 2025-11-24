@@ -653,13 +653,19 @@ IA Generativa: Risco de alucinações. Mitigado apresentando sempre dados brutos
 
 ---
 
-7. CONCLUSÃO
+7. CONCLUSÃO E CONSIDERAÇÕES FINAIS
 
-O AgroInsight demonstra que tecnologias web modernas podem transformar análise de dados zootécnicos. A plataforma alcançou todos os 10 objetivos específicos, com validação em 12.500 registros reais e satisfação de usuários de 4.6/5.0.
+7.1 Conclusão
+
+Conclui-se que o objetivo geral deste trabalho foi alcançado, uma vez que foi desenvolvida e implementada a plataforma web full-stack open-source AgroInsight para gestão e análise de dados zootécnicos multi-espécie, integrando tecnologias web modernas, inteligência artificial e bases científicas consolidadas, de modo a democratizar o acesso a análises complexas e apoiar a tomada de decisão baseada em evidências no setor pecuário brasileiro.
+
+7.2 Considerações Finais
+
+O AgroInsight demonstra que tecnologias web modernas podem transformar a análise de dados zootécnicos. A plataforma alcançou todos os 10 objetivos específicos, com validação em 12.500 registros reais e satisfação de usuários de 4,6/5,0.
 
 Impacto Esperado: Democratizar análise de dados para milhões de produtores, reduzir custos de consultoria e aumentar produtividade setorial em 5-15%.
 
-O código open-source convida a comunidade a contribuir, evoluir e adaptar, acelerando transformação digital do agronegócio brasileiro.
+O código open-source convida a comunidade a contribuir, evoluir e adaptar, acelerando a transformação digital do agronegócio brasileiro.
 
 ---
 
