@@ -292,7 +292,9 @@ A interpretação adequada desses indicadores requer conhecimento das faixas de 
 
 O ecossistema de software aplicado à zootecnia abrange desde planilhas e scripts até plataformas integradas. Uma versão preliminar deste conceito foi proposta no “Tio ZooEstatístico” (aplicativo em Python/Streamlit voltado à ANOVA de mercado bovino) que ilustrou a viabilidade de automatizar rotinas estatísticas e relatórios interpretativos. O AgroInsight amplia esse escopo com arquitetura web full‑stack, análise multi‑espécie, comparação com referências científicas, interpretação para diferentes públicos, cache, autenticação e acervo de referências acadêmicas (Google Scholar/PubMed/Crossref). Outras soluções existentes frequentemente carecem de integração multi‑fonte de referências, de um modelo de dados unificado e de mecanismos de cache/limitação de taxa que suportem escala e colaboração.
 
-4.1 Arquitetura geral do sistema
+## **5\. Metodologia tecnológica**
+
+5.1 Arquitetura geral do sistema
 
 A arquitetura do AgroInsight é construída sobre uma base full-stack moderna, utilizando o framework Next.js 14\. Essa escolha unifica o desenvolvimento de frontend e backend em um projeto monolítico, o que otimiza o desenvolvimento, a implantação (deploy) e a manutenção. A adoção do Next.js é estratégica devido aos seus recursos avançados, como renderização híbrida (incluindo SSR, SSG e CSR), otimização automática de ativos (assets), um sistema de rotas baseado na estrutura de arquivos e suporte nativo ao TypeScript.
 
@@ -314,7 +316,7 @@ Componentes transversais incluem:
 
 - Integrações externas: SerpAPI para Google Scholar, PubMed E-utilities API, Crossref REST API, Google Generative AI e OpenAI API (opcionais).
 
-  4.2 Tecnologias e dependências
+  5.2 Tecnologias e dependências
 
 Frontend:
 
@@ -382,7 +384,7 @@ Desenvolvimento:
 
 \- tsx 4.1.0: execução de scripts TypeScript
 
-4.3 Organização do projeto
+5.3 Organização do projeto
 
 A estrutura de diretórios segue as convenções do Next.js 14 com App Router:
 
@@ -452,7 +454,7 @@ agroinsight/
 ├── next.config.js \# Configuração Next.js  
 └── vercel.json \# Configuração Vercel
 
-4.4 Pipeline de análise de dados
+5.4 Pipeline de análise de dados
 
 O fluxo de análise de dados no AgroInsight segue as seguintes etapas:
 
@@ -474,7 +476,7 @@ O fluxo de análise de dados no AgroInsight segue as seguintes etapas:
 
 9. Visualização: usuário acessa página de resultados (dashboard/resultados) que renderiza tabelas, gráficos (boxplot, scatter, heatmap, violin) e apresenta opções de exportação (PDF/CSV).
 
-4.5 Estratégia de cache e otimização de desempenho
+5.5 Estratégia de cache e otimização de desempenho
 
 O AgroInsight implementa cache em múltiplas camadas para otimizar desempenho e reduzir custos:
 
@@ -488,7 +490,7 @@ O AgroInsight implementa cache em múltiplas camadas para otimizar desempenho e 
 
 A estratégia de invalidação é conservadora: o cache é invalidado apenas em operações de escrita (criação, atualização, deleção) que afetam os dados cacheados. Upstash Redis é utilizado por sua simplicidade (REST API, sem necessidade de cliente persistente), escalabilidade (distribuído globalmente) e tier gratuito generoso (10.000 comandos/dia).
 
-4.6 Segurança e conformidade
+5.6 Segurança e conformidade
 
 Medidas de segurança implementadas:
 
@@ -733,8 +735,7 @@ Interpretação para bovinos de leite (NRC, 2001; EMBRAPA Gado de Leite, 2022):
 
 \- BCS 3,0-3,5: ideal para período seco
 
-\- BCS \> 4,0: gorda, risco de problemas metabólicos  
-
+\- BCS \> 4,0: gorda, risco de problemas metabólicos
 
 6.4 Interpretação técnica e para leigos (IA híbrida)
 
@@ -926,7 +927,7 @@ Cálculo de indicadores zootécnicos:
 
   - Lote B: (95,8 × 2,48) / (42 × 1,87) × 100 \= 302 (status “médio”)
 
-  7.1.3 Interpretação e recomendações
+    7.1.3 Interpretação e recomendações
 
 Modo técnico: “Lote B apresentou desempenho inferior ao Lote A em todos os indicadores. Teste t independente indica diferença significativa no peso médio (p \< 0,001, d de Cohen \= 0,85). A conversão alimentar 10% superior e a mortalidade 50% maior sugerem problemas de ambiência ou sanidade.”
 
