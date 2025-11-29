@@ -1,0 +1,2257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroInsight - TCC Zootecnia UFSJ</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/theme/white.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/plugin/highlight/monokai.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1a5f2a;
+            --secondary-color: #2d8a3e;
+            --accent-color: #4caf50;
+            --dark-color: #0d3015;
+            --light-color: #e8f5e9;
+            --text-color: #333333;
+            --highlight-color: #ff9800;
+        }
+        
+        .reveal {
+            font-family: 'Roboto', sans-serif;
+            font-size: 28px;
+            color: var(--text-color);
+        }
+        
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+            font-family: 'Roboto Slab', serif;
+            color: var(--primary-color);
+            text-transform: none;
+            letter-spacing: normal;
+        }
+        
+        .reveal h1 {
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 0.5em;
+        }
+        
+        .reveal h2 {
+            font-size: 1.6em;
+            font-weight: 700;
+            border-bottom: 3px solid var(--accent-color);
+            padding-bottom: 0.3em;
+            margin-bottom: 0.8em;
+        }
+        
+        .reveal h3 {
+            font-size: 1.3em;
+            font-weight: 500;
+            color: var(--secondary-color);
+        }
+        
+        .reveal p, .reveal li {
+            line-height: 1.6;
+            text-align: left;
+        }
+        
+        .reveal ul, .reveal ol {
+            display: block;
+            margin-left: 1em;
+        }
+        
+        .reveal li {
+            margin-bottom: 0.5em;
+        }
+        
+        .reveal .slides section {
+            padding: 20px 40px;
+        }
+        
+        /* Title slide styling */
+        .title-slide {
+            background: linear-gradient(135deg, var(--dark-color) 0%, var(--primary-color) 100%);
+        }
+        
+        .title-slide h1, .title-slide h2, .title-slide h3, .title-slide p, .title-slide strong {
+            color: white !important;
+        }
+        
+        .title-slide .institution {
+            font-size: 0.9em;
+            margin-bottom: 2em;
+            opacity: 0.9;
+        }
+        
+        .title-slide .author {
+            font-size: 1.1em;
+            margin-top: 1.5em;
+            color: white !important;
+        }
+        
+        .title-slide .advisor {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+        
+        .title-slide .date {
+            font-size: 0.8em;
+            margin-top: 1em;
+            opacity: 0.8;
+        }
+        
+        /* Image and table scaling for better centering */
+        .reveal section img {
+            max-width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+        }
+        
+        .reveal table {
+            font-size: 0.65em;
+        }
+        
+        .reveal table td, .reveal table th {
+            padding: 6px 10px;
+        }
+        
+        /* Vertically centered slides */
+        .reveal .slides section.vertically-centered {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* Section divider slides */
+        .section-slide {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        }
+        
+        .section-slide h2 {
+            color: white !important;
+            border-bottom: none;
+            font-size: 2em;
+        }
+        
+        .section-slide .section-number {
+            font-size: 4em;
+            opacity: 0.3;
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: white;
+        }
+        
+        .section-slide .section-description {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .section-slide .section-description p {
+            color: white !important;
+            font-size: 0.85em;
+            opacity: 0.95;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .section-slide .section-topics {
+            font-size: 0.75em !important;
+            opacity: 0.85;
+            margin-top: 20px !important;
+        }
+        
+        /* Content boxes */
+        .highlight-box {
+            background: var(--light-color);
+            border-left: 4px solid var(--accent-color);
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .warning-box {
+            background: #fff3e0;
+            border-left: 4px solid var(--highlight-color);
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .definition-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        /* Two column layout */
+        .two-columns {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+        }
+        
+        .two-columns > div {
+            flex: 1;
+        }
+        
+        /* Three column layout */
+        .three-columns {
+            display: flex;
+            gap: 25px;
+            align-items: flex-start;
+        }
+        
+        .three-columns > div {
+            flex: 1;
+        }
+        
+        /* Tables */
+        .reveal table {
+            font-size: 0.7em;
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+        }
+        
+        .reveal table th {
+            background: var(--primary-color);
+            color: white;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 500;
+        }
+        
+        .reveal table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .reveal table tr:nth-child(even) {
+            background: var(--light-color);
+        }
+        
+        /* Citations */
+        .citation {
+            font-size: 0.65em;
+            color: #666;
+            font-style: italic;
+            margin-top: 10px;
+        }
+        
+        /* Footer */
+        .slide-footer {
+            position: absolute;
+            bottom: 15px;
+            left: 40px;
+            font-size: 0.5em;
+            color: #999;
+        }
+        
+        /* Visual cards for reducing text density */
+        .visual-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+            border-top: 4px solid var(--accent-color);
+        }
+        
+        .visual-card h4 {
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        
+        .visual-card .card-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .feature-item {
+            background: var(--light-color);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .feature-item h5 {
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        
+        .feature-item p {
+            font-size: 0.75em;
+            text-align: center;
+        }
+        
+        /* Icons and badges */
+        .tech-badge {
+            display: inline-block;
+            background: var(--secondary-color);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.75em;
+            margin: 3px;
+        }
+        
+        .status-excellent {
+            color: #2e7d32;
+            font-weight: 500;
+        }
+        
+        .status-very-good {
+            color: #43a047;
+            font-weight: 500;
+        }
+        
+        .status-good {
+            color: #558b2f;
+            font-weight: 500;
+        }
+        
+        .status-attention {
+            color: #f57c00;
+            font-weight: 500;
+        }
+        
+        .status-critical {
+            color: #c62828;
+            font-weight: 500;
+        }
+        
+        /* Architecture diagram styling */
+        .architecture-layer {
+            background: white;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .architecture-layer h4 {
+            margin: 0 0 8px 0;
+            color: var(--primary-color);
+        }
+        
+        /* Pipeline steps */
+        .pipeline-step {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+        
+        .step-number {
+            background: var(--primary-color);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        
+        /* Metric cards */
+        .metric-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .metric-card .value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .metric-card .label {
+            font-size: 0.75em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        /* Emphasis text */
+        .emphasis {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .reveal strong {
+            color: var(--primary-color);
+        }
+        
+        /* Small text */
+        .small-text {
+            font-size: 0.8em;
+        }
+        
+        .smaller-text {
+            font-size: 0.7em;
+        }
+        
+        /* Agenda/TOC styling */
+        .agenda-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .agenda-number {
+            background: var(--accent-color);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        
+        /* Progress indicator */
+        .reveal .progress {
+            background: rgba(0,0,0,0.1);
+            height: 4px;
+        }
+        
+        .reveal .progress span {
+            background: var(--accent-color);
+        }
+        
+        /* Slide numbers */
+        .reveal .slide-number {
+            background: var(--primary-color);
+            color: white;
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 4px 0 0 0;
+        }
+        
+        /* Formula styling */
+        .formula {
+            background: #f5f5f5;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        /* Conclusion slide */
+        .conclusion-slide {
+            background: linear-gradient(135deg, var(--light-color) 0%, white 100%);
+        }
+        
+        /* Thank you slide */
+        .thanks-slide {
+            background: linear-gradient(135deg, var(--dark-color) 0%, var(--primary-color) 100%);
+        }
+        
+        .thanks-slide h2, .thanks-slide p, .thanks-slide strong {
+            color: white !important;
+        }
+        
+        .thanks-slide h2 {
+            border-bottom: none;
+        }
+        
+        .thanks-slide .obrigado {
+            font-size: 1.4em;
+            color: white !important;
+            margin-top: 1em;
+        }
+        
+        /* References slide */
+        .references-slide {
+            font-size: 0.65em;
+        }
+        
+        .references-slide p {
+            margin: 8px 0;
+            text-indent: -2em;
+            padding-left: 2em;
+        }
+        
+        /* ========================================
+           RESPONSIVENESS AND COLOR FIXES
+           ======================================== */
+        
+        /* Fix color contrast - strong should inherit color in colored backgrounds */
+        .section-slide strong,
+        .title-slide strong,
+        .thanks-slide strong {
+            color: inherit !important;
+        }
+        
+        /* Ensure text is visible on colored backgrounds */
+        .section-slide .section-description strong {
+            color: white !important;
+        }
+        
+        /* Fix highlight-box and warning-box strong text to be readable */
+        .highlight-box strong,
+        .warning-box strong,
+        .definition-box strong {
+            color: var(--text-color);
+            font-weight: 600;
+        }
+        
+        /* Architecture slide - more compact layout */
+        .architecture-layer {
+            padding: 10px 15px;
+            margin: 6px 0;
+        }
+        
+        .architecture-layer h4 {
+            margin: 0 0 4px 0;
+            font-size: 0.95em;
+        }
+        
+        .architecture-layer p {
+            margin: 0;
+            font-size: 0.7em;
+        }
+        
+        /* Visualization slide - equal height cards */
+        .three-columns > div {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .three-columns .metric-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 80px;
+        }
+        
+        /* Two-columns layout - equal height items */
+        .two-columns {
+            align-items: stretch;
+        }
+        
+        .two-columns > div {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .two-columns .metric-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        /* Make non-card content in two-columns also centered */
+        .two-columns > div > h4 {
+            margin-bottom: 0.5em;
+        }
+        
+        .two-columns > div > ul {
+            margin: 0;
+        }
+        
+        /* Conclusion slides - more compact */
+        .conclusion-slide h2 {
+            margin-bottom: 0.5em;
+        }
+        
+        .conclusion-slide .highlight-box {
+            padding: 12px 15px;
+            margin: 10px 0;
+        }
+        
+        .conclusion-slide .two-columns {
+            gap: 25px;
+        }
+        
+        .conclusion-slide ul {
+            margin-left: 0.5em;
+        }
+        
+        .conclusion-slide li {
+            margin-bottom: 0.3em;
+            font-size: 0.9em;
+        }
+        
+        /* ========================================
+           RESPONSIVE MEDIA QUERIES
+           ======================================== */
+        
+        /* Medium screens (laptops, smaller monitors) */
+        @media (max-width: 1200px), (max-height: 800px) {
+            .reveal {
+                font-size: 24px;
+            }
+            
+            .reveal h2 {
+                font-size: 1.4em;
+                margin-bottom: 0.6em;
+            }
+            
+            .architecture-layer {
+                padding: 8px 12px;
+                margin: 5px 0;
+            }
+            
+            .architecture-layer h4 {
+                font-size: 0.9em;
+            }
+            
+            .two-columns {
+                gap: 25px;
+            }
+            
+            .three-columns {
+                gap: 15px;
+            }
+            
+            .highlight-box,
+            .warning-box,
+            .definition-box {
+                padding: 10px 15px;
+                margin: 10px 0;
+            }
+            
+            .metric-card {
+                padding: 10px;
+            }
+            
+            .formula {
+                padding: 10px 15px;
+                margin: 10px 0;
+            }
+        }
+        
+        /* Small screens (small laptops, tablets) */
+        @media (max-width: 1000px), (max-height: 700px) {
+            .reveal {
+                font-size: 22px;
+            }
+            
+            .reveal h2 {
+                font-size: 1.3em;
+                margin-bottom: 0.5em;
+            }
+            
+            .reveal .slides section {
+                padding: 15px 30px;
+            }
+            
+            .two-columns,
+            .three-columns {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .feature-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .architecture-layer {
+                padding: 6px 10px;
+                margin: 4px 0;
+            }
+            
+            .architecture-layer h4 {
+                font-size: 0.85em;
+            }
+            
+            .architecture-layer p {
+                font-size: 0.65em;
+            }
+            
+            .metric-card {
+                padding: 8px;
+                min-height: 60px;
+            }
+            
+            .three-columns .metric-card {
+                min-height: auto;
+            }
+            
+            .pipeline-step {
+                margin: 5px 0;
+            }
+            
+            .step-number {
+                width: 24px;
+                height: 24px;
+                font-size: 0.85em;
+                margin-right: 8px;
+            }
+        }
+        
+        /* Very small screens */
+        @media (max-width: 800px), (max-height: 600px) {
+            .reveal {
+                font-size: 20px;
+            }
+            
+            .reveal h2 {
+                font-size: 1.2em;
+            }
+            
+            .reveal .slides section {
+                padding: 10px 20px;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .reveal table {
+                font-size: 0.6em;
+            }
+            
+            .reveal table td, .reveal table th {
+                padding: 4px 6px;
+            }
+            
+            /* Allow scrolling on very tall slides */
+            .reveal .slides section {
+                overflow-y: auto;
+                max-height: 100%;
+            }
+        }
+        
+        /* Ensure status colors are always visible */
+        .status-excellent,
+        .status-very-good,
+        .status-good,
+        .status-attention,
+        .status-critical {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            
+            <!-- SLIDE 1: Title -->
+            <section class="title-slide">
+                <p class="institution">
+                    UNIVERSIDADE FEDERAL DE SÃO JOÃO DEL REI<br>
+                    Departamento de Ciências Agrárias - COZOO<br>
+                    Curso de Bacharelado em Zootecnia
+                </p>
+                <h1>Aplicativo AGROINSIGHT</h1>
+                <h3>Uso de ferramentas de programação e tecnologia na análise de dados em Zootecnia</h3>
+                <p class="author"><strong>Pedro Gabriel Alves da Silva</strong></p>
+                <p class="advisor">Orientadora: Profa. Dra. Carla Regina Guimarães Brighenti</p>
+                <p class="date">São João del Rei - 2025</p>
+            </section>
+
+            <!-- SLIDE 2: Agenda -->
+            <section>
+                <h2>Roteiro da Apresentação</h2>
+                <div class="two-columns">
+                    <div>
+                        <div class="agenda-item"><span class="agenda-number">1</span> Introdução e Contexto</div>
+                        <div class="agenda-item"><span class="agenda-number">2</span> Objetivos</div>
+                        <div class="agenda-item"><span class="agenda-number">3</span> Fundamentação Teórica</div>
+                        <div class="agenda-item"><span class="agenda-number">4</span> Metodologia Tecnológica</div>
+                        <div class="agenda-item"><span class="agenda-number">5</span> O Aplicativo AgroInsight</div>
+                    </div>
+                    <div>
+                        <div class="agenda-item"><span class="agenda-number">6</span> Resultados e Aplicações</div>
+                        <div class="agenda-item"><span class="agenda-number">7</span> Discussão</div>
+                        <div class="agenda-item"><span class="agenda-number">8</span> Conclusão</div>
+                        <div class="agenda-item"><span class="agenda-number">9</span> Trabalhos Futuros</div>
+                        <div class="agenda-item"><span class="agenda-number">10</span> Referências</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 2.5: Mapa Mental -->
+            <section>
+                <h2>Estrutura do Trabalho</h2>
+                <p class="small-text" style="text-align: center;">Este mapa mental apresenta a visão geral do projeto AgroInsight e guiará nossa apresentação.</p>
+                <div style="text-align: center; margin-top: 15px;">
+                    <img src="mindmap.png" alt="Mapa Mental do AgroInsight" style="max-width: 90%; max-height: 55vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                </div>
+                <p class="citation" style="text-align: center;">Mapa mental: Aplicativo AGROINSIGHT - Análise de Dados em Zootecnia (TCC)</p>
+            </section>
+
+            <!-- SECTION: INTRODUCAO -->
+            <section class="section-slide">
+                <h2>Introdução</h2>
+                <span class="section-number">1</span>
+                <div class="section-description">
+                    <p>Contextualização do agronegócio brasileiro e a necessidade de ferramentas de análise de dados na zootecnia moderna.</p>
+                    <p class="section-topics"><strong>Nesta seção:</strong> Contexto • Problema • Lacuna • Oportunidade</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 3: Contexto do Agronegócio -->
+            <section>
+                <h2>Contexto: O Agronegócio Brasileiro</h2>
+                <div class="two-columns">
+                    <div>
+                        <div class="highlight-box">
+                            <p><strong>Brasil: potencia mundial em proteina animal</strong></p>
+                            <ul>
+                                <li>Lider em exportações de carne bovina e frango</li>
+                                <li>Entre os principais produtores de suinos, leite e pescado</li>
+                                <li>Contribuição significativa para o PIB agropecuario</li>
+                            </ul>
+                        </div>
+                        <p class="small-text">A intensificação da pecuária trouxe ganhos de produtividade, mas aumentou a <strong>complexidade da gestão</strong> dos sistemas produtivos.</p>
+                    </div>
+                    <div>
+                        <div class="metric-card">
+                            <div class="value">+</div>
+                            <div class="label">Volumes crescentes de dados</div>
+                        </div>
+                        <br>
+                        <div class="metric-card">
+                            <div class="value">?</div>
+                            <div class="label">Como transformar dados em decisoes?</div>
+                        </div>
+                    </div>
+                </div>
+                <p class="citation">Fonte: IBGE, 2023; FAO, 2024; EMBRAPA, 2022; ANUALPEC, 2023</p>
+            </section>
+
+            <!-- SLIDE 4: O Problema -->
+            <section>
+                <h2>O Problema: Barreira de Acessibilidade</h2>
+                <div class="warning-box">
+                    <p><strong>Desafio crítico:</strong> A análise de dados zootécnicos enfrenta barreiras significativas de acessibilidade tecnológica.</p>
+                </div>
+                <div class="three-columns">
+                    <div>
+                        <h4>Planilhas</h4>
+                        <ul class="small-text">
+                            <li>Falta de padronização</li>
+                            <li>Sem integração com referências</li>
+                            <li>Propenso a erros</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Softwares Estatisticos</h4>
+                        <ul class="small-text">
+                            <li>Alto custo (SAS, SPSS)</li>
+                            <li>Exigem conhecimento avançado</li>
+                            <li>Interfaces complexas</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Scripts Isolados</h4>
+                        <ul class="small-text">
+                            <li>Requerem programação</li>
+                            <li>Sem auditoria</li>
+                            <li>Dificil colaboração</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="citation">Fonte: McKinney, 2018; Bussab & Morettin, 2017; Rose et al., 2016</p>
+            </section>
+
+            <!-- SLIDE 5: Lacuna e Exclusao Digital -->
+            <section>
+                <h2>Lacuna: Conhecimento vs. Aplicação</h2>
+                <div class="two-columns">
+                    <div>
+                        <div class="definition-box">
+                            <p><strong>Exclusao digital no meio rural:</strong></p>
+                            <p class="small-text">Mesmo com acesso a internet, a complexidade das ferramentas impede que profissionais aproveitem o potencial dos dados coletados.</p>
+                        </div>
+                        <ul>
+                            <li>Desigualdades regionais no acesso a tecnologia</li>
+                            <li>Formação tradicional não inclui programação</li>
+                            <li>Assimetria de informação entre pesquisa e produção</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="highlight-box">
+                            <h4>Consequencias:</h4>
+                            <ul class="small-text">
+                                <li>Decisoes baseadas em intuicao</li>
+                                <li>Subaproveitamento de dados</li>
+                                <li>Distancia entre ciencia e campo</li>
+                                <li>Perda de competitividade</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <p class="citation">Fonte: CETIC, 2020; Massruha & Leite, 2017; Mulder et al., 2019</p>
+            </section>
+
+            <!-- SLIDE 6: Oportunidade -->
+            <section>
+                <h2>Oportunidade: Convergencia Tecnológica</h2>
+                <div class="highlight-box">
+                    <p>A popularização de tecnologias de dados e IA generativa revoluciona o desenvolvimento de software, permitindo criar plataformas acessiveis que <strong>democratizam análises estatísticas complexas</strong>.</p>
+                </div>
+                <div class="two-columns">
+                    <div>
+                        <h4>Tecnologias Habilitadoras:</h4>
+                        <ul>
+                            <li>Frameworks web modernos (Next.js)</li>
+                            <li>Linguagens tipadas (TypeScript)</li>
+                            <li>IA assistiva no desenvolvimento</li>
+                            <li>Cloud computing acessivel</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Possibilidades:</h4>
+                        <ul>
+                            <li>Interfaces intuitivas</li>
+                            <li>Análises automatizadas</li>
+                            <li>Integração com referências científicas</li>
+                            <li>Acesso via navegador web</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="citation">Fonte: Russell & Norvig, 2021; Chen et al., 2021; Goodfellow et al., 2016</p>
+            </section>
+
+            <!-- SECTION: OBJETIVOS -->
+            <section class="section-slide">
+                <h2>Objetivos</h2>
+                <span class="section-number">2</span>
+                <div class="section-description">
+                    <p>Definição dos objetivos gerais e específicos do desenvolvimento do aplicativo AgroInsight.</p>
+                    <p class="section-topics"><strong>Nesta seção:</strong> Objetivo Geral • Objetivos Específicos</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 7: Objetivos -->
+            <section>
+                <h2>Objetivos do Trabalho</h2>
+                <div class="highlight-box">
+                    <h3>Objetivo Geral</h3>
+                    <p>Desenvolver o aplicativo <strong>AgroInsight</strong> para análises estatísticas zootecnicas de diferentes culturas com suporte a referências científicas para interpretação tecnica.</p>
+                </div>
+                <h3>Objetivos Específicos</h3>
+                <ol>
+                    <li>Descrever a concepção e implementação do aplicativo AgroInsight</li>
+                    <li>Contextualizar a importância de ferramentas de IA e dados na zootecnia</li>
+                    <li>Apresentar a arquitetura tecnica (frontend, backend, banco de dados, seguranca, cache)</li>
+                    <li>Detalhar o pipeline de análise e os cálculos zootécnicos</li>
+                    <li>Comparar resultados com referências bibliograficas em conformidade com padroes academicos</li>
+                </ol>
+            </section>
+
+            <!-- SECTION: FUNDAMENTACAO TEORICA -->
+            <section class="section-slide">
+                <h2>Fundamentação Teórica</h2>
+                <span class="section-number">3</span>
+                <div class="section-description">
+                    <p>Base científica que sustenta o desenvolvimento do AgroInsight: estatística, referências e inteligência artificial.</p>
+                    <p class="section-topics"><strong>Nesta seção:</strong> Estatística • Padrões NRC/EMBRAPA • IA no Agronegócio • Indicadores Zootécnicos</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 8: Estatística Aplicada -->
+            <section>
+                <h2>Estatística Aplicada a Zootecnia</h2>
+                <div class="definition-box">
+                    <p>A análise estatística é ferramenta essencial para quantificar diferenças, identificar relações entre variáveis e avaliar significância de efeitos em sistemas biológicos.</p>
+                </div>
+                <div class="two-columns">
+                    <div>
+                        <h4>Tecnicas Principais:</h4>
+                        <ul class="small-text">
+                            <li><strong>Descritiva:</strong> média, mediana, desvio-padrão, CV</li>
+                            <li><strong>Testes de hipoteses:</strong> teste t, ANOVA</li>
+                            <li><strong>Correlação:</strong> coeficiente de Pearson</li>
+                            <li><strong>Regressao:</strong> modelagem de relações</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>No AgroInsight:</h4>
+                        <ul class="small-text">
+                            <li>Biblioteca estatística em TypeScript</li>
+                            <li>Teste t (independente e pareado)</li>
+                            <li>ANOVA de uma via</li>
+                            <li>Tamanhos de efeito (d de Cohen, eta-quadrado)</li>
+                            <li>Intervalos de confianca</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="citation">Fonte: Bussab & Morettin, 2017; Triola, 2022; Montgomery, 2017</p>
+            </section>
+
+            <!-- SLIDE 9: Referências Científicas -->
+            <section>
+                <h2>Padroes e Referências Científicas</h2>
+                <div class="two-columns">
+                    <div>
+                        <div class="highlight-box">
+                            <h4>NRC - National Research Council</h4>
+                            <p class="small-text">Referência internacional desde 1940 para exigencias nutricionais de diferentes espécies animais.</p>
+                        </div>
+                        <div class="highlight-box">
+                            <h4>EMBRAPA</h4>
+                            <p class="small-text">Conhecimento adaptado as condicoes tropicais brasileiras. Prioridade no AgroInsight.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4>Faixas de Referência:</h4>
+                        <ul class="small-text">
+                            <li>Valores minimos e maximos</li>
+                            <li>Faixa ideal (ideal_min a ideal_max)</li>
+                            <li>Fonte bibliografica</li>
+                            <li>Variação sazonal (forragens)</li>
+                        </ul>
+                        <div class="definition-box">
+                            <p class="small-text"><strong>Exemplo:</strong> Frangos de corte aos 42 dias - peso ideal: 2,5-2,8 kg; CA: 1,6-1,8; mortalidade: < 3%</p>
+                        </div>
+                    </div>
+                </div>
+                <p class="citation">Fonte: NRC, 2001; NRC, 2016; EMBRAPA, 2022</p>
+            </section>
+
+            <!-- SLIDE 10: IA no Agronegócio -->
+            <section>
+                <h2>Inteligencia Artificial no Agronegócio</h2>
+                <div class="two-columns">
+                    <div>
+                        <h4>Aplicações em Zootecnia:</h4>
+                        <ul class="small-text">
+                            <li>Predicao de desempenho animal</li>
+                            <li>Identificação individual por reconhecimento facial</li>
+                            <li>Monitoramento de comportamento</li>
+                            <li>Deteccao precoce de doencas</li>
+                            <li>Otimização de dietas</li>
+                            <li>Análise de imagens de ultrassom</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div class="warning-box">
+                            <h4>Estrategia Híbrida no AgroInsight:</h4>
+                            <ul class="small-text">
+                                <li><strong>80%</strong> - Lógica baseada em regras (reprodutivel, transparente)</li>
+                                <li><strong>20%</strong> - IA generativa opcional (enriquecimento)</li>
+                                <li>Fallback automático para regras</li>
+                            </ul>
+                        </div>
+                        <p class="small-text">Equilibrio entre <strong>inovação</strong> e <strong>confiabilidade</strong>.</p>
+                    </div>
+                </div>
+                <p class="citation">Fonte: Russell & Norvig, 2021; Liakos et al., 2018</p>
+            </section>
+
+            <!-- SLIDE 11: Ferramentas de IA Assistiva -->
+            <section>
+                <h2>IA Assistiva no Desenvolvimento</h2>
+                <div class="highlight-box">
+                    <p>Ferramentas como GitHub Copilot, ChatGPT, Claude e Cursor funcionam como "copilots" para programadores, acelerando o desenvolvimento de software.</p>
+                </div>
+                <div class="two-columns">
+                    <div>
+                        <h4>Capacidades:</h4>
+                        <ul class="small-text">
+                            <li>Sugestão e completação de codigo</li>
+                            <li>Geração de testes automatizados</li>
+                            <li>Escrita de documentação</li>
+                            <li>Refatoração de codigo</li>
+                            <li>Prototipação rapida</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>No Desenvolvimento do AgroInsight:</h4>
+                        <ul class="small-text">
+                            <li>Prototipagem de interfaces</li>
+                            <li>Elaboração de funcoes estatísticas</li>
+                            <li>Definicao de tipos TypeScript</li>
+                            <li>Documentação de APIs</li>
+                        </ul>
+                        <p class="small-text emphasis">Foco na lógica de negócio e conhecimento zootécnico.</p>
+                    </div>
+                </div>
+                <p class="citation">Fonte: Chen et al., 2021</p>
+            </section>
+
+            <!-- SLIDE 12: Zootecnia Digital -->
+            <section>
+                <h2>Zootecnia Digital e Integração</h2>
+                <div class="definition-box">
+                    <p><strong>Zootecnia Digital / Pecuária de Precisão:</strong> Aplicação de TICs para monitoramento, análise e gestão de sistemas de produção animal.</p>
+                </div>
+                <div class="three-columns">
+                    <div>
+                        <h4>Sensores</h4>
+                        <ul class="smaller-text">
+                            <li>Colares</li>
+                            <li>Brincos eletronicos</li>
+                            <li>Cameras</li>
+                            <li>Balanças automáticas</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Sistemas</h4>
+                        <ul class="smaller-text">
+                            <li>Registro de dados</li>
+                            <li>Análise produtiva</li>
+                            <li>Gestão integrada</li>
+                            <li>Rastreabilidade</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Decisao</h4>
+                        <ul class="smaller-text">
+                            <li>Modelos matematicos</li>
+                            <li>Alertas automáticos</li>
+                            <li>Recomendações</li>
+                            <li>Benchmarking</li>
+                        </ul>
+                    </div>
+                </div>
+                <p class="citation">Fonte: Liakos et al., 2018; Wolfert et al., 2017</p>
+            </section>
+
+            <!-- SLIDE 13: Indicadores Zootécnicos -->
+            <section>
+                <h2>Indicadores Zootécnicos</h2>
+                <p>Métricas quantitativas essenciais para avaliação do desempenho produtivo e reprodutivo.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Indicador</th>
+                            <th>Sigla</th>
+                            <th>Aplicação</th>
+                            <th>Formula</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Ganho de Peso Diario</td>
+                            <td>GPD</td>
+                            <td>Todas espécies</td>
+                            <td>(Peso Final - Peso Inicial) / Dias</td>
+                        </tr>
+                        <tr>
+                            <td>Conversão Alimentar</td>
+                            <td>FCR</td>
+                            <td>Todas espécies</td>
+                            <td>Consumo Ração / Ganho Peso</td>
+                        </tr>
+                        <tr>
+                            <td>Indice Eficiencia Produtiva</td>
+                            <td>IEP</td>
+                            <td>Aves</td>
+                            <td>(Viab. x Peso) / (Idade x CA) x 100</td>
+                        </tr>
+                        <tr>
+                            <td>Leite Corrigido Gordura</td>
+                            <td>FCM</td>
+                            <td>Bovinos leite</td>
+                            <td>0,4 x Prod + 15 x Prod x %Gord</td>
+                        </tr>
+                        <tr>
+                            <td>Escore Condicao Corporal</td>
+                            <td>BCS</td>
+                            <td>Bovinos</td>
+                            <td>Escala 1-5 (visual/tatil)</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="citation">Fonte: NRC, 2016; EMBRAPA, 2022</p>
+            </section>
+
+            <!-- SECTION: METODOLOGIA -->
+            <section class="section-slide">
+                <h2>Metodologia Tecnológica</h2>
+                <span class="section-number">4</span>
+                <div class="section-description">
+                    <p>Arquitetura técnica, stack de desenvolvimento e pipeline de análise do AgroInsight.</p>
+                    <p class="section-topics"><strong>Nesta seção:</strong> Arquitetura • Stack Tecnológico • Pipeline • Cache • Segurança</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 14: Arquitetura Geral -->
+            <section>
+                <h2>Arquitetura do Sistema</h2>
+                <p>Arquitetura full-stack moderna com Next.js 14, seguindo padrao de tres camadas:</p>
+                <div class="architecture-layer" style="background: #e3f2fd;">
+                    <h4>Camada de Apresentação (Frontend)</h4>
+                    <p class="smaller-text">React + TypeScript | TailwindCSS + Radix UI | Recharts | React Hook Form</p>
+                </div>
+                <div class="architecture-layer" style="background: #e8f5e9;">
+                    <h4>Camada de Lógica de Negócio (Backend)</h4>
+                    <p class="smaller-text">Next.js API Routes | Servicos TypeScript | Biblioteca Estatística | Validação Zod</p>
+                </div>
+                <div class="architecture-layer" style="background: #fff3e0;">
+                    <h4>Camada de Dados</h4>
+                    <p class="smaller-text">Prisma ORM | PostgreSQL (prod) / SQLite (dev) | Upstash Redis (cache)</p>
+                </div>
+                <div class="architecture-layer" style="background: #fce4ec;">
+                    <h4>Integrações Externas</h4>
+                    <p class="smaller-text">Google Gemini / OpenAI | SerpAPI (Scholar) | PubMed | Crossref</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 15: Stack Tecnologico -->
+            <section>
+                <h2>Stack Tecnologico</h2>
+                <div class="three-columns">
+                    <div>
+                        <h4>Frontend</h4>
+                        <span class="tech-badge">Next.js 14</span>
+                        <span class="tech-badge">React 18</span>
+                        <span class="tech-badge">TypeScript</span>
+                        <span class="tech-badge">TailwindCSS</span>
+                        <span class="tech-badge">Radix UI</span>
+                        <span class="tech-badge">Recharts</span>
+                        <span class="tech-badge">React Hook Form</span>
+                        <span class="tech-badge">Zod</span>
+                    </div>
+                    <div>
+                        <h4>Backend</h4>
+                        <span class="tech-badge">API Routes</span>
+                        <span class="tech-badge">Prisma ORM</span>
+                        <span class="tech-badge">NextAuth</span>
+                        <span class="tech-badge">Bcrypt</span>
+                        <span class="tech-badge">Upstash Redis</span>
+                        <span class="tech-badge">PapaParse</span>
+                        <span class="tech-badge">jsPDF</span>
+                    </div>
+                    <div>
+                        <h4>IA e APIs</h4>
+                        <span class="tech-badge">Google Gemini</span>
+                        <span class="tech-badge">OpenAI GPT</span>
+                        <span class="tech-badge">SerpAPI</span>
+                        <span class="tech-badge">PubMed API</span>
+                        <span class="tech-badge">Crossref API</span>
+                        <span class="tech-badge">Vercel</span>
+                    </div>
+                </div>
+                <div class="highlight-box" style="margin-top: 20px;">
+                    <p class="small-text"><strong>Qualidade de Codigo:</strong> ESLint + Prettier | Jest (testes) | Husky (pre-commit hooks) | TypeScript strict mode</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 16: Pipeline de Análise -->
+            <section>
+                <h2>Pipeline de Análise de Dados</h2>
+                <div class="two-columns">
+                    <div>
+                        <div class="pipeline-step"><span class="step-number">1</span> <strong>Upload:</strong> CSV/Excel via drag-and-drop</div>
+                        <div class="pipeline-step"><span class="step-number">2</span> <strong>Parsing:</strong> PapaParse (streaming para arquivos grandes)</div>
+                        <div class="pipeline-step"><span class="step-number">3</span> <strong>Validação:</strong> Colunas obrigatórias por espécie</div>
+                        <div class="pipeline-step"><span class="step-number">4</span> <strong>Estatística:</strong> Média, mediana, DP, CV, quartis</div>
+                        <div class="pipeline-step"><span class="step-number">5</span> <strong>Comparação:</strong> Faixas de referência NRC/EMBRAPA</div>
+                    </div>
+                    <div>
+                        <div class="pipeline-step"><span class="step-number">6</span> <strong>Cálculos:</strong> Indicadores zootécnicos (IEP, GPD, FCR)</div>
+                        <div class="pipeline-step"><span class="step-number">7</span> <strong>Interpretação:</strong> Diagnósticos + IA opcional</div>
+                        <div class="pipeline-step"><span class="step-number">8</span> <strong>Armazenamento:</strong> Banco de dados (Dataset)</div>
+                        <div class="pipeline-step"><span class="step-number">9</span> <strong>Visualização:</strong> Gráficos + Relatórios PDF</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 17: Cache e Otimização -->
+            <section>
+                <h2>Cache e Otimização de Desempenho</h2>
+                <div class="highlight-box">
+                    <p>Estrategia de cache em multiplas camadas com <strong>Upstash Redis</strong> para otimizar desempenho e reduzir custos.</p>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tipo de Cache</th>
+                            <th>TTL</th>
+                            <th>Reducao de Latencia</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Diagnósticos de análise</td>
+                            <td>24 horas</td>
+                            <td>10-30s para ~50ms (95%+)</td>
+                        </tr>
+                        <tr>
+                            <td>Buscas de referências</td>
+                            <td>1 hora</td>
+                            <td>3-5s para ~100ms</td>
+                        </tr>
+                        <tr>
+                            <td>Listagens por usuário</td>
+                            <td>5 minutos</td>
+                            <td>Reducao de carga no BD</td>
+                        </tr>
+                        <tr>
+                            <td>Artigos salvos</td>
+                            <td>10 minutos</td>
+                            <td>Acesso rapido a biblioteca</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="small-text">Invalidação conservadora: apenas em operações de escrita que afetam dados cacheados.</p>
+            </section>
+
+            <!-- SLIDE 18: Seguranca -->
+            <section>
+                <h2>Seguranca e Conformidade</h2>
+                <div class="three-columns">
+                    <div>
+                        <h4>Autenticação</h4>
+                        <ul class="smaller-text">
+                            <li>NextAuth com JWT</li>
+                            <li>Hash bcrypt (salt: 10)</li>
+                            <li>Tokens de reset com expiração</li>
+                            <li>Papeis: User/Admin</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Protecao</h4>
+                        <ul class="smaller-text">
+                            <li>Raté limiting (sliding window)</li>
+                            <li>Validação Zod</li>
+                            <li>HTTPS obrigatorio</li>
+                            <li>CORS restritivo</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Auditoria</h4>
+                        <ul class="smaller-text">
+                            <li>Logs de todas as ações</li>
+                            <li>Isolamento por usuário</li>
+                            <li>Prisma (SQL injection)</li>
+                            <li>React (XSS)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="warning-box" style="margin-top: 15px;">
+                    <p class="small-text"><strong>Raté Limiting:</strong> Upload: 5 req/hora | Diagnósticos: 20 req/hora | Buscas: 100 req/hora | Auth: 5 req/15min</p>
+                </div>
+            </section>
+
+            <!-- SECTION: O APLICATIVO -->
+            <section class="section-slide">
+                <h2>O Aplicativo AgroInsight</h2>
+                <span class="section-number">5</span>
+                <div class="section-description">
+                    <p>Funcionalidades principais do sistema: análise multi-espécie, visualização de dados e interpretação de resultados.</p>
+                    <p class="section-topics"><strong>Nesta seção:</strong> Visão Geral • Multi-Espécie • Banco de Dados • Métricas • IA Híbrida • Visualizações</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 19: Visão Geral do App -->
+            <section>
+                <h2>AgroInsight: Visão Geral</h2>
+                <div class="definition-box">
+                    <p>Plataforma web gratuita e open-source que integra dados experimentais com referências científicas, proporcionando <strong>diagnósticos automatizados</strong>, <strong>visualizações interativas</strong> e <strong>relatórios padronizados</strong>.</p>
+                </div>
+                <div class="two-columns">
+                    <div>
+                        <h4>Público-alvo:</h4>
+                        <ul class="small-text">
+                            <li>Pesquisadores</li>
+                            <li>Técnicos extensionistas</li>
+                            <li>Veterinários e zootecnistas</li>
+                            <li>Produtores rurais</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Diferenciais:</h4>
+                        <ul class="small-text">
+                            <li>Acesso via navegador (sem instalação)</li>
+                            <li>Suporte multi-espécie</li>
+                            <li>Comparação com NRC/EMBRAPA</li>
+                            <li>Interpretação dual (técnico/leigo)</li>
+                            <li>Busca de literatura integrada</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 20: Sistema Multi-Espécie -->
+            <section>
+                <h2>Sistema Multi-Espécie</h2>
+                <p>Suporte a 7 categorias principais com validação e referências especificas:</p>
+                <div class="three-columns">
+                    <div>
+                        <div class="metric-card">
+                            <div class="label"><strong>Bovinos</strong></div>
+                            <p class="smaller-text">Leite, Corte, Dupla Aptidao</p>
+                        </div>
+                        <br>
+                        <div class="metric-card">
+                            <div class="label"><strong>Suinos</strong></div>
+                            <p class="smaller-text">Creche, Crescimento, Terminação, Reprodução</p>
+                        </div>
+                        <br>
+                        <div class="metric-card">
+                            <div class="label"><strong>Aves</strong></div>
+                            <p class="smaller-text">Frango de Corte, Poedeiras, Matrizes</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="metric-card">
+                            <div class="label"><strong>Ovinos</strong></div>
+                            <p class="smaller-text">Carne, La, Leite</p>
+                        </div>
+                        <br>
+                        <div class="metric-card">
+                            <div class="label"><strong>Caprinos</strong></div>
+                            <p class="smaller-text">Carne, Leite, Pele</p>
+                        </div>
+                        <br>
+                        <div class="metric-card">
+                            <div class="label"><strong>Forragem</strong></div>
+                            <p class="smaller-text">Brachiaria, Panicum, Cynodon, Misturas</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="metric-card">
+                            <div class="label"><strong>Piscicultura</strong></div>
+                            <p class="smaller-text">Tilapia, Tambaqui, Pintado, Pacu</p>
+                        </div>
+                        <br>
+                        <div class="metric-card">
+                            <div class="label"><strong>Apicultura</strong></div>
+                            <p class="smaller-text">Apis mellifera, Abelha nativa</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 21: Banco de Dados -->
+            <section>
+                <h2>Banco de Dados e Modelos</h2>
+                <p>Schema Prisma com 16 modelos principais organizados em dominios:</p>
+                <div class="two-columns">
+                    <div>
+                        <h4>Usuários e Projetos</h4>
+                        <ul class="smaller-text">
+                            <li><strong>User:</strong> email, senha (bcrypt), role</li>
+                            <li><strong>Project:</strong> agrupamento de datasets</li>
+                            <li><strong>ProjectUploadPreset:</strong> configurações</li>
+                        </ul>
+                        <h4>Datasets e Validação</h4>
+                        <ul class="smaller-text">
+                            <li><strong>Dataset:</strong> dados + estatísticas (JSON)</li>
+                            <li><strong>DataValidation:</strong> regras por campo</li>
+                            <li><strong>DataMapping:</strong> conversão de unidades</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Multi-Espécie</h4>
+                        <ul class="smaller-text">
+                            <li><strong>AnimalSpecies:</strong> 7 categorias</li>
+                            <li><strong>AnimalSubtype:</strong> subtipos</li>
+                            <li><strong>ReferenceData:</strong> faixas NRC/EMBRAPA</li>
+                            <li><strong>ForageReference:</strong> variação sazonal</li>
+                        </ul>
+                        <h4>Auditoria</h4>
+                        <ul class="smaller-text">
+                            <li><strong>AuditLog:</strong> ações do usuário</li>
+                            <li><strong>SavedReference:</strong> biblioteca pessoal</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 22: Métricas Zootecnicas -->
+            <section>
+                <h2>Cálculos Zootécnicos Automatizados</h2>
+                <div class="two-columns">
+                    <div>
+                        <h4>IEP - Aves (42 dias)</h4>
+                        <div class="formula">IEP = (Viab x Peso) / (Idade x CA) x 100</div>
+                        <ul class="smaller-text">
+                            <li>< 280: Baixo</li>
+                            <li>280-320: Medio</li>
+                            <li>320-380: Bom</li>
+                            <li>maior que 380: Excelente</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>GPD - Bovinos de Corte</h4>
+                        <div class="formula">GPD = (Peso Final - Peso Inicial) / Dias</div>
+                        <ul class="smaller-text">
+                            <li>< 0,8 kg/dia: Baixo</li>
+                            <li>0,8-1,0: Medio</li>
+                            <li>1,0-1,4: Bom</li>
+                            <li>maior que 1,4: Excelente</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box" style="margin-top: 15px;">
+                    <p class="small-text"><strong>Outros indicadores:</strong> FCR (Conversão Alimentar), FCM (Leite Corrigido), BCS (Escore Corporal) - todos com interpretação automática baseada em referências.</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 23: IA Híbrida -->
+            <section>
+                <h2>Interpretação: IA Híbrida</h2>
+                <div class="two-columns">
+                    <div>
+                        <div class="highlight-box">
+                            <h4>80% - Lógica de Regras</h4>
+                            <ul class="smaller-text">
+                                <li>Regras deterministicas por espécie</li>
+                                <li>Comparação com referências</li>
+                                <li>Insights pre-definidos</li>
+                                <li>Reprodutivel e transparente</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="definition-box">
+                            <h4>20% - IA Generativa (opcional)</h4>
+                            <ul class="smaller-text">
+                                <li>Google Gemini ou OpenAI GPT</li>
+                                <li>Enriquecimento de linguagem</li>
+                                <li>Contextualização adicional</li>
+                                <li>Fallback automático</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="warning-box" style="margin-top: 15px;">
+                    <p class="small-text"><strong>Garantia:</strong> Se API de IA falhar, sistema retorna automáticamente para lógica de regras - disponibilidade 100%.</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 24: Visualizações -->
+            <section>
+                <h2>Visualização e Relatórios</h2>
+                <p>Gráficos interativos com Recharts (tooltips, zoom, pan, exportação):</p>
+                <div class="three-columns">
+                    <div>
+                        <div class="metric-card">
+                            <div class="label"><strong>BoxPlot</strong></div>
+                            <p class="smaller-text">Distribuição com quartis, mediana e outliers</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="metric-card">
+                            <div class="label"><strong>ScatterPlot</strong></div>
+                            <p class="smaller-text">Correlação com regressao linear e R-quadrado</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="metric-card">
+                            <div class="label"><strong>Heatmap</strong></div>
+                            <p class="smaller-text">Matriz de correlação multivariada</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="two-columns" style="margin-top: 20px;">
+                    <div>
+                        <div class="metric-card">
+                            <div class="label"><strong>ViolinPlot</strong></div>
+                            <p class="smaller-text">Boxplot + densidade kernel (KDE)</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4>Exportação:</h4>
+                        <ul class="smaller-text">
+                            <li>PDF com jsPDF + autotable</li>
+                            <li>CSV para dados brutos</li>
+                            <li>PNG para gráficos</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 25: Referências Academicas -->
+            <section>
+                <h2>Busca de Referências Academicas</h2>
+                <div class="three-columns">
+                    <div>
+                        <div class="highlight-box">
+                            <h4>Google Scholar</h4>
+                            <p class="smaller-text">Via SerpAPI - ampla cobertura academica</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="highlight-box">
+                            <h4>PubMed</h4>
+                            <p class="smaller-text">E-utilities API - literatura biomedica</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="highlight-box">
+                            <h4>Crossref</h4>
+                            <p class="smaller-text">REST API - metadados de DOIs</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="two-columns" style="margin-top: 20px;">
+                    <div>
+                        <h4>Formatação de Citações:</h4>
+                        <ul class="small-text">
+                            <li><strong>ABNT (NBR 6023)</strong> - padrao brasileiro</li>
+                            <li><strong>APA 7th</strong> - ciências sociais</li>
+                            <li><strong>MLA 9th</strong> - humanidades</li>
+                            <li><strong>Chicago</strong> - história</li>
+                            <li><strong>Vancouver</strong> - biomédicas</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Funcionalidades:</h4>
+                        <ul class="small-text">
+                            <li>Biblioteca pessoal (SavedReference)</li>
+                            <li>Exportação BibTeX/RIS</li>
+                            <li>Cache de buscas (1h TTL)</li>
+                            <li>Economia de 80% em chamadas API</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION: RESULTADOS -->
+            <section class="section-slide">
+                <h2>Resultados e Aplicações</h2>
+                <span class="section-number">6</span>
+                <div class="section-description">
+                    <p>Demonstração prática do AgroInsight com cenários reais de análise para diferentes espécies.</p>
+                    <p class="section-topics"><strong>Nesta seção:</strong> Aves • Bovinos • Suínos • Abelhas • Peixes • Comparativos</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 26: Cenário Aves -->
+            <section>
+                <h2>Aplicação: Aves - Frango de Corte</h2>
+                <p class="small-text"><strong>Cenário:</strong> Integrado avicola com 4 galpoes (40.000 aves/galpao) comparando 2 lotes aos 42 dias.</p>
+                <div class="two-columns">
+                    <div>
+                        <h4>Lote A (n=150)</h4>
+                        <ul class="smaller-text">
+                            <li>Peso: 2,65 kg (DP: 0,18)</li>
+                            <li>Consumo: 4,50 kg/ave</li>
+                            <li>Mortalidade: 2,8%</li>
+                            <li>FCR: 1,70 kg/kg</li>
+                            <li>IEP: 361</li>
+                        </ul>
+                        <p class="status-excellent">Status: Excelente</p>
+                    </div>
+                    <div>
+                        <h4>Lote B (n=150)</h4>
+                        <ul class="smaller-text">
+                            <li>Peso: 2,48 kg (DP: 0,22)</li>
+                            <li>Consumo: 4,65 kg/ave</li>
+                            <li>Mortalidade: 4,2%</li>
+                            <li>FCR: 1,87 kg/kg</li>
+                            <li>IEP: 302</li>
+                        </ul>
+                        <p class="status-attention">Status: Medio</p>
+                    </div>
+                </div>
+                <div class="warning-box" style="margin-top: 10px;">
+                    <p class="smaller-text"><strong>Diagnóstico:</strong> Teste t indica diferença significativa (p < 0,001, d=0,85). Lote B com CA 10% superior e mortalidade 50% maior sugere problemas de ambiencia ou sanidade.</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 27: Tabela Aves -->
+            <section>
+                <h2>Resultados: Indicadores por Lote (Aves)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Lote</th>
+                            <th>N inicial</th>
+                            <th>Mort. (%)</th>
+                            <th>Peso (g)</th>
+                            <th>FCR</th>
+                            <th>GPD (g/dia)</th>
+                            <th>IEP</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Lote A</td>
+                            <td>258</td>
+                            <td>3,2</td>
+                            <td>2.850</td>
+                            <td>1,72</td>
+                            <td>67,9</td>
+                            <td>385</td>
+                            <td class="status-excellent">Excelente</td>
+                        </tr>
+                        <tr>
+                            <td>Lote B</td>
+                            <td>260</td>
+                            <td>5,8</td>
+                            <td>2.680</td>
+                            <td>1,89</td>
+                            <td>63,8</td>
+                            <td>328</td>
+                            <td class="status-good">Bom</td>
+                        </tr>
+                        <tr>
+                            <td>Lote C</td>
+                            <td>255</td>
+                            <td>2,7</td>
+                            <td>2.920</td>
+                            <td>1,68</td>
+                            <td>69,5</td>
+                            <td>402</td>
+                            <td class="status-excellent">Excelente</td>
+                        </tr>
+                        <tr>
+                            <td>Lote D</td>
+                            <td>262</td>
+                            <td>4,2</td>
+                            <td>2.780</td>
+                            <td>1,78</td>
+                            <td>66,2</td>
+                            <td>365</td>
+                            <td class="status-very-good">Muito Bom</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="citation">Nota: CV < 10% indica boa uniformidade. Referências: NRC, 1994; EMBRAPA Suinos e Aves, 2022</p>
+            </section>
+
+            <!-- SLIDE 28: Cenário Bovinos -->
+            <section>
+                <h2>Aplicação: Bovinos de Leite</h2>
+                <p class="small-text"><strong>Cenário:</strong> Fazenda leiteira com 80 vacas Holandesas em lactação - controle leiteiro mensal.</p>
+                <div class="two-columns">
+                    <div>
+                        <h4>Dados do Rebanho (n=80)</h4>
+                        <ul class="small-text">
+                            <li>Produção: 28,5 L/dia (DP: 6,2) - <span class="status-excellent">Excelente</span></li>
+                            <li>Gordura: 3,65% (DP: 0,42) - <span class="status-excellent">Excelente</span></li>
+                            <li>Proteina: 3,18% (DP: 0,28) - <span class="status-good">Bom</span></li>
+                            <li>CCS: 285.000 cel/mL - <span class="status-attention">Atencao</span></li>
+                            <li>FCM (4%): 27,0 kg/dia</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Alertas Identificados:</h4>
+                        <ul class="small-text">
+                            <li>18 vacas (22,5%) com CCS maior que 400.000</li>
+                            <li>5 vacas com CCS maior que 800.000 (mastite)</li>
+                            <li>2 vacas com gordura < 2,5% (acidose?)</li>
+                            <li>Correlação CCS x Produção: r = -0,42 (p < 0,01)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box" style="margin-top: 10px;">
+                    <p class="smaller-text"><strong>Recomendações:</strong> CMT nas 18 vacas com CCS elevado; revisar protocolo de ordenha; verificar equipamento; avaliar dieta das vacas com baixa gordura.</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 29: Cenário Suinos -->
+            <section>
+                <h2>Aplicação: Suinos de Terminação</h2>
+                <p class="small-text"><strong>Cenário:</strong> Comparação de dietas - Dieta A (milho-soja) vs Dieta B (15% farelo de canola).</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Variável</th>
+                            <th>Dieta A (n=100)</th>
+                            <th>Dieta B (n=100)</th>
+                            <th>p-valor</th>
+                            <th>d Cohen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Peso inicial (kg)</td>
+                            <td>25,2 +/- 2,1</td>
+                            <td>25,5 +/- 2,3</td>
+                            <td>0,328</td>
+                            <td>0,14</td>
+                        </tr>
+                        <tr>
+                            <td>Peso final (kg)</td>
+                            <td>108,5 +/- 6,8</td>
+                            <td>106,2 +/- 7,5</td>
+                            <td>0,031</td>
+                            <td>0,32</td>
+                        </tr>
+                        <tr>
+                            <td>GPD (kg/dia)</td>
+                            <td>0,850 +/- 0,068</td>
+                            <td>0,791 +/- 0,072</td>
+                            <td>< 0,001</td>
+                            <td>0,85</td>
+                        </tr>
+                        <tr>
+                            <td>FCR (kg/kg)</td>
+                            <td>2,82 +/- 0,15</td>
+                            <td>3,00 +/- 0,18</td>
+                            <td>< 0,001</td>
+                            <td>1,09</td>
+                        </tr>
+                        <tr>
+                            <td>Toucinho P2 (mm)</td>
+                            <td>12,8 +/- 2,2</td>
+                            <td>11,5 +/- 2,0</td>
+                            <td>< 0,001</td>
+                            <td>0,62</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="citation">Nota: d Cohen - 0,2=pequeno, 0,5=medio, 0,8=grande</p>
+            </section>
+
+            <!-- SLIDE 30: Cenário Forragem -->
+            <section>
+                <h2>Aplicação: Forragem - Brachiaria brizantha</h2>
+                <p class="small-text"><strong>Cenário:</strong> Avaliação de qualidade em pastejo rotacionado - aguas vs seca.</p>
+                <div class="two-columns">
+                    <div>
+                        <h4>Estação das Aguas</h4>
+                        <ul class="small-text">
+                            <li>Biomassa: 3.200 kg MS/ha - <span class="status-excellent">Excelente</span></li>
+                            <li>Proteina bruta: 11,5% - <span class="status-excellent">Excelente</span></li>
+                            <li>FDN: 58,2% - <span class="status-good">Bom</span></li>
+                            <li>Digestibilidade: 62,5% - <span class="status-excellent">Excelente</span></li>
+                        </ul>
+                        <p class="smaller-text emphasis">Suporta 3-4 UA/ha sem suplementação</p>
+                    </div>
+                    <div>
+                        <h4>Estação Seca</h4>
+                        <ul class="small-text">
+                            <li>Biomassa: 1.800 kg MS/ha - <span class="status-good">Bom</span></li>
+                            <li>Proteina bruta: 6,8% - <span class="status-critical">Critico</span></li>
+                            <li>FDN: 68,5% - <span class="status-attention">Atencao</span></li>
+                            <li>Digestibilidade: 48,2% - <span class="status-critical">Critico</span></li>
+                        </ul>
+                        <p class="smaller-text emphasis">Reduzir para 1,5-2 UA/ha + suplementação</p>
+                    </div>
+                </div>
+                <div class="warning-box" style="margin-top: 10px;">
+                    <p class="smaller-text"><strong>Diagnóstico:</strong> Teste t pareado confirma diferenças significativas (p < 0,001). Digestibilidade reduzida em 23% na seca. Suplementação proteica e energética essencial.</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 31: Suplementação -->
+            <section>
+                <h2>Efeito da Suplementação na Seca</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tratamento</th>
+                            <th>N</th>
+                            <th>GPD (kg/dia)</th>
+                            <th>DP</th>
+                            <th>IC 95%</th>
+                            <th>vs Controle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Controle (so mineral)</td>
+                            <td>20</td>
+                            <td>0,680</td>
+                            <td>0,28</td>
+                            <td>[0,55; 0,81]</td>
+                            <td>Referência</td>
+                        </tr>
+                        <tr>
+                            <td>Sal proteinado</td>
+                            <td>20</td>
+                            <td>0,820</td>
+                            <td>0,26</td>
+                            <td>[0,70; 0,94]</td>
+                            <td>+21% *</td>
+                        </tr>
+                        <tr>
+                            <td>Sal + energia (0,5% PV)</td>
+                            <td>20</td>
+                            <td>0,950</td>
+                            <td>0,29</td>
+                            <td>[0,82; 1,08]</td>
+                            <td>+40% **</td>
+                        </tr>
+                        <tr>
+                            <td>Sal + energia (1,0% PV)</td>
+                            <td>20</td>
+                            <td>1,020</td>
+                            <td>0,31</td>
+                            <td>[0,88; 1,16]</td>
+                            <td>+50% **</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="citation">* p < 0,05; ** p < 0,01 vs Controle (teste post-hoc de Tukey)</p>
+                <div class="highlight-box">
+                    <p class="small-text">Suplementação proteica + energética (1,0% PV) proporcionou GPD <strong>50% superior</strong> ao controle mineral.</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 32: Beneficios -->
+            <section>
+                <h2>Beneficios Observados</h2>
+                <div class="three-columns">
+                    <div>
+                        <div class="metric-card">
+                            <div class="value">95%+</div>
+                            <div class="label">Reducao de latencia com cache</div>
+                        </div>
+                        <br>
+                        <div class="metric-card">
+                            <div class="value">80%</div>
+                            <div class="label">Economia em chamadas API</div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4>Padronização</h4>
+                        <ul class="smaller-text">
+                            <li>Mesmos critérios para todos</li>
+                            <li>Reprodutibilidade</li>
+                            <li>Auditoria de resultados</li>
+                            <li>Comparações longitudinais</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Comunicação</h4>
+                        <ul class="smaller-text">
+                            <li>Modo técnico para especialistas</li>
+                            <li>Modo leigo para produtores</li>
+                            <li>Analogias práticas</li>
+                            <li>Recomendações acionáveis</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box" style="margin-top: 15px;">
+                    <p class="small-text"><strong>Gestão de Conhecimento:</strong> Biblioteca pessoal com formatação automática em 5 estilos (ABNT, APA, MLA, Chicago, Vancouver) e exportação BibTeX/RIS.</p>
+                </div>
+            </section>
+
+            <!-- SECTION: DISCUSSAO -->
+            <section class="section-slide">
+                <h2>Discussão</h2>
+                <span class="section-number">7</span>
+                <div class="section-description">
+                    <p>Análise crítica das vantagens, limitações e comparação com soluções existentes no mercado.</p>
+                    <p class="section-topics"><strong>Nesta seção:</strong> Vantagens • Limitações • Comparativo de Mercado</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 33: Vantagens -->
+            <section>
+                <h2>Vantagens e Contribuições</h2>
+                <div class="two-columns">
+                    <div>
+                        <h4>Integração Ponta-a-Ponta</h4>
+                        <ul class="small-text">
+                            <li>Upload até relatório em uma plataforma</li>
+                            <li>Elimina alternância entre ferramentas</li>
+                            <li>Reduz erros de transcrição</li>
+                            <li>Rastreabilidade completa</li>
+                        </ul>
+                        <h4>Modularidade</h4>
+                        <ul class="small-text">
+                            <li>Fácil adição de espécies/métricas</li>
+                            <li>TypeScript propaga mudanças</li>
+                            <li>Lógica de regras independente de IA</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Escalabilidade</h4>
+                        <ul class="small-text">
+                            <li>Cache Redis distribudo</li>
+                            <li>Serverless (Vercel)</li>
+                            <li>Raté limiting protege recursos</li>
+                        </ul>
+                        <h4>Democratização</h4>
+                        <ul class="small-text">
+                            <li>Acesso via navegador</li>
+                            <li>Gratuito e open-source</li>
+                            <li>Interpretações simplificadas</li>
+                            <li>Sem necessidade de programação</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 34: Limitações -->
+            <section>
+                <h2>Limitações e Desafios</h2>
+                <div class="two-columns">
+                    <div>
+                        <div class="warning-box">
+                            <h4>Qualidade dos Dados</h4>
+                            <p class="smaller-text">"Garbage in, garbage out" - sistema não detecta erros semanticos (unidades erradas, valores implausveis).</p>
+                        </div>
+                        <div class="warning-box">
+                            <h4>Atualização de Referências</h4>
+                            <p class="smaller-text">Dados "hardcoded" requerem atualização manual. Interface administrativa incompleta.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="warning-box">
+                            <h4>Cobertura Parcial</h4>
+                            <p class="smaller-text">7 espécies, ~50 métricas. Equinos, coelhos, sistemas alternativos não cobertos.</p>
+                        </div>
+                        <div class="warning-box">
+                            <h4>Vieses da IA</h4>
+                            <p class="smaller-text">IA generativa pode introduzir vieses ou "alucinar". Sempre com disclaimer e fallback.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 35: Comparação -->
+            <section>
+                <h2>Comparação com Solucoes Existentes</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Caracteristica</th>
+                            <th>Comerciais</th>
+                            <th>Planilhas</th>
+                            <th>R/Python</th>
+                            <th>AgroInsight</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Custo</td>
+                            <td class="status-critical">Alto</td>
+                            <td class="status-excellent">Baixo</td>
+                            <td class="status-excellent">Gratuito</td>
+                            <td class="status-excellent">Gratuito</td>
+                        </tr>
+                        <tr>
+                            <td>Multi-espécie</td>
+                            <td class="status-attention">Limitado</td>
+                            <td class="status-attention">Manual</td>
+                            <td class="status-good">Possivel</td>
+                            <td class="status-excellent">Nativo</td>
+                        </tr>
+                        <tr>
+                            <td>Referências científicas</td>
+                            <td class="status-attention">Parcial</td>
+                            <td class="status-critical">Não</td>
+                            <td class="status-attention">Manual</td>
+                            <td class="status-excellent">Integrado</td>
+                        </tr>
+                        <tr>
+                            <td>Fácilidade de uso</td>
+                            <td class="status-good">Media</td>
+                            <td class="status-excellent">Alta</td>
+                            <td class="status-critical">Baixa</td>
+                            <td class="status-excellent">Alta</td>
+                        </tr>
+                        <tr>
+                            <td>Estatística avancada</td>
+                            <td class="status-good">Sim</td>
+                            <td class="status-attention">Limitada</td>
+                            <td class="status-excellent">Completa</td>
+                            <td class="status-good">Sim</td>
+                        </tr>
+                        <tr>
+                            <td>Busca literatura</td>
+                            <td class="status-critical">Não</td>
+                            <td class="status-critical">Não</td>
+                            <td class="status-critical">Não</td>
+                            <td class="status-excellent">Integrado</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- SECTION: CONCLUSAO -->
+            <section class="section-slide">
+                <h2>Conclusão</h2>
+                <span class="section-number">8</span>
+                <div class="section-description">
+                    <p>Síntese dos resultados alcançados e contribuições do AgroInsight para a zootecnia digital.</p>
+                    <p class="section-topics"><strong>Nesta seção:</strong> Considerações Finais • Objetivos Atendidos • Impacto</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 36: Considerações Finais -->
+            <section class="conclusion-slide">
+                <h2>Considerações Finais</h2>
+                <div class="highlight-box">
+                    <p>O <strong>objetivo geral</strong> foi alcancado: desenvolver o aplicativo AgroInsight para análises estatísticas zootecnicas de diferentes culturas com suporte a referências científicas.</p>
+                </div>
+                <div class="two-columns">
+                    <div>
+                        <h4>Objetivos Específicos Atendidos:</h4>
+                        <ul class="small-text">
+                            <li>Concepção e implementação descritas</li>
+                            <li>Importância de IA/dados contextualizada</li>
+                            <li>Arquitetura tecnica apresentada</li>
+                            <li>Pipeline e cálculos detalhados</li>
+                            <li>Comparação com referências realizada</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Impacto Esperado:</h4>
+                        <ul class="small-text">
+                            <li>Democratizar acesso a análise de dados</li>
+                            <li>Reduzir custos de consultoria</li>
+                            <li>Aumentar agilidade na interpretação</li>
+                            <li>Apoiar ganhos de produtividade</li>
+                            <li>Aproximar ciencia e produção</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SLIDE 37: Conclusao Principal -->
+            <section>
+                <h2>Conclusao</h2>
+                <div class="definition-box">
+                    <p>O AgroInsight demonstra que o uso combinado de <strong>tecnologias web modernas</strong>, <strong>metodos estatisticos</strong> e <strong>inteligencia artificial</strong> pode transformar a prática da análise de dados zootécnicos.</p>
+                </div>
+                <div class="highlight-box">
+                    <h4>Contribuições Principais:</h4>
+                    <ul>
+                        <li>Plataforma integrada de upload até relatório interpretado</li>
+                        <li>Comparação automática com referências NRC/EMBRAPA</li>
+                        <li>Sistema multi-espécie com validação contextual</li>
+                        <li>Interpretação dual (técnico/leigo) com IA híbrida</li>
+                        <li>Gestão de conhecimento com busca de literatura</li>
+                    </ul>
+                </div>
+                <p class="emphasis" style="text-align: center; margin-top: 20px;">Aproximando a rotina produtiva do conhecimento científico atualizado.</p>
+            </section>
+
+            <!-- SECTION: TRABALHOS FUTUROS -->
+            <section class="section-slide">
+                <h2>Trabalhos Futuros</h2>
+                <span class="section-number">9</span>
+                <div class="section-description">
+                    <p>Perspectivas de evolução e expansão do AgroInsight para novas funcionalidades e integrações.</p>
+                    <p class="section-topics"><strong>Nesta seção:</strong> Expansão • Integração IoT • Aprimoramento IA</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 38: Trabalhos Futuros -->
+            <section>
+                <h2>Trabalhos Futuros</h2>
+                <div class="three-columns">
+                    <div>
+                        <h4>Expansão</h4>
+                        <ul class="smaller-text">
+                            <li>Novas espécies (equinos, coelhos)</li>
+                            <li>Mais métricas por espécie</li>
+                            <li>Sistemas alternativos (orgânico, silvipastoril)</li>
+                            <li>Métricas de bem-estar animal</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Integração</h4>
+                        <ul class="smaller-text">
+                            <li>Sensores IoT</li>
+                            <li>Dispositivos de campo</li>
+                            <li>APIs de instituições</li>
+                            <li>Atualização automática de referências</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Aprimoramento</h4>
+                        <ul class="smaller-text">
+                            <li>Módulos estatisticos avançados</li>
+                            <li>Fine-tuning de IA zootecnica</li>
+                            <li>Painel administrativo completo</li>
+                            <li>Validação científica formal</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="highlight-box" style="margin-top: 20px;">
+                    <p class="small-text"><strong>Visão:</strong> Consolidar o AgroInsight como referência em zootecnia digital, tanto no contexto brasileiro quanto internacional.</p>
+                </div>
+            </section>
+
+            <!-- SECTION: REFERENCIAS -->
+            <section class="section-slide">
+                <h2>Referências</h2>
+                <span class="section-number">10</span>
+                <div class="section-description">
+                    <p>Principais fontes científicas e técnicas que fundamentaram o desenvolvimento do AgroInsight.</p>
+                    <p class="section-topics"><strong>Nesta seção:</strong> Referências Bibliográficas • Agradecimentos</p>
+                </div>
+            </section>
+
+            <!-- SLIDE 39: Referências Principais -->
+            <section class="references-slide">
+                <h2>Referências Principais</h2>
+                <div class="two-columns">
+                    <div>
+                        <p>BUSSAB, W. O.; MORETTIN, P. A. <strong>Estatística Básica</strong>. 9. ed. São Paulo: Saraiva, 2017.</p>
+                        <p>CHEN, M. et al. Evaluating Large Language Models Trained on Code. <strong>arXiv</strong>, 2021.</p>
+                        <p>EMBRAPA. <strong>Sistemas de Produção</strong>. Brasília: Embrapa, 2022.</p>
+                        <p>GOODFELLOW, I. et al. <strong>Deep Learning</strong>. MIT Press, 2016.</p>
+                        <p>LIAKOS, K. G. et al. Machine Learning in Agriculture. <strong>Sensors</strong>, v. 18, 2018.</p>
+                    </div>
+                    <div>
+                        <p>MONTGOMERY, D. C. <strong>Design and Analysis of Experiments</strong>. 9. ed. Wiley, 2017.</p>
+                        <p>NRC. <strong>Nutrient Requirements</strong> (Beef, Dairy, Poultry, Swine). National Academies Press, 1994-2016.</p>
+                        <p>RUSSELL, S.; NORVIG, P. <strong>Artificial Intelligence</strong>. 4. ed. Pearson, 2021.</p>
+                        <p>WOLFERT, S. et al. Big Data in Smart Farming. <strong>Agricultural Systems</strong>, v. 153, 2017.</p>
+                    </div>
+                </div>
+                <p class="small-text" style="margin-top: 20px; text-align: center;">Lista completa de referências disponível no documento escrito.</p>
+            </section>
+
+            <!-- SLIDE 40: Agradecimentos -->
+            <section class="thanks-slide">
+                <h2>Agradecimentos</h2>
+                <p>A Deus, a minha família e a minha namorada pelo apoio incondicional.</p>
+                <p>A Profa. Dra. Carla Regina Guimaraes Brighenti pela orientação.</p>
+                <p>Aos professores e colegas do curso de Zootecnia da UFSJ.</p>
+                <br>
+                <p style="font-size: 1.2em;"><strong>Obrigado!</strong></p>
+                <br>
+                <p style="font-size: 0.8em;">Pedro Gabriel Alves da Silva</p>
+                <p style="font-size: 0.7em;">pedrogabriieell@gmail.com</p>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/plugin/notes/notes.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/plugin/highlight/highlight.js"></script>
+    <script>
+        Reveal.initialize({
+            hash: true,
+            slideNumber: 'c/t',
+            showSlideNumber: 'all',
+            progress: true,
+            center: false,
+            transition: 'slide',
+            transitionSpeed: 'default',
+            backgroundTransition: 'fade',
+            viewDistance: 3,
+            width: 1280,
+            height: 720,
+            margin: 0.04,
+            minScale: 0.2,
+            maxScale: 2.0,
+            plugins: [ RevealNotes, RevealHighlight ]
+        });
+    </script>
+</body>
+</html>
