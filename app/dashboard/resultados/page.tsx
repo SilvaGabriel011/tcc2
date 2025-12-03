@@ -12,7 +12,6 @@ import {
   BarChart3,
   PieChart,
   FileText,
-  Printer,
   Activity,
   Info,
   GitCompare,
@@ -24,6 +23,7 @@ import {
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Tabs } from '@/components/tabs'
 import { LaymanTab } from '@/components/layman'
+import { TechnicalDiagnosticPanel } from '@/components/diagnostic'
 import {
   BoxPlotChart,
   PieChartComponent,
@@ -131,6 +131,14 @@ function toDiagnosticResult(raw: RawDiagnostico | null): DiagnosticResult | null
   }
 }
 
+// Types for main tabs
+type MainTabId = 'technical' | 'diagnostic' | 'layman'
+
+// Type-safe validation for tab IDs
+function isValidMainTabId(tabId: string): tabId is MainTabId {
+  return tabId === 'technical' || tabId === 'diagnostic' || tabId === 'layman'
+}
+
 function ResultadosContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -158,8 +166,12 @@ function ResultadosContent() {
   const [loading, setLoading] = useState(true)
   const [diagnostico, setDiagnostico] = useState<RawDiagnostico | null>(null)
   const [loadingDiagnostico, setLoadingDiagnostico] = useState(false)
-  const [showDiagnostico, setShowDiagnostico] = useState(false)
   const [showLaymanDevModal, setShowLaymanDevModal] = useState(false)
+
+  // NEW: State for 3-tab structure
+  const [activeMainTab, setActiveMainTab] = useState<MainTabId>('technical')
+  const [diagnosticoError, setDiagnosticoError] = useState<string | null>(null)
+  const [diagnosticoCache, setDiagnosticoCache] = useState<Map<string, RawDiagnostico>>(new Map())
 
   useEffect(() => {
     if (session) {
@@ -183,8 +195,17 @@ function ResultadosContent() {
         if (targetAnalysis) {
           console.log('[resultados:select:found]', { analysisId, name: targetAnalysis.name })
           setSelectedAnalysis(targetAnalysis)
-          setShowDiagnostico(false)
-          setDiagnostico(null)
+          // Check cache for existing diagnostic
+          const cached = diagnosticoCache.get(analysisId)
+          if (cached) {
+            setDiagnostico(cached)
+            setDiagnosticoError(null)
+          } else {
+            setDiagnostico(null)
+            setDiagnosticoError(null)
+          }
+          setLoadingDiagnostico(false)
+          setActiveMainTab('technical')
         } else {
           console.warn('[resultados:select:not-found]', {
             analysisId,
@@ -192,8 +213,9 @@ function ResultadosContent() {
             fallbackToFirst: true,
           })
           setSelectedAnalysis(analyses[0])
-          setShowDiagnostico(false)
           setDiagnostico(null)
+          setDiagnosticoError(null)
+          setActiveMainTab('technical')
         }
       } else {
         console.log('[resultados:select:no-url-id]', { selectingFirst: true })
@@ -202,7 +224,7 @@ function ResultadosContent() {
     } else {
       console.log('[resultados:select:empty-list]', { analysisId })
     }
-  }, [analyses, searchParams])
+  }, [analyses, searchParams, diagnosticoCache])
 
   const fetchAnalyses = async () => {
     console.log('[resultados:fetchAnalyses:start]', { timestamp: new Date().toISOString() })
@@ -256,8 +278,9 @@ function ResultadosContent() {
         setAnalyses(updatedAnalyses)
 
         if (selectedAnalysis?.id === analysisId) {
-          setShowDiagnostico(false)
           setDiagnostico(null)
+          setDiagnosticoError(null)
+          setActiveMainTab('technical')
           if (updatedAnalyses.length > 0) {
             router.push(`/dashboard/resultados?id=${updatedAnalyses[0].id}`, { scroll: false })
           } else {
@@ -299,32 +322,102 @@ function ResultadosContent() {
     window.print()
   }
 
-  const handleGerarDiagnostico = async () => {
+  const handleGerarDiagnostico = async (forceRegenerate = false) => {
+    // Guards to avoid duplicate calls
     if (!selectedAnalysis) {
       return
     }
+    if (loadingDiagnostico) {
+      return
+    }
+    if (diagnostico && !forceRegenerate) {
+      return
+    }
+
+    // FIX: Capture current analysis ID to verify later
+    const analysisId = selectedAnalysis.id
 
     setLoadingDiagnostico(true)
-    const toastId = toast.loading('Gerando diagnóstico...')
+    setDiagnosticoError(null)
+    const toastId = toast.loading('Gerando diagnostico...')
 
     try {
-      const response = await fetch(`/api/analise/diagnostico/${selectedAnalysis.id}`)
+      const response = await fetch(`/api/analise/diagnostico/${analysisId}`)
+
+      // FIX: Check if analysis is still the same (race condition)
+      if (selectedAnalysis?.id !== analysisId) {
+        toast.dismiss(toastId)
+        return
+      }
+
+      // FIX: Error handling for non-OK responses
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`)
+      }
+
       const data = await response.json()
+
+      // Verify again after parse (may have changed during parse)
+      if (selectedAnalysis?.id !== analysisId) {
+        toast.dismiss(toastId)
+        return
+      }
 
       if (data.success) {
         setDiagnostico(data.diagnostico)
-        setShowDiagnostico(true)
-        toast.success('Diagnóstico gerado com sucesso!', { id: toastId })
+        // NEW: Save to cache
+        setDiagnosticoCache((prev) => new Map(prev).set(analysisId, data.diagnostico))
+        toast.success('Diagnostico gerado com sucesso!', { id: toastId })
       } else {
-        toast.error(data.error || 'Erro ao gerar diagnóstico', { id: toastId })
+        throw new Error(data.error || 'Erro ao gerar diagnostico')
       }
     } catch (error) {
-      console.error('Erro ao gerar diagnóstico:', error)
-      toast.error('Erro ao conectar com o servidor', { id: toastId })
+      // FIX: Check if still same analysis before setting error
+      if (selectedAnalysis?.id !== analysisId) {
+        toast.dismiss(toastId)
+        return
+      }
+
+      console.error('Erro ao gerar diagnostico:', error)
+
+      // FIX: User-friendly error message
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Ocorreu um erro ao gerar o diagnostico. Por favor, tente novamente.'
+
+      setDiagnosticoError(errorMessage)
+      toast.error(errorMessage, { id: toastId })
     } finally {
-      setLoadingDiagnostico(false)
+      // FIX: Only clear loading if still same analysis
+      if (selectedAnalysis?.id === analysisId) {
+        setLoadingDiagnostico(false)
+      }
     }
   }
+
+  // NEW: Handler for main tab change
+  const handleMainTabChange = (tabId: string) => {
+    if (!isValidMainTabId(tabId)) {
+      console.warn(`Invalid tab id: ${tabId}`)
+      return
+    }
+    setActiveMainTab(tabId)
+
+    // Show development modal for layman tab
+    if (tabId === 'layman') {
+      setShowLaymanDevModal(true)
+    }
+  }
+
+  // NEW: Auto-trigger diagnostic generation when entering diagnostic tab
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- handleGerarDiagnostico is stable, selectedAnalysis?.id is the key dependency
+  useEffect(() => {
+    if (activeMainTab === 'diagnostic' && !diagnostico && !loadingDiagnostico && selectedAnalysis) {
+      void handleGerarDiagnostico()
+    }
+  }, [activeMainTab, diagnostico, loadingDiagnostico, selectedAnalysis?.id])
 
   // const handlePrint = () => {
   //   window.print()
@@ -631,23 +724,11 @@ function ResultadosContent() {
             {selectedAnalysis && (
               <div className="flex space-x-3 print:hidden">
                 <button
-                  onClick={() => {
-                    void handleGerarDiagnostico()
-                  }}
-                  disabled={loadingDiagnostico}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-md"
+                  onClick={() => setActiveMainTab('diagnostic')}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
                 >
-                  {loadingDiagnostico ? (
-                    <>
-                      <Activity className="h-4 w-4 mr-2 animate-spin" />
-                      Gerando...
-                    </>
-                  ) : (
-                    <>
-                      <Activity className="h-4 w-4 mr-2" />
-                      Diagnóstico IA
-                    </>
-                  )}
+                  <Activity className="h-4 w-4 mr-2" />
+                  Diagnostico IA
                 </button>
                 <button
                   onClick={() => {
@@ -768,215 +849,19 @@ function ResultadosContent() {
                       </div>
                     </div>
 
-                    {/* Tabs: Análise Técnica vs Visualização Leiga */}
+                    {/* Tabs: Analise Tecnica, Diagnostico IA, Visualizacao Leiga */}
                     <Tabs
                       defaultTab="technical"
-                      onTabChange={(tabId) => {
-                        if (tabId === 'layman') {
-                          setShowLaymanDevModal(true)
-                        }
-                      }}
+                      activeTab={activeMainTab}
+                      onTabChange={handleMainTabChange}
                       tabs={[
                         {
                           id: 'technical',
-                          label: 'Análise Técnica',
+                          label: 'Analise Tecnica',
                           icon: <BarChart3 className="h-4 w-4" />,
                           content: (
                             <>
-                              {/* Diagnóstico Zootécnico com IA - Fica fora das abas */}
-                              {showDiagnostico && diagnostico && (
-                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 shadow-lg rounded-lg p-6 border-l-4 border-blue-600 mb-6">
-                                  <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center">
-                                      <Activity className="h-6 w-6 text-blue-600 mr-2" />
-                                      <h3 className="text-xl font-bold text-foreground">
-                                        Diagnóstico Zootécnico - Análise Especializada
-                                      </h3>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <button
-                                        onClick={handlePrintDiagnostico}
-                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors text-sm"
-                                        title="Imprimir/Salvar como PDF"
-                                      >
-                                        <Printer className="h-4 w-4" />
-                                        <span className="hidden sm:inline">PDF</span>
-                                      </button>
-                                      <button
-                                        onClick={() => setShowDiagnostico(false)}
-                                        className="text-muted-foreground hover:text-foreground/80 px-2"
-                                      >
-                                        ✕
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  {/* Resumo Executivo */}
-                                  <div className="bg-card rounded-lg p-4 mb-4">
-                                    <h4 className="font-semibold text-blue-900 mb-2 flex items-center">
-                                      📋 Resumo Executivo
-                                    </h4>
-                                    <p className="text-foreground/80 leading-relaxed">
-                                      {diagnostico.resumoExecutivo}
-                                    </p>
-                                  </div>
-
-                                  {/* Análises Numéricas */}
-                                  {diagnostico.analiseNumericas &&
-                                    diagnostico.analiseNumericas.length > 0 && (
-                                      <div className="bg-card rounded-lg p-4 mb-4">
-                                        <h4 className="font-semibold text-blue-900 mb-3 flex items-center">
-                                          📊 Análise das Variáveis Numéricas
-                                        </h4>
-                                        <div className="space-y-3">
-                                          {diagnostico.analiseNumericas.map(
-                                            (
-                                              analise: {
-                                                variavel: string
-                                                status: string
-                                                interpretacao: string
-                                                comparacaoLiteratura?: string
-                                              },
-                                              idx: number
-                                            ) => (
-                                              <div key={idx} className="border-l-2 border pl-3">
-                                                <div className="flex items-center justify-between mb-1">
-                                                  <span className="font-medium text-foreground">
-                                                    {analise.variavel}
-                                                  </span>
-                                                  <span
-                                                    className={`px-2 py-1 text-xs rounded ${
-                                                      analise.status === 'Excelente'
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : analise.status === 'Bom'
-                                                          ? 'bg-blue-100 text-blue-800'
-                                                          : analise.status === 'Regular'
-                                                            ? 'bg-yellow-100 text-yellow-800'
-                                                            : 'bg-red-100 text-red-800'
-                                                    }`}
-                                                  >
-                                                    {analise.status}
-                                                  </span>
-                                                </div>
-                                                <p className="text-sm text-foreground/80 mb-1">
-                                                  {analise.interpretacao}
-                                                </p>
-                                                {analise.comparacaoLiteratura && (
-                                                  <p className="text-xs text-muted-foreground italic">
-                                                    📚 {analise.comparacaoLiteratura}
-                                                  </p>
-                                                )}
-                                              </div>
-                                            )
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                  {/* Pontos Fortes */}
-                                  {diagnostico.pontosFortes &&
-                                    diagnostico.pontosFortes.length > 0 && (
-                                      <div className="bg-card rounded-lg p-4 mb-4">
-                                        <h4 className="font-semibold text-green-900 mb-3 flex items-center">
-                                          ✅ Pontos Fortes
-                                        </h4>
-                                        <ul className="space-y-2">
-                                          {diagnostico.pontosFortes.map(
-                                            (ponto: string, idx: number) => (
-                                              <li
-                                                key={idx}
-                                                className="flex items-start text-sm text-foreground/80"
-                                              >
-                                                <span className="text-green-600 mr-2">▸</span>
-                                                {ponto}
-                                              </li>
-                                            )
-                                          )}
-                                        </ul>
-                                      </div>
-                                    )}
-
-                                  {/* Pontos de Atenção */}
-                                  {diagnostico.pontosAtencao &&
-                                    diagnostico.pontosAtencao.length > 0 && (
-                                      <div className="bg-card rounded-lg p-4 mb-4">
-                                        <h4 className="font-semibold text-orange-900 mb-3 flex items-center">
-                                          ⚠️ Pontos de Atenção
-                                        </h4>
-                                        <ul className="space-y-2">
-                                          {diagnostico.pontosAtencao.map(
-                                            (ponto: string, idx: number) => (
-                                              <li
-                                                key={idx}
-                                                className="flex items-start text-sm text-foreground/80"
-                                              >
-                                                <span className="text-orange-600 mr-2">▸</span>
-                                                {ponto}
-                                              </li>
-                                            )
-                                          )}
-                                        </ul>
-                                      </div>
-                                    )}
-
-                                  {/* Recomendações Prioritárias */}
-                                  {diagnostico.recomendacoesPrioritarias &&
-                                    diagnostico.recomendacoesPrioritarias.length > 0 && (
-                                      <div className="bg-card rounded-lg p-4 mb-4">
-                                        <h4 className="font-semibold text-purple-900 mb-3 flex items-center">
-                                          🎯 Recomendações Prioritárias
-                                        </h4>
-                                        <div className="space-y-3">
-                                          {diagnostico.recomendacoesPrioritarias.map(
-                                            (
-                                              rec: {
-                                                titulo: string
-                                                descricao: string
-                                                prioridade: string
-                                                justificativa?: string
-                                              },
-                                              idx: number
-                                            ) => (
-                                              <div
-                                                key={idx}
-                                                className="border border-purple-200 rounded p-3"
-                                              >
-                                                <div className="flex items-center mb-1">
-                                                  <span className="bg-purple-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center mr-2">
-                                                    {rec.prioridade}
-                                                  </span>
-                                                  <span className="font-semibold text-foreground">
-                                                    {rec.titulo}
-                                                  </span>
-                                                </div>
-                                                <p className="text-sm text-foreground/80 ml-8 mb-1">
-                                                  {rec.descricao}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground italic ml-8">
-                                                  💡 {rec.justificativa}
-                                                </p>
-                                              </div>
-                                            )
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                  {/* Conclusão */}
-                                  {diagnostico.conclusao && (
-                                    <div className="bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 rounded-lg p-4">
-                                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center">
-                                        🎓 Conclusão e Perspectivas
-                                      </h4>
-                                      <p className="text-foreground leading-relaxed">
-                                        {diagnostico.conclusao}
-                                      </p>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Abas de Análise */}
+                              {/* Sub-tabs for technical analysis */}
                               <Tabs
                                 defaultTab="variables"
                                 tabs={[
@@ -1455,8 +1340,22 @@ function ResultadosContent() {
                           ),
                         },
                         {
+                          id: 'diagnostic',
+                          label: 'Diagnostico IA',
+                          icon: <Activity className="h-4 w-4" />,
+                          content: (
+                            <TechnicalDiagnosticPanel
+                              diagnostico={diagnostico}
+                              loading={loadingDiagnostico}
+                              error={diagnosticoError}
+                              onPrint={handlePrintDiagnostico}
+                              onRetry={() => void handleGerarDiagnostico(true)}
+                            />
+                          ),
+                        },
+                        {
                           id: 'layman',
-                          label: 'Visualização Leiga',
+                          label: 'Visualizacao Leiga',
                           icon: <User className="h-4 w-4" />,
                           content: (
                             <LaymanTab
