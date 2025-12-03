@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="900" height="500" viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.2"/>
+    </filter>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8f9fa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e9ecef;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="900" height="500" fill="url(#bgGradient)"/>
+  
+  <!-- Left Box - Data inputs -->
+  <rect x="40" y="120" width="220" height="260" rx="20" ry="20" 
+        fill="#ffffff" stroke="#6c757d" stroke-width="3" filter="url(#shadow)"/>
+  
+  <!-- Bullet points in left box -->
+  <circle cx="70" cy="200" r="6" fill="#495057"/>
+  <text x="90" y="207" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#212529">Geração de Dados</text>
+  
+  <circle cx="70" cy="250" r="6" fill="#495057"/>
+  <text x="90" y="257" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#212529">Armazenamento</text>
+  <text x="90" y="277" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#212529">de Dados</text>
+  
+  <circle cx="70" cy="320" r="6" fill="#495057"/>
+  <text x="90" y="327" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#212529">Processamento</text>
+  <text x="90" y="347" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#212529">de Dados</text>
+  
+  <!-- Arrow from left box to center -->
+  <polygon points="280,250 340,220 340,235 380,235 380,265 340,265 340,280" 
+           fill="#adb5bd" stroke="#6c757d" stroke-width="2"/>
+  
+  <!-- Center Ellipse - AI -->
+  <ellipse cx="500" cy="250" rx="110" ry="70" 
+           fill="#ffffff" stroke="#6c757d" stroke-width="3" filter="url(#shadow)"/>
+  <text x="500" y="240" font-family="Arial, sans-serif" font-size="22" font-weight="bold" 
+        fill="#0d6efd" text-anchor="middle">Inteligência</text>
+  <text x="500" y="270" font-family="Arial, sans-serif" font-size="22" font-weight="bold" 
+        fill="#0d6efd" text-anchor="middle">Artificial</text>
+  
+  <!-- Arrows from center to right boxes -->
+  <!-- Top arrow -->
+  <line x1="600" y1="210" x2="680" y2="130" stroke="#adb5bd" stroke-width="3" marker-end="url(#arrowhead)"/>
+  <polygon points="680,130 700,115 705,140" fill="#adb5bd"/>
+  
+  <!-- Middle arrow -->
+  <line x1="610" y1="250" x2="700" y2="250" stroke="#adb5bd" stroke-width="3"/>
+  <polygon points="700,250 720,240 720,260" fill="#adb5bd"/>
+  
+  <!-- Bottom arrow -->
+  <line x1="600" y1="290" x2="680" y2="370" stroke="#adb5bd" stroke-width="3"/>
+  <polygon points="680,370 700,385 705,360" fill="#adb5bd"/>
+  
+  <!-- Right boxes -->
+  <!-- Top right - Agriculture monitoring -->
+  <rect x="710" y="60" width="160" height="80" rx="15" ry="15" 
+        fill="#ffffff" stroke="#6c757d" stroke-width="3" filter="url(#shadow)"/>
+  <text x="790" y="95" font-family="Arial, sans-serif" font-size="16" font-weight="bold" 
+        fill="#212529" text-anchor="middle">Monitoramento</text>
+  <text x="790" y="118" font-family="Arial, sans-serif" font-size="16" font-weight="bold" 
+        fill="#212529" text-anchor="middle">Agrícola</text>
+  
+  <!-- Middle right - Action/Signal -->
+  <rect x="710" y="210" width="160" height="80" rx="15" ry="15" 
+        fill="#ffffff" stroke="#6c757d" stroke-width="3" filter="url(#shadow)"/>
+  <text x="790" y="258" font-family="Arial, sans-serif" font-size="16" font-weight="bold" 
+        fill="#212529" text-anchor="middle">Ação / Sinal</text>
+  
+  <!-- Bottom right - Prediction -->
+  <rect x="710" y="360" width="160" height="80" rx="15" ry="15" 
+        fill="#ffffff" stroke="#6c757d" stroke-width="3" filter="url(#shadow)"/>
+  <text x="790" y="408" font-family="Arial, sans-serif" font-size="16" font-weight="bold" 
+        fill="#212529" text-anchor="middle">Predição</text>
+</svg>
