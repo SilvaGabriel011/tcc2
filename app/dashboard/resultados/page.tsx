@@ -36,6 +36,7 @@ import { EnhancedScatterPlot } from '@/components/analysis/charts/EnhancedScatte
 import { CorrelationMatrix } from '@/components/analysis/charts/CorrelationMatrix'
 import type { CorrelationAnalysisReport } from '@/lib/correlations/correlation-analysis'
 import { VariableType, VariableInfo, NumericStats, CategoricalStats } from '@/lib/dataAnalysis'
+import type { DiagnosticResult } from '@/lib/ai-diagnostic'
 import { AnalysisLoadingSkeleton } from '@/components/skeleton'
 import { toast } from 'sonner'
 
@@ -73,6 +74,63 @@ interface AnalysisData {
   }
 }
 
+// Type for raw diagnostico from API (with optional fields)
+interface RawDiagnostico {
+  diagnostico: string
+  geradoEm: string
+  metodo: string
+  resumoExecutivo?: string
+  analiseNumericas?: Array<{
+    variavel: string
+    status: string
+    interpretacao: string
+    comparacaoLiteratura?: string
+  }>
+  pontosFortes?: string[]
+  pontosAtencao?: string[]
+  recomendacoesPrioritarias?: Array<{
+    titulo: string
+    descricao: string
+    prioridade: string
+  }>
+  conclusao?: string
+  fontes?: string[]
+  generatedBy?: string
+}
+
+// Convert raw diagnostico to DiagnosticResult for LaymanTab
+function toDiagnosticResult(raw: RawDiagnostico | null): DiagnosticResult | null {
+  if (!raw) {
+    return null
+  }
+
+  // If the diagnostic doesn't have structured data, return null
+  // so ActionSummary shows the "generate diagnostic" prompt
+  if (!raw.resumoExecutivo && !raw.recomendacoesPrioritarias) {
+    return null
+  }
+
+  return {
+    resumoExecutivo: raw.resumoExecutivo ?? raw.diagnostico ?? '',
+    analiseNumericas: (raw.analiseNumericas ?? []).map((item) => ({
+      variavel: item.variavel,
+      status: item.status as 'Excelente' | 'Bom' | 'Regular' | 'Preocupante',
+      interpretacao: item.interpretacao,
+      comparacaoLiteratura: item.comparacaoLiteratura,
+    })),
+    pontosFortes: raw.pontosFortes ?? [],
+    pontosAtencao: raw.pontosAtencao ?? [],
+    recomendacoesPrioritarias: (raw.recomendacoesPrioritarias ?? []).map((item) => ({
+      titulo: item.titulo,
+      descricao: item.descricao,
+      prioridade: item.prioridade as 'Alta' | 'Média' | 'Baixa',
+    })),
+    conclusao: raw.conclusao ?? '',
+    fontes: raw.fontes ?? [],
+    generatedBy: raw.generatedBy as DiagnosticResult['generatedBy'],
+  }
+}
+
 function ResultadosContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -98,27 +156,7 @@ function ResultadosContent() {
     updatedAt: string
   } | null>(null)
   const [loading, setLoading] = useState(true)
-  const [diagnostico, setDiagnostico] = useState<{
-    diagnostico: string
-    geradoEm: string
-    metodo: string
-    resumoExecutivo?: string
-    analiseNumericas?: Array<{
-      variavel: string
-      status: string
-      interpretacao: string
-      comparacaoLiteratura?: string
-    }>
-    pontosFortes?: string[]
-    pontosAtencao?: string[]
-    recomendacoesPrioritarias?: Array<{
-      titulo: string
-      descricao: string
-      prioridade: string
-    }>
-    conclusao?: string
-    fontes?: string[]
-  } | null>(null)
+  const [diagnostico, setDiagnostico] = useState<RawDiagnostico | null>(null)
   const [loadingDiagnostico, setLoadingDiagnostico] = useState(false)
   const [showDiagnostico, setShowDiagnostico] = useState(false)
   const [showLaymanDevModal, setShowLaymanDevModal] = useState(false)
@@ -1424,7 +1462,7 @@ function ResultadosContent() {
                             <LaymanTab
                               analysisData={analysisData as Record<string, unknown>}
                               entityType="gado"
-                              diagnostic={diagnostico}
+                              diagnostic={toDiagnosticResult(diagnostico)}
                               loadingDiagnostic={loadingDiagnostico}
                               onRequestDiagnostic={() => void handleGerarDiagnostico()}
                             />
