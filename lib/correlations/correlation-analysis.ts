@@ -7,6 +7,7 @@
 
 import { getSpeciesCorrelationConfig, CorrelationPair } from './species-correlations'
 import { pearsonCorrelation } from '../statistics'
+import { parseNumber } from '../number-utils'
 
 /**
  * Normalize species names to match correlation config keys
@@ -280,11 +281,10 @@ function getNumericColumns(data: Record<string, unknown>[]): string[] {
         continue
       }
 
-      if (typeof value === 'string') {
-        const parsed = parseFloat(value)
-        if (!isNaN(parsed) && isFinite(parsed)) {
-          numericCount++
-        }
+      // Use parseNumber for consistent handling of Brazilian decimal format
+      const parsed = parseNumber(value)
+      if (parsed !== null) {
+        numericCount++
       }
     }
 
@@ -327,6 +327,7 @@ function findMatchingVariables(
 
 /**
  * Extract valid data points for two variables
+ * Uses parseNumber for consistent handling of Brazilian decimal format
  */
 function extractDataPoints(
   data: Record<string, unknown>[],
@@ -336,10 +337,10 @@ function extractDataPoints(
   const points: Array<{ x: number; y: number }> = []
 
   for (const row of data) {
-    const x = parseFloat(row[var1] as string)
-    const y = parseFloat(row[var2] as string)
+    const x = parseNumber(row[var1])
+    const y = parseNumber(row[var2])
 
-    if (!isNaN(x) && !isNaN(y) && isFinite(x) && isFinite(y)) {
+    if (x !== null && y !== null) {
       points.push({ x, y })
     }
   }
@@ -495,7 +496,8 @@ export function proposeCorrelations(
   availableColumns: string[],
   species: string
 ): Array<{ var1: string; var2: string; reason: string; priority: number }> {
-  const config = getSpeciesCorrelationConfig(species)
+  const normalizedSpecies = normalizeSpecies(species)
+  const config = getSpeciesCorrelationConfig(normalizedSpecies)
   if (!config) {
     return []
   }
@@ -525,7 +527,8 @@ export function getMissingVariables(
   availableColumns: string[],
   species: string
 ): Array<{ variable: string; importance: string; reason: string }> {
-  const config = getSpeciesCorrelationConfig(species)
+  const normalizedSpecies = normalizeSpecies(species)
+  const config = getSpeciesCorrelationConfig(normalizedSpecies)
   if (!config) {
     return []
   }

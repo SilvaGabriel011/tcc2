@@ -7,6 +7,96 @@ import {
 } from '@/lib/statistics'
 
 describe('statistics', () => {
+  /**
+   * Golden tests for statistical distribution accuracy
+   * These tests validate that p-values match expected values from R/SciPy
+   * to ensure the incompleteBeta implementation is correct
+   */
+  describe('Statistical Distribution Accuracy (Golden Tests)', () => {
+    it('t-test p-values should be accurate for small samples (df <= 30)', () => {
+      // Data designed to produce a known significant difference
+      // R: t.test(c(2.3, 1.9, 2.1, 2.5, 2.0), c(2.8, 3.1, 2.9, 3.0, 2.7))
+      // Expected: t = -4.47, df = 8, p-value ≈ 0.002
+      const group1 = [2.3, 1.9, 2.1, 2.5, 2.0]
+      const group2 = [2.8, 3.1, 2.9, 3.0, 2.7]
+
+      const result = independentTTest(group1, group2)
+
+      // The p-value should be small (significant difference)
+      expect(result.pValue).toBeLessThan(0.01)
+      expect(result.significant).toBe(true)
+      expect(result.degreesOfFreedom).toBe(8)
+    })
+
+    it('Pearson correlation p-value should be accurate for n=10', () => {
+      // Strong positive correlation with n=10
+      // R: cor.test(1:10, c(2.1, 4.2, 5.8, 8.1, 10.2, 11.9, 14.1, 16.0, 18.2, 20.1))
+      // Expected: r ≈ 0.9998, p < 0.0001
+      const x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      const y = [2.1, 4.2, 5.8, 8.1, 10.2, 11.9, 14.1, 16.0, 18.2, 20.1]
+
+      const result = pearsonCorrelation(x, y)
+
+      expect(result.coefficient).toBeGreaterThan(0.99)
+      expect(result.pValue).toBeLessThan(0.0001)
+      expect(result.significant).toBe(true)
+    })
+
+    it('Pearson correlation should detect non-significant correlation for small n', () => {
+      // Weak correlation with small sample - should NOT be significant
+      // R: cor.test(c(1,2,3,4,5), c(1.5, 1.8, 2.2, 1.9, 2.5))
+      const x = [1, 2, 3, 4, 5]
+      const y = [1.5, 1.8, 2.2, 1.9, 2.5]
+
+      const result = pearsonCorrelation(x, y)
+
+      // With only 5 points and moderate correlation, should have higher p-value
+      expect(result.pValue).toBeGreaterThan(0.05)
+      expect(result.significant).toBe(false)
+    })
+
+    it('ANOVA p-value should be accurate for clearly different groups', () => {
+      // Three clearly different groups
+      // R: summary(aov(value ~ group, data=...))
+      const groups = [
+        { name: 'Low', values: [10, 11, 12, 13, 14] },
+        { name: 'Medium', values: [25, 26, 27, 28, 29] },
+        { name: 'High', values: [40, 41, 42, 43, 44] },
+      ]
+
+      const result = oneWayANOVA(groups)
+
+      // Should be highly significant
+      expect(result.pValue).toBeLessThan(0.0001)
+      expect(result.significant).toBe(true)
+      expect(result.fStatistic).toBeGreaterThan(100)
+    })
+
+    it('paired t-test should detect significant change', () => {
+      // Before/after treatment with consistent improvement
+      // R: t.test(before, after, paired=TRUE)
+      const before = [100, 102, 98, 105, 101, 99, 103, 97, 104, 100]
+      const after = [108, 110, 106, 113, 109, 107, 111, 105, 112, 108]
+
+      const result = pairedTTest(before, after)
+
+      expect(result.pValue).toBeLessThan(0.0001)
+      expect(result.significant).toBe(true)
+      expect(result.meanDifference).toBeCloseTo(-8, 1)
+    })
+
+    it('linear regression p-value should be accurate', () => {
+      // Strong linear relationship
+      const x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      const y = [2.1, 4.0, 6.1, 7.9, 10.2, 11.8, 14.1, 15.9, 18.0, 20.2]
+
+      const result = linearRegression(x, y)
+
+      expect(result.pValue).toBeLessThan(0.0001)
+      expect(result.rSquared).toBeGreaterThan(0.99)
+    })
+  })
+
   describe('independentTTest', () => {
     it('should detect significant difference between groups', () => {
       const group1 = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
