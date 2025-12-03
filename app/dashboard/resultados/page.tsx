@@ -35,6 +35,7 @@ import { CorrelationHeatmap } from '@/components/analysis/charts/CorrelationHeat
 import { EnhancedScatterPlot } from '@/components/analysis/charts/EnhancedScatterPlot'
 import { CorrelationMatrix } from '@/components/analysis/charts/CorrelationMatrix'
 import type { CorrelationAnalysisReport } from '@/lib/correlations/correlation-analysis'
+import type { DiagnosticResponse } from '@/types/diagnostic'
 import { VariableType, VariableInfo, NumericStats, CategoricalStats } from '@/lib/dataAnalysis'
 import { AnalysisLoadingSkeleton } from '@/components/skeleton'
 import { toast } from 'sonner'
@@ -98,27 +99,7 @@ function ResultadosContent() {
     updatedAt: string
   } | null>(null)
   const [loading, setLoading] = useState(true)
-  const [diagnostico, setDiagnostico] = useState<{
-    diagnostico: string
-    geradoEm: string
-    metodo: string
-    resumoExecutivo?: string
-    analiseNumericas?: Array<{
-      variavel: string
-      status: string
-      interpretacao: string
-      comparacaoLiteratura?: string
-    }>
-    pontosFortes?: string[]
-    pontosAtencao?: string[]
-    recomendacoesPrioritarias?: Array<{
-      titulo: string
-      descricao: string
-      prioridade: string
-    }>
-    conclusao?: string
-    fontes?: string[]
-  } | null>(null)
+  const [diagnostico, setDiagnostico] = useState<DiagnosticResponse | null>(null)
   const [loadingDiagnostico, setLoadingDiagnostico] = useState(false)
   const [showDiagnostico, setShowDiagnostico] = useState(false)
   const [showLaymanDevModal, setShowLaymanDevModal] = useState(false)
@@ -1424,6 +1405,9 @@ function ResultadosContent() {
                             <LaymanTab
                               analysisData={analysisData as Record<string, unknown>}
                               entityType="gado"
+                              diagnostic={diagnostico}
+                              loadingDiagnostic={loadingDiagnostico}
+                              onRequestDiagnostic={() => void handleGerarDiagnostico()}
                             />
                           ),
                         },

@@ -9,6 +9,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import OpenAI from 'openai'
 import { generateDiagnostico } from './diagnostico-generator'
 import type { NumericStats } from './dataAnalysis'
+import type { DiagnosticResult } from '@/types/diagnostic'
+
+// Re-export the shared type for backward compatibility
+export type { DiagnosticResult } from '@/types/diagnostic'
 
 export interface DiagnosticInput {
   species: string
@@ -42,26 +46,6 @@ export interface DiagnosticInput {
     totalColumns?: number
     validRows?: number
   }
-}
-
-export interface DiagnosticResult {
-  resumoExecutivo: string
-  analiseNumericas: Array<{
-    variavel: string
-    status: 'Excelente' | 'Bom' | 'Regular' | 'Preocupante'
-    interpretacao: string
-    comparacaoLiteratura?: string
-  }>
-  pontosFortes: string[]
-  pontosAtencao: string[]
-  recomendacoesPrioritarias: Array<{
-    titulo: string
-    descricao: string
-    prioridade: 'Alta' | 'Média' | 'Baixa'
-  }>
-  conclusao: string
-  fontes: string[]
-  generatedBy?: 'gemini' | 'openai' | 'rule-based'
 }
 
 /**
