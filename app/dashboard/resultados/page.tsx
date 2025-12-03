@@ -1424,6 +1424,9 @@ function ResultadosContent() {
                             <LaymanTab
                               analysisData={analysisData as Record<string, unknown>}
                               entityType="gado"
+                              diagnostic={diagnostico}
+                              loadingDiagnostic={loadingDiagnostico}
+                              onRequestDiagnostic={() => void handleGerarDiagnostico()}
                             />
                           ),
                         },
