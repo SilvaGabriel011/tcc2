@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode, useState } from 'react'
+import { ReactNode, useState, useEffect } from 'react'
 
 interface Tab {
   id: string
@@ -12,14 +12,27 @@ interface Tab {
 interface TabsProps {
   tabs: Tab[]
   defaultTab?: string
+  activeTab?: string // NEW: controlled mode
   onTabChange?: (tabId: string) => void
 }
 
-export function Tabs({ tabs, defaultTab, onTabChange }: TabsProps) {
-  const [activeTab, setActiveTab] = useState(defaultTab || tabs[0]?.id || '')
-  
+export function Tabs({ tabs, defaultTab, activeTab: controlledActiveTab, onTabChange }: TabsProps) {
+  const [internalActiveTab, setInternalActiveTab] = useState(defaultTab || tabs[0]?.id || '')
+
+  // FIX: Sync internal state when switching from controlled to uncontrolled
+  useEffect(() => {
+    if (controlledActiveTab === undefined && defaultTab) {
+      setInternalActiveTab(defaultTab)
+    }
+  }, [controlledActiveTab, defaultTab])
+
+  // Use controlled tab if provided, otherwise use internal state
+  const activeTab = controlledActiveTab ?? internalActiveTab
+
   const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId)
+    if (controlledActiveTab === undefined) {
+      setInternalActiveTab(tabId)
+    }
     onTabChange?.(tabId)
   }
 
@@ -52,10 +65,7 @@ export function Tabs({ tabs, defaultTab, onTabChange }: TabsProps) {
       {/* Tab Content */}
       <div className="mt-6">
         {tabs.map((tab) => (
-          <div
-            key={tab.id}
-            className={activeTab === tab.id ? 'block' : 'hidden'}
-          >
+          <div key={tab.id} className={activeTab === tab.id ? 'block' : 'hidden'}>
             {tab.content}
           </div>
         ))}
