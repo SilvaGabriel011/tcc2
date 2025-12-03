@@ -119,7 +119,8 @@ export function ActionSummary({ diagnostic, loading, onRequestDiagnostic }: Acti
           </p>
           {onRequestDiagnostic && (
             <button
-              onClick={onRequestDiagnostic}
+              type="button"
+              onClick={() => onRequestDiagnostic()}
               className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
               <Lightbulb className="h-4 w-4 mr-2" />
