@@ -8,7 +8,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
 } from 'recharts'
 
 interface EnhancedScatterPlotProps {
@@ -38,44 +38,52 @@ export function EnhancedScatterPlot({
   showTrendLine = true,
 }: EnhancedScatterPlotProps) {
   const { slope, intercept, rSquared } = calculateLinearRegression(data)
-  
-  const xMin = Math.min(...data.map(p => p.x))
-  const xMax = Math.max(...data.map(p => p.x))
+
+  const xMin = Math.min(...data.map((p) => p.x))
+  const xMax = Math.max(...data.map((p) => p.x))
   const trendLineData = [
     { x: xMin, y: slope * xMin + intercept, trend: true },
-    { x: xMax, y: slope * xMax + intercept, trend: true }
+    { x: xMax, y: slope * xMax + intercept, trend: true },
   ]
 
   const getColor = () => {
     const abs = Math.abs(correlation)
     if (correlation > 0) {
-      if (abs >= 0.7) return '#065F46' // Dark green
-      if (abs >= 0.5) return '#10B981' // Green
+      if (abs >= 0.7) {
+        return '#065F46'
+      } // Dark green
+      if (abs >= 0.5) {
+        return '#10B981'
+      } // Green
       return '#6EE7B7' // Light green
     } else {
-      if (abs >= 0.7) return '#991B1B' // Dark red
-      if (abs >= 0.5) return '#EF4444' // Red
+      if (abs >= 0.7) {
+        return '#991B1B'
+      } // Dark red
+      if (abs >= 0.5) {
+        return '#EF4444'
+      } // Red
       return '#FCA5A5' // Light red
     }
   }
 
   const getCategoryColor = () => {
     const colors: Record<string, string> = {
-      'Crescimento': '#3B82F6',
-      'Morfometria': '#10B981',
-      'Performance': '#8B5CF6',
-      'Eficiência': '#F59E0B',
-      'Produção': '#EC4899',
-      'Desenvolvimento': '#06B6D4',
-      'Qualidade': '#84CC16',
-      'Condição': '#F97316',
-      'Carcaça': '#6366F1',
-      'Reprodução': '#EF4444',
-      'Estrutura': '#14B8A6',
-      'Maturidade': '#A855F7',
-      'Manejo': '#F59E0B',
+      Crescimento: '#3B82F6',
+      Morfometria: '#10B981',
+      Performance: '#8B5CF6',
+      Eficiência: '#F59E0B',
+      Produção: '#EC4899',
+      Desenvolvimento: '#06B6D4',
+      Qualidade: '#84CC16',
+      Condição: '#F97316',
+      Carcaça: '#6366F1',
+      Reprodução: '#EF4444',
+      Estrutura: '#14B8A6',
+      Maturidade: '#A855F7',
+      Manejo: '#F59E0B',
       'Qualidade Água': '#0EA5E9',
-      'Outros': '#6B7280'
+      Outros: '#6B7280',
     }
     return colors[category] || '#6B7280'
   }
@@ -84,27 +92,27 @@ export function EnhancedScatterPlot({
   const categoryColor = getCategoryColor()
 
   return (
-    <div className="w-full">
+    <div className="w-full bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-md p-4 mb-6">
       {title && (
-        <div className="mb-4">
-          <h4 className="text-md font-medium text-gray-900 dark:text-gray-100">{title}</h4>
-          <div className="flex items-center gap-4 mt-2 text-sm">
+        <div className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+          <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h4>
+          <div className="flex flex-wrap items-center gap-4 mt-2 text-sm">
             <span
-              className="px-2 py-1 rounded text-white font-medium"
+              className="px-3 py-1.5 rounded-lg text-white font-semibold shadow-sm"
               style={{ backgroundColor: categoryColor }}
             >
               {category}
             </span>
-            <span className="text-gray-600 dark:text-gray-400">
+            <span className="text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
               r = {correlation.toFixed(3)}
             </span>
-            <span className="text-gray-600 dark:text-gray-400">
+            <span className="text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
               R² = {rSquared.toFixed(3)}
             </span>
-            <span className="text-gray-600 dark:text-gray-400">
+            <span className="text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
               p = {pValue.toFixed(4)}
             </span>
-            <span className="text-gray-600 dark:text-gray-400">
+            <span className="text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
               Relevância: {relevanceScore}/10
             </span>
           </div>
@@ -122,7 +130,7 @@ export function EnhancedScatterPlot({
               value: xLabel,
               position: 'bottom',
               offset: 40,
-              style: { fontSize: 14, fill: '#374151' }
+              style: { fontSize: 14, fill: '#374151' },
             }}
             stroke="#6B7280"
           />
@@ -135,17 +143,19 @@ export function EnhancedScatterPlot({
               angle: -90,
               position: 'left',
               offset: 40,
-              style: { fontSize: 14, fill: '#374151' }
+              style: { fontSize: 14, fill: '#374151' },
             }}
             stroke="#6B7280"
           />
           <Tooltip
             cursor={{ strokeDasharray: '3 3' }}
             content={({ active, payload }) => {
-              if (active && payload && payload[0]) {
+              if (active && payload?.[0]) {
                 const point = payload[0].payload
-                if (point.trend) return null
-                
+                if (point.trend) {
+                  return null
+                }
+
                 return (
                   <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded shadow-lg">
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -161,7 +171,7 @@ export function EnhancedScatterPlot({
             }}
           />
           <Legend />
-          
+
           {/* Data points */}
           <Scatter
             name="Dados"
@@ -171,7 +181,7 @@ export function EnhancedScatterPlot({
             stroke={color}
             strokeWidth={1}
           />
-          
+
           {/* Trend line */}
           {showTrendLine && (
             <Scatter
@@ -189,27 +199,37 @@ export function EnhancedScatterPlot({
       </ResponsiveContainer>
 
       {/* Statistics summary */}
-      <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-        <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded">
-          <div className="text-gray-600 dark:text-gray-400">N</div>
-          <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">{data.length}</div>
-        </div>
-        <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded">
-          <div className="text-gray-600 dark:text-gray-400">Correlação</div>
-          <div className="text-lg font-semibold" style={{ color }}>
-            {correlation.toFixed(3)}
+      <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              N
+            </div>
+            <div className="text-xl font-bold text-gray-900 dark:text-gray-100">{data.length}</div>
           </div>
-        </div>
-        <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded">
-          <div className="text-gray-600 dark:text-gray-400">R²</div>
-          <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            {(rSquared * 100).toFixed(1)}%
+          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Correlação
+            </div>
+            <div className="text-xl font-bold" style={{ color }}>
+              {correlation.toFixed(3)}
+            </div>
           </div>
-        </div>
-        <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded">
-          <div className="text-gray-600 dark:text-gray-400">Equação</div>
-          <div className="text-sm font-mono text-gray-900 dark:text-gray-100">
-            y = {slope.toFixed(3)}x + {intercept.toFixed(3)}
+          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              R²
+            </div>
+            <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              {(rSquared * 100).toFixed(1)}%
+            </div>
+          </div>
+          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Equação
+            </div>
+            <div className="text-sm font-mono text-gray-900 dark:text-gray-100 mt-1">
+              y = {slope.toFixed(3)}x + {intercept.toFixed(3)}
+            </div>
           </div>
         </div>
       </div>
@@ -236,7 +256,7 @@ function calculateLinearRegression(data: Array<{ x: number; y: number }>) {
     const predicted = slope * p.x + intercept
     return sum + Math.pow(p.y - predicted, 2)
   }, 0)
-  const rSquared = 1 - (ssResidual / ssTotal)
+  const rSquared = 1 - ssResidual / ssTotal
 
   return { slope, intercept, rSquared }
 }

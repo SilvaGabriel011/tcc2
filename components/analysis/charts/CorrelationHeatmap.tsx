@@ -95,23 +95,30 @@ export function CorrelationHeatmap({ correlations, title }: CorrelationHeatmapPr
           <table className="border-collapse">
             <thead>
               <tr>
-                <th className="p-1"></th>
+                <th className="p-1" style={{ height: cellSize * 2.5 }}></th>
                 {variables.map((v, i) => (
                   <th
                     key={i}
-                    className="p-1 text-xs font-medium text-gray-700 dark:text-gray-300"
+                    className="p-1 text-xs font-medium text-gray-700 dark:text-gray-300 align-bottom"
                     style={{
                       width: cellSize,
                       maxWidth: cellSize,
                       minWidth: cellSize,
+                      height: cellSize * 2.5,
+                      position: 'relative',
                     }}
                   >
                     <div
-                      className="transform -rotate-45 origin-left whitespace-nowrap overflow-hidden text-ellipsis"
-                      style={{ width: cellSize * 1.5 }}
+                      className="transform -rotate-45 origin-bottom-left whitespace-nowrap"
+                      style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: cellSize / 2,
+                        width: cellSize * 2.5,
+                      }}
                       title={v}
                     >
-                      {v.length > 12 ? `${v.substring(0, 12)}...` : v}
+                      {v.length > 18 ? `${v.substring(0, 18)}...` : v}
                     </div>
                   </th>
                 ))}
