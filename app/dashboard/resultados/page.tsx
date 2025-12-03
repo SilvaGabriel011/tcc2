@@ -18,6 +18,8 @@ import {
   GitCompare,
   Trash2,
   User,
+  Table,
+  TrendingUp,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Tabs } from '@/components/tabs'
@@ -743,9 +745,9 @@ function ResultadosContent() {
                           icon: <BarChart3 className="h-4 w-4" />,
                           content: (
                             <>
-                              {/* Diagnóstico Zootécnico com IA */}
+                              {/* Diagnóstico Zootécnico com IA - Fica fora das abas */}
                               {showDiagnostico && diagnostico && (
-                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 shadow-lg rounded-lg p-6 border-l-4 border-blue-600">
+                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 shadow-lg rounded-lg p-6 border-l-4 border-blue-600 mb-6">
                                   <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center">
                                       <Activity className="h-6 w-6 text-blue-600 mr-2" />
@@ -936,408 +938,481 @@ function ResultadosContent() {
                                 </div>
                               )}
 
-                              {/* Informações sobre Tipos de Variáveis */}
-                              {analysisData.variablesInfo &&
-                                Object.keys(analysisData.variablesInfo).length > 0 && (
-                                  <div className="bg-card shadow rounded-lg p-6">
-                                    <div className="flex items-center mb-4">
-                                      <Info className="h-5 w-5 text-blue-600 mr-2" />
-                                      <h3 className="text-lg font-semibold text-foreground">
-                                        Classificação das Variáveis
-                                      </h3>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                      {Object.entries(analysisData.variablesInfo).map(
-                                        ([variable, info]: [string, VariableInfo]) => (
-                                          <div
-                                            key={variable}
-                                            className="border border rounded-lg p-3"
-                                          >
-                                            <div className="font-medium text-foreground text-sm mb-1">
-                                              {variable}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground mb-1">
-                                              <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                                                {getVariableTypeLabel(info.type)}
-                                              </span>
-                                            </div>
-                                            {info.isZootechnical && (
-                                              <div className="text-xs text-green-600 font-medium">
-                                                ✓ Zootécnica
-                                              </div>
-                                            )}
-                                            {info.description && (
-                                              <div className="text-xs text-muted-foreground mt-1">
-                                                {info.description}
-                                              </div>
-                                            )}
-                                            {info.unit && (
-                                              <div className="text-xs text-muted-foreground">
-                                                Unidade: {info.unit}
-                                              </div>
-                                            )}
-                                          </div>
-                                        )
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
-                              {/* Estatísticas Descritivas - Tabela Detalhada */}
-                              {analysisData.numericStats &&
-                                Object.keys(analysisData.numericStats).length > 0 && (
-                                  <div className="bg-card shadow rounded-lg p-6">
-                                    <StatsTable
-                                      stats={analysisData.numericStats}
-                                      title="Estatísticas Descritivas - Variáveis Numéricas"
-                                    />
-                                  </div>
-                                )}
-
-                              {/* Gráfico de Caixa - Distribuição das Variáveis */}
-                              {analysisData.numericStats &&
-                                Object.keys(analysisData.numericStats).length > 0 && (
-                                  <div className="bg-card shadow rounded-lg p-6">
-                                    <div className="flex items-center mb-4">
-                                      <Activity className="h-5 w-5 text-green-600 mr-2" />
-                                      <h3 className="text-lg font-semibold text-foreground">
-                                        Gráfico de Caixa (BoxPlot) - Distribuição das Variáveis
-                                      </h3>
-                                    </div>
-                                    <BoxPlotChart data={analysisData.numericStats} />
-                                  </div>
-                                )}
-
-                              {/* Histogramas */}
-                              {analysisData.numericStats &&
-                                Object.keys(analysisData.numericStats).length > 0 &&
-                                analysisData.rawData && (
-                                  <div className="bg-card shadow rounded-lg p-6">
-                                    <h3 className="text-lg font-semibold text-foreground mb-6">
-                                      Distribuição de Frequências
-                                    </h3>
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                      {Object.keys(analysisData.numericStats)
-                                        .slice(0, 4)
-                                        .map((variable) => {
-                                          const values = analysisData
-                                            .rawData!.map((row: Record<string, unknown>) =>
-                                              parseFloat(row[variable] as string)
-                                            )
-                                            .filter((v: number) => !isNaN(v))
-
-                                          return values.length > 0 ? (
-                                            <HistogramChart
-                                              key={variable}
-                                              data={values}
-                                              variableName={variable}
-                                              title={`Histograma - ${variable}`}
-                                              bins={10}
-                                            />
-                                          ) : null
-                                        })}
-                                    </div>
-                                  </div>
-                                )}
-
-                              {/* Gráficos de Pizza para Variáveis Categóricas */}
-                              {analysisData.categoricalStats &&
-                                Object.keys(analysisData.categoricalStats).length > 0 && (
-                                  <div className="bg-card shadow rounded-lg p-6">
-                                    <div className="flex items-center mb-6">
-                                      <PieChart className="h-5 w-5 text-purple-600 mr-2" />
-                                      <h3 className="text-lg font-semibold text-foreground">
-                                        Distribuição de Variáveis Categóricas
-                                      </h3>
-                                    </div>
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                      {Object.entries(analysisData.categoricalStats).map(
-                                        ([variable, stats]) => (
-                                          <PieChartComponent
-                                            key={variable}
-                                            data={stats}
-                                            title={variable}
-                                            maxSlices={8}
-                                          />
-                                        )
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
-                              {/* Análise Categórica Detalhada */}
-                              {analysisData.categoricalStats &&
-                                Object.keys(analysisData.categoricalStats).length > 0 && (
-                                  <div className="bg-card shadow rounded-lg p-6">
-                                    <h3 className="text-lg font-semibold text-foreground mb-4">
-                                      Estatísticas das Variáveis Categóricas
-                                    </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                      {Object.entries(analysisData.categoricalStats).map(
-                                        ([variable, stats]) => (
-                                          <div
-                                            key={variable}
-                                            className="border border rounded-lg p-4"
-                                          >
-                                            <h4 className="font-medium text-foreground mb-3">
-                                              {variable}
-                                            </h4>
-                                            <div className="space-y-2 mb-4">
-                                              <div className="flex justify-between text-sm">
-                                                <span className="text-muted-foreground">
-                                                  Valores únicos:
-                                                </span>
-                                                <span className="font-medium">
-                                                  {stats.uniqueValues}
-                                                </span>
-                                              </div>
-                                              <div className="flex justify-between text-sm">
-                                                <span className="text-muted-foreground">
-                                                  Mais comum:
-                                                </span>
-                                                <span className="font-medium text-green-600">
-                                                  {stats.mostCommon}
-                                                </span>
-                                              </div>
-                                              <div className="flex justify-between text-sm">
-                                                <span className="text-muted-foreground">
-                                                  Valores válidos:
-                                                </span>
-                                                <span className="font-medium">
-                                                  {stats.validCount}
-                                                </span>
-                                              </div>
-                                              {stats.entropy !== undefined && (
-                                                <div className="flex justify-between text-sm">
-                                                  <span className="text-muted-foreground">
-                                                    Entropia:
-                                                  </span>
-                                                  <span className="font-medium">
-                                                    {stats.entropy.toFixed(4)}
-                                                  </span>
-                                                </div>
-                                              )}
-                                            </div>
-                                            <div className="border-t pt-3">
-                                              <div className="text-sm font-medium text-foreground/80 mb-2">
-                                                Distribuição:
-                                              </div>
-                                              <div className="space-y-1 max-h-48 overflow-y-auto">
-                                                {Object.entries(stats.distribution)
-                                                  .sort(
-                                                    (a, b) => (b[1] as number) - (a[1] as number)
-                                                  )
-                                                  .map(([value, count]: [string, number]) => (
-                                                    <div
-                                                      key={value}
-                                                      className="flex justify-between text-sm"
-                                                    >
-                                                      <span className="text-foreground/80 truncate mr-2">
-                                                        {value}
-                                                      </span>
-                                                      <span className="font-medium whitespace-nowrap">
-                                                        {count} (
-                                                        {typeof stats.frequencies[value] ===
-                                                        'number'
-                                                          ? stats.frequencies[value]
-                                                          : stats.frequencies[value]}
-                                                        %)
+                              {/* Abas de Análise */}
+                              <Tabs
+                                defaultTab="variables"
+                                tabs={[
+                                  {
+                                    id: 'variables',
+                                    label: 'Classificação das Variáveis',
+                                    icon: <Info className="h-4 w-4" />,
+                                    content: (
+                                      <div className="space-y-6">
+                                        {/* Informações sobre Tipos de Variáveis */}
+                                        {analysisData.variablesInfo &&
+                                        Object.keys(analysisData.variablesInfo).length > 0 ? (
+                                          <div className="bg-card shadow rounded-lg p-6">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                              {Object.entries(analysisData.variablesInfo).map(
+                                                ([variable, info]: [string, VariableInfo]) => (
+                                                  <div
+                                                    key={variable}
+                                                    className="border border rounded-lg p-3"
+                                                  >
+                                                    <div className="font-medium text-foreground text-sm mb-1">
+                                                      {variable}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground mb-1">
+                                                      <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                                                        {getVariableTypeLabel(info.type)}
                                                       </span>
                                                     </div>
-                                                  ))}
-                                              </div>
-                                            </div>
-                                          </div>
-                                        )
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-
-                              {/* Enhanced Correlation Analysis */}
-                              {analysisData.correlations?.report &&
-                                (() => {
-                                  const report = analysisData.correlations.report
-                                  const topCorrelations = report.topCorrelations || []
-
-                                  return topCorrelations.length > 0 ? (
-                                    <div className="space-y-6">
-                                      {/* Correlation Summary */}
-                                      <div className="bg-card shadow rounded-lg p-6">
-                                        <div className="flex items-center justify-between mb-4">
-                                          <div className="flex items-center">
-                                            <GitCompare className="h-5 w-5 text-purple-600 mr-2" />
-                                            <div>
-                                              <h3 className="text-lg font-semibold text-foreground">
-                                                Análise de Correlações Biologicamente Relevantes
-                                              </h3>
-                                              <p className="text-sm text-muted-foreground">
-                                                Sistema inteligente com priorização por relevância
-                                                zootécnica
-                                              </p>
-                                            </div>
-                                          </div>
-                                        </div>
-
-                                        {/* Statistics Cards */}
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                                          <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg">
-                                            <div className="text-sm text-blue-600 dark:text-blue-400 mb-1">
-                                              Total
-                                            </div>
-                                            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                                              {report.totalCorrelations}
-                                            </div>
-                                          </div>
-                                          <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-lg">
-                                            <div className="text-sm text-green-600 dark:text-green-400 mb-1">
-                                              Significativas
-                                            </div>
-                                            <div className="text-2xl font-bold text-green-900 dark:text-green-100">
-                                              {report.significantCorrelations}
-                                            </div>
-                                          </div>
-                                          <div className="bg-purple-50 dark:bg-purple-950/30 p-4 rounded-lg">
-                                            <div className="text-sm text-purple-600 dark:text-purple-400 mb-1">
-                                              Alta Relevância
-                                            </div>
-                                            <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                                              {report.highRelevanceCorrelations}
-                                            </div>
-                                          </div>
-                                          <div className="bg-amber-50 dark:bg-amber-950/30 p-4 rounded-lg">
-                                            <div className="text-sm text-amber-600 dark:text-amber-400 mb-1">
-                                              Categorias
-                                            </div>
-                                            <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                                              {
-                                                Object.keys(report.correlationsByCategory || {})
-                                                  .length
-                                              }
-                                            </div>
-                                          </div>
-                                        </div>
-
-                                        {/* Warnings and Recommendations */}
-                                        {report.warnings && report.warnings.length > 0 && (
-                                          <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-950/30 border-l-4 border-yellow-500 rounded">
-                                            <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
-                                              ⚠️ Avisos
-                                            </h4>
-                                            <ul className="space-y-1">
-                                              {report.warnings.map(
-                                                (warning: string, idx: number) => (
-                                                  <li
-                                                    key={idx}
-                                                    className="text-sm text-yellow-800 dark:text-yellow-200"
-                                                  >
-                                                    {warning}
-                                                  </li>
+                                                    {info.isZootechnical && (
+                                                      <div className="text-xs text-green-600 font-medium">
+                                                        ✓ Zootécnica
+                                                      </div>
+                                                    )}
+                                                    {info.description && (
+                                                      <div className="text-xs text-muted-foreground mt-1">
+                                                        {info.description}
+                                                      </div>
+                                                    )}
+                                                    {info.unit && (
+                                                      <div className="text-xs text-muted-foreground">
+                                                        Unidade: {info.unit}
+                                                      </div>
+                                                    )}
+                                                  </div>
                                                 )
                                               )}
-                                            </ul>
-                                          </div>
-                                        )}
-
-                                        {report.recommendations &&
-                                          report.recommendations.length > 0 && (
-                                            <div className="p-4 bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 rounded">
-                                              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                                                💡 Recomendações
-                                              </h4>
-                                              <ul className="space-y-1">
-                                                {report.recommendations.map(
-                                                  (rec: string, idx: number) => (
-                                                    <li
-                                                      key={idx}
-                                                      className="text-sm text-blue-800 dark:text-blue-200"
-                                                    >
-                                                      {rec}
-                                                    </li>
-                                                  )
-                                                )}
-                                              </ul>
                                             </div>
-                                          )}
-                                      </div>
-
-                                      {/* Correlation Matrix Table */}
-                                      <div className="bg-card shadow rounded-lg p-6">
-                                        <CorrelationMatrix
-                                          correlations={topCorrelations}
-                                          title="Matriz de Correlações Priorizadas"
-                                          maxDisplay={20}
-                                        />
-                                      </div>
-
-                                      {/* Correlation Heatmap */}
-                                      {topCorrelations.length >= 3 && (
-                                        <div className="bg-card shadow rounded-lg p-6">
-                                          <CorrelationHeatmap
-                                            correlations={topCorrelations.map((c) => ({
-                                              var1: c.var1,
-                                              var2: c.var2,
-                                              coefficient: c.coefficient,
-                                              significant: c.significant,
-                                              relevanceScore: c.relevanceScore,
-                                            }))}
-                                            title="Mapa de Calor das Correlações"
-                                          />
-                                        </div>
-                                      )}
-
-                                      {/* Enhanced Scatter Plots */}
-                                      <div className="bg-card shadow rounded-lg p-6">
-                                        <h3 className="text-lg font-semibold text-foreground mb-6">
-                                          Gráficos de Dispersão com Linha de Tendência
-                                        </h3>
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                          {topCorrelations.slice(0, 12).map((corr, idx) => (
-                                            <EnhancedScatterPlot
-                                              key={idx}
-                                              data={corr.dataPoints}
-                                              xLabel={corr.var1}
-                                              yLabel={corr.var2}
-                                              correlation={corr.coefficient}
-                                              pValue={corr.pValue}
-                                              category={corr.category}
-                                              relevanceScore={corr.relevanceScore}
-                                              title={`${corr.var1} vs ${corr.var2}`}
-                                              showTrendLine={true}
-                                            />
-                                          ))}
-                                        </div>
-                                        {topCorrelations.length > 12 && (
-                                          <div className="mt-6 text-center">
-                                            <p className="text-sm text-muted-foreground">
-                                              Mostrando as 12 correlações mais relevantes de{' '}
-                                              {topCorrelations.length} encontradas
+                                          </div>
+                                        ) : (
+                                          <div className="bg-card shadow rounded-lg p-8 text-center">
+                                            <Info className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                                            <p className="text-muted-foreground">
+                                              Nenhuma informação de variáveis disponível.
                                             </p>
                                           </div>
                                         )}
                                       </div>
-                                    </div>
-                                  ) : (
-                                    <div className="bg-card shadow rounded-lg p-8 text-center">
-                                      <GitCompare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                                      <h3 className="text-lg font-medium text-foreground mb-2">
-                                        📊 Análise de Correlações
-                                      </h3>
-                                      <p className="text-muted-foreground mb-4">
-                                        Nenhuma correlação forte foi encontrada entre as variáveis
-                                        analisadas neste conjunto de dados.
-                                      </p>
-                                      <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-900 max-w-2xl mx-auto">
-                                        <p className="text-sm text-blue-800 dark:text-blue-400">
-                                          💡 <strong>Dica:</strong> Correlações são mais evidentes
-                                          com datasets maiores (&gt;30 registros) e quando há
-                                          variáveis relacionadas biologicamente (ex: peso × consumo
-                                          de ração, produção de leite × proteína).
-                                        </p>
+                                    ),
+                                  },
+                                  {
+                                    id: 'statistics',
+                                    label: 'Estatísticas Descritivas',
+                                    icon: <Table className="h-4 w-4" />,
+                                    content: (
+                                      <div className="space-y-6">
+                                        {/* Estatísticas Descritivas - Tabela Detalhada */}
+                                        {analysisData.numericStats &&
+                                        Object.keys(analysisData.numericStats).length > 0 ? (
+                                          <>
+                                            <div className="bg-card shadow rounded-lg p-6">
+                                              <StatsTable
+                                                stats={analysisData.numericStats}
+                                                title="Estatísticas Descritivas - Variáveis Numéricas"
+                                              />
+                                            </div>
+
+                                            {/* Gráfico de Caixa - Distribuição das Variáveis */}
+                                            <div className="bg-card shadow rounded-lg p-6">
+                                              <div className="flex items-center mb-4">
+                                                <Activity className="h-5 w-5 text-green-600 mr-2" />
+                                                <h3 className="text-lg font-semibold text-foreground">
+                                                  Gráfico de Caixa (BoxPlot) - Distribuição das
+                                                  Variáveis
+                                                </h3>
+                                              </div>
+                                              <BoxPlotChart data={analysisData.numericStats} />
+                                            </div>
+
+                                            {/* Histogramas */}
+                                            {analysisData.rawData && (
+                                              <div className="bg-card shadow rounded-lg p-6">
+                                                <h3 className="text-lg font-semibold text-foreground mb-6">
+                                                  Distribuição de Frequências
+                                                </h3>
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                  {Object.keys(analysisData.numericStats)
+                                                    .slice(0, 4)
+                                                    .map((variable) => {
+                                                      const values = analysisData
+                                                        .rawData!.map(
+                                                          (row: Record<string, unknown>) =>
+                                                            parseFloat(row[variable] as string)
+                                                        )
+                                                        .filter((v: number) => !isNaN(v))
+
+                                                      return values.length > 0 ? (
+                                                        <HistogramChart
+                                                          key={variable}
+                                                          data={values}
+                                                          variableName={variable}
+                                                          title={`Histograma - ${variable}`}
+                                                          bins={10}
+                                                        />
+                                                      ) : null
+                                                    })}
+                                                </div>
+                                              </div>
+                                            )}
+                                          </>
+                                        ) : (
+                                          <div className="bg-card shadow rounded-lg p-8 text-center">
+                                            <Table className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                                            <p className="text-muted-foreground">
+                                              Nenhuma estatística descritiva disponível.
+                                            </p>
+                                          </div>
+                                        )}
                                       </div>
-                                    </div>
-                                  )
-                                })()}
+                                    ),
+                                  },
+                                  {
+                                    id: 'categorical',
+                                    label: 'Variáveis Categóricas',
+                                    icon: <PieChart className="h-4 w-4" />,
+                                    content: (
+                                      <div className="space-y-6">
+                                        {/* Gráficos de Pizza para Variáveis Categóricas */}
+                                        {analysisData.categoricalStats &&
+                                        Object.keys(analysisData.categoricalStats).length > 0 ? (
+                                          <>
+                                            <div className="bg-card shadow rounded-lg p-6">
+                                              <div className="flex items-center mb-6">
+                                                <PieChart className="h-5 w-5 text-purple-600 mr-2" />
+                                                <h3 className="text-lg font-semibold text-foreground">
+                                                  Distribuição de Variáveis Categóricas
+                                                </h3>
+                                              </div>
+                                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                                {Object.entries(analysisData.categoricalStats).map(
+                                                  ([variable, stats]) => (
+                                                    <PieChartComponent
+                                                      key={variable}
+                                                      data={stats}
+                                                      title={variable}
+                                                      maxSlices={8}
+                                                    />
+                                                  )
+                                                )}
+                                              </div>
+                                            </div>
+
+                                            {/* Análise Categórica Detalhada */}
+                                            <div className="bg-card shadow rounded-lg p-6">
+                                              <h3 className="text-lg font-semibold text-foreground mb-4">
+                                                Estatísticas das Variáveis Categóricas
+                                              </h3>
+                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                {Object.entries(analysisData.categoricalStats).map(
+                                                  ([variable, stats]) => (
+                                                    <div
+                                                      key={variable}
+                                                      className="border border rounded-lg p-4"
+                                                    >
+                                                      <h4 className="font-medium text-foreground mb-3">
+                                                        {variable}
+                                                      </h4>
+                                                      <div className="space-y-2 mb-4">
+                                                        <div className="flex justify-between text-sm">
+                                                          <span className="text-muted-foreground">
+                                                            Valores únicos:
+                                                          </span>
+                                                          <span className="font-medium">
+                                                            {stats.uniqueValues}
+                                                          </span>
+                                                        </div>
+                                                        <div className="flex justify-between text-sm">
+                                                          <span className="text-muted-foreground">
+                                                            Mais comum:
+                                                          </span>
+                                                          <span className="font-medium text-green-600">
+                                                            {stats.mostCommon}
+                                                          </span>
+                                                        </div>
+                                                        <div className="flex justify-between text-sm">
+                                                          <span className="text-muted-foreground">
+                                                            Valores válidos:
+                                                          </span>
+                                                          <span className="font-medium">
+                                                            {stats.validCount}
+                                                          </span>
+                                                        </div>
+                                                        {stats.entropy !== undefined && (
+                                                          <div className="flex justify-between text-sm">
+                                                            <span className="text-muted-foreground">
+                                                              Entropia:
+                                                            </span>
+                                                            <span className="font-medium">
+                                                              {stats.entropy.toFixed(4)}
+                                                            </span>
+                                                          </div>
+                                                        )}
+                                                      </div>
+                                                      <div className="border-t pt-3">
+                                                        <div className="text-sm font-medium text-foreground/80 mb-2">
+                                                          Distribuição:
+                                                        </div>
+                                                        <div className="space-y-1 max-h-48 overflow-y-auto">
+                                                          {Object.entries(stats.distribution)
+                                                            .sort(
+                                                              (a, b) =>
+                                                                (b[1] as number) - (a[1] as number)
+                                                            )
+                                                            .map(
+                                                              ([value, count]: [
+                                                                string,
+                                                                number,
+                                                              ]) => (
+                                                                <div
+                                                                  key={value}
+                                                                  className="flex justify-between text-sm"
+                                                                >
+                                                                  <span className="text-foreground/80 truncate mr-2">
+                                                                    {value}
+                                                                  </span>
+                                                                  <span className="font-medium whitespace-nowrap">
+                                                                    {count} (
+                                                                    {typeof stats.frequencies[
+                                                                      value
+                                                                    ] === 'number'
+                                                                      ? stats.frequencies[value]
+                                                                      : stats.frequencies[value]}
+                                                                    %)
+                                                                  </span>
+                                                                </div>
+                                                              )
+                                                            )}
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  )
+                                                )}
+                                              </div>
+                                            </div>
+                                          </>
+                                        ) : (
+                                          <div className="bg-card shadow rounded-lg p-8 text-center">
+                                            <PieChart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                                            <p className="text-muted-foreground">
+                                              Nenhuma variável categórica disponível.
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ),
+                                  },
+                                  {
+                                    id: 'correlations',
+                                    label: 'Análise de Correlações',
+                                    icon: <TrendingUp className="h-4 w-4" />,
+                                    content: (
+                                      <div className="space-y-6">
+                                        {/* Enhanced Correlation Analysis */}
+                                        {analysisData.correlations?.report &&
+                                          (() => {
+                                            const report = analysisData.correlations.report
+                                            const topCorrelations = report.topCorrelations || []
+
+                                            return topCorrelations.length > 0 ? (
+                                              <div className="space-y-6">
+                                                {/* Correlation Summary */}
+                                                <div className="bg-card shadow rounded-lg p-6">
+                                                  <div className="flex items-center justify-between mb-4">
+                                                    <div className="flex items-center">
+                                                      <GitCompare className="h-5 w-5 text-purple-600 mr-2" />
+                                                      <div>
+                                                        <h3 className="text-lg font-semibold text-foreground">
+                                                          Análise de Correlações Biologicamente
+                                                          Relevantes
+                                                        </h3>
+                                                        <p className="text-sm text-muted-foreground">
+                                                          Sistema inteligente com priorização por
+                                                          relevância zootécnica
+                                                        </p>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+
+                                                  {/* Statistics Cards */}
+                                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                                    <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg">
+                                                      <div className="text-sm text-blue-600 dark:text-blue-400 mb-1">
+                                                        Total
+                                                      </div>
+                                                      <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                                                        {report.totalCorrelations}
+                                                      </div>
+                                                    </div>
+                                                    <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-lg">
+                                                      <div className="text-sm text-green-600 dark:text-green-400 mb-1">
+                                                        Significativas
+                                                      </div>
+                                                      <div className="text-2xl font-bold text-green-900 dark:text-green-100">
+                                                        {report.significantCorrelations}
+                                                      </div>
+                                                    </div>
+                                                    <div className="bg-purple-50 dark:bg-purple-950/30 p-4 rounded-lg">
+                                                      <div className="text-sm text-purple-600 dark:text-purple-400 mb-1">
+                                                        Alta Relevância
+                                                      </div>
+                                                      <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                                                        {report.highRelevanceCorrelations}
+                                                      </div>
+                                                    </div>
+                                                    <div className="bg-amber-50 dark:bg-amber-950/30 p-4 rounded-lg">
+                                                      <div className="text-sm text-amber-600 dark:text-amber-400 mb-1">
+                                                        Categorias
+                                                      </div>
+                                                      <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">
+                                                        {
+                                                          Object.keys(
+                                                            report.correlationsByCategory || {}
+                                                          ).length
+                                                        }
+                                                      </div>
+                                                    </div>
+                                                  </div>
+
+                                                  {/* Warnings and Recommendations */}
+                                                  {report.warnings &&
+                                                    report.warnings.length > 0 && (
+                                                      <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-950/30 border-l-4 border-yellow-500 rounded">
+                                                        <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">
+                                                          ⚠️ Avisos
+                                                        </h4>
+                                                        <ul className="space-y-1">
+                                                          {report.warnings.map(
+                                                            (warning: string, idx: number) => (
+                                                              <li
+                                                                key={idx}
+                                                                className="text-sm text-yellow-800 dark:text-yellow-200"
+                                                              >
+                                                                {warning}
+                                                              </li>
+                                                            )
+                                                          )}
+                                                        </ul>
+                                                      </div>
+                                                    )}
+
+                                                  {report.recommendations &&
+                                                    report.recommendations.length > 0 && (
+                                                      <div className="p-4 bg-blue-50 dark:bg-blue-950/30 border-l-4 border-blue-500 rounded">
+                                                        <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                                                          💡 Recomendações
+                                                        </h4>
+                                                        <ul className="space-y-1">
+                                                          {report.recommendations.map(
+                                                            (rec: string, idx: number) => (
+                                                              <li
+                                                                key={idx}
+                                                                className="text-sm text-blue-800 dark:text-blue-200"
+                                                              >
+                                                                {rec}
+                                                              </li>
+                                                            )
+                                                          )}
+                                                        </ul>
+                                                      </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Correlation Matrix Table */}
+                                                <div className="bg-card shadow rounded-lg p-6">
+                                                  <CorrelationMatrix
+                                                    correlations={topCorrelations}
+                                                    title="Matriz de Correlações Priorizadas"
+                                                    maxDisplay={20}
+                                                  />
+                                                </div>
+
+                                                {/* Correlation Heatmap */}
+                                                {topCorrelations.length >= 3 && (
+                                                  <div className="bg-card shadow rounded-lg p-6">
+                                                    <CorrelationHeatmap
+                                                      correlations={topCorrelations.map((c) => ({
+                                                        var1: c.var1,
+                                                        var2: c.var2,
+                                                        coefficient: c.coefficient,
+                                                        significant: c.significant,
+                                                        relevanceScore: c.relevanceScore,
+                                                      }))}
+                                                      title="Mapa de Calor das Correlações"
+                                                    />
+                                                  </div>
+                                                )}
+
+                                                {/* Enhanced Scatter Plots */}
+                                                <div className="bg-card shadow rounded-lg p-6">
+                                                  <h3 className="text-lg font-semibold text-foreground mb-6">
+                                                    Gráficos de Dispersão com Linha de Tendência
+                                                  </h3>
+                                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                                    {topCorrelations
+                                                      .slice(0, 12)
+                                                      .map((corr, idx) => (
+                                                        <EnhancedScatterPlot
+                                                          key={idx}
+                                                          data={corr.dataPoints}
+                                                          xLabel={corr.var1}
+                                                          yLabel={corr.var2}
+                                                          correlation={corr.coefficient}
+                                                          pValue={corr.pValue}
+                                                          category={corr.category}
+                                                          relevanceScore={corr.relevanceScore}
+                                                          title={`${corr.var1} vs ${corr.var2}`}
+                                                          showTrendLine={true}
+                                                        />
+                                                      ))}
+                                                  </div>
+                                                  {topCorrelations.length > 12 && (
+                                                    <div className="mt-6 text-center">
+                                                      <p className="text-sm text-muted-foreground">
+                                                        Mostrando as 12 correlações mais relevantes
+                                                        de {topCorrelations.length} encontradas
+                                                      </p>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <div className="bg-card shadow rounded-lg p-8 text-center">
+                                                <GitCompare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                                                <h3 className="text-lg font-medium text-foreground mb-2">
+                                                  Análise de Correlações
+                                                </h3>
+                                                <p className="text-muted-foreground mb-4">
+                                                  Nenhuma correlação forte foi encontrada entre as
+                                                  variáveis analisadas neste conjunto de dados.
+                                                </p>
+                                                <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-900 max-w-2xl mx-auto">
+                                                  <p className="text-sm text-blue-800 dark:text-blue-400">
+                                                    Dica: Correlações são mais evidentes com
+                                                    datasets maiores (&gt;30 registros) e quando há
+                                                    variáveis relacionadas biologicamente (ex: peso
+                                                    x consumo de ração, produção de leite x
+                                                    proteína).
+                                                  </p>
+                                                </div>
+                                              </div>
+                                            )
+                                          })()}
+                                        {!analysisData.correlations?.report && (
+                                          <div className="bg-card shadow rounded-lg p-8 text-center">
+                                            <TrendingUp className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                                            <p className="text-muted-foreground">
+                                              Nenhuma análise de correlação disponível.
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    ),
+                                  },
+                                ]}
+                              />
                             </>
                           ),
                         },
