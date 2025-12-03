@@ -5,12 +5,12 @@
  * EN: Displays analysis data in an intuitive, accessible format using:
  *     - Color-coded visualizations (red/yellow/green)
  *     - Simple language
- *     - Visual silhouettes and icons
+ *     - Action summary based on diagnostic analysis
  *     - Toggle between layman and technical views
  * PT-BR: Exibe dados de análise em formato intuitivo e acessível usando:
  *        - Visualizações codificadas por cores (vermelho/amarelo/verde)
  *        - Linguagem simples
- *        - Silhuetas visuais e ícones
+ *        - Resumo de ações baseado na análise diagnóstica
  *        - Alternância entre visualizações leiga e técnica
  */
 
@@ -19,16 +19,24 @@
 import { useState, useEffect } from 'react'
 import { AlertCircle, Info } from 'lucide-react'
 import { LaymanToggle } from './LaymanToggle'
-import { AnimalSilhouette } from './AnimalSilhouettes'
-import { ForagePanel } from './ForagePanel'
 import { MetricCard } from './MetricCard'
 import { ColorLegend } from './ColorLegend'
+import { ActionSummary } from './ActionSummary'
 import { laymanService } from '@/services/layman.service'
 import { toast } from 'sonner'
 import type { LaymanViewResponse, EntityType } from '@/lib/layman/types'
+import type { DiagnosticResult } from '@/lib/ai-diagnostic'
 
-// Helper function to map entity type to species
-function getSpeciesFromEntityType(
+// Feature flag to control image visibility (set to false to hide silhouettes)
+// The AnimalSilhouettes and ForagePanel components are preserved for future use
+const SHOW_IMAGES = false
+
+// Preserved imports for future use when SHOW_IMAGES is enabled:
+// import { AnimalSilhouette } from './AnimalSilhouettes'
+// import { ForagePanel } from './ForagePanel'
+
+// Helper function to map entity type to species (preserved for future use when SHOW_IMAGES is enabled)
+function _getSpeciesFromEntityType(
   entityType: EntityType
 ): 'bovine' | 'swine' | 'poultry' | 'sheep' | 'goat' | 'fish' {
   switch (entityType) {
@@ -53,9 +61,18 @@ function getSpeciesFromEntityType(
 interface LaymanTabProps {
   analysisData: Record<string, unknown>
   entityType: EntityType
+  diagnostic?: DiagnosticResult | null
+  loadingDiagnostic?: boolean
+  onRequestDiagnostic?: () => void
 }
 
-export function LaymanTab({ analysisData, entityType }: LaymanTabProps) {
+export function LaymanTab({
+  analysisData,
+  entityType,
+  diagnostic,
+  loadingDiagnostic,
+  onRequestDiagnostic,
+}: LaymanTabProps) {
   const [viewMode, setViewMode] = useState<'layman' | 'technical'>('layman')
   const [evaluation, setEvaluation] = useState<LaymanViewResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -160,20 +177,19 @@ export function LaymanTab({ analysisData, entityType }: LaymanTabProps) {
 
       {/* Main Visualization */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Left: Silhouette/Image */}
+        {/* Left: Action Summary (replaces silhouettes when SHOW_IMAGES is false) */}
         <div>
-          {entityType === 'forragem' ? (
-            <ForagePanel
-              color={evaluation.final_color}
-              label={evaluation.short_label}
-              annotation={evaluation.annotation}
-            />
+          {SHOW_IMAGES ? (
+            // Silhouettes are hidden but code is preserved for future use
+            // To re-enable, set SHOW_IMAGES = true and uncomment the imports
+            <div className="bg-muted/30 rounded-lg p-6 text-center text-muted-foreground">
+              Silhuetas desabilitadas
+            </div>
           ) : (
-            <AnimalSilhouette
-              species={getSpeciesFromEntityType(entityType)}
-              color={evaluation.final_color}
-              label={evaluation.short_label}
-              annotation={evaluation.annotation}
+            <ActionSummary
+              diagnostic={diagnostic ?? null}
+              loading={loadingDiagnostic}
+              onRequestDiagnostic={onRequestDiagnostic}
             />
           )}
         </div>
