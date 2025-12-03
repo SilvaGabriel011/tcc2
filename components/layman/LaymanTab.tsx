@@ -23,9 +23,18 @@ import { AnimalSilhouette } from './AnimalSilhouettes'
 import { ForagePanel } from './ForagePanel'
 import { MetricCard } from './MetricCard'
 import { ColorLegend } from './ColorLegend'
+import { ActionSummary } from './ActionSummary'
 import { laymanService } from '@/services/layman.service'
 import { toast } from 'sonner'
 import type { LaymanViewResponse, EntityType } from '@/lib/layman/types'
+import type { DiagnosticResult } from '@/types/diagnostic'
+
+/**
+ * Controls whether to show animal silhouettes/forage panels in the layman view.
+ * Set to false to show ActionSummary instead.
+ * Kept as a constant to allow easy reactivation in the future.
+ */
+const SHOW_SILHOUETTES_IN_LAYMAN = false
 
 // Helper function to map entity type to species
 function getSpeciesFromEntityType(
@@ -53,9 +62,18 @@ function getSpeciesFromEntityType(
 interface LaymanTabProps {
   analysisData: Record<string, unknown>
   entityType: EntityType
+  diagnostic?: DiagnosticResult | null
+  loadingDiagnostic?: boolean
+  onRequestDiagnostic?: () => void
 }
 
-export function LaymanTab({ analysisData, entityType }: LaymanTabProps) {
+export function LaymanTab({
+  analysisData,
+  entityType,
+  diagnostic,
+  loadingDiagnostic,
+  onRequestDiagnostic,
+}: LaymanTabProps) {
   const [viewMode, setViewMode] = useState<'layman' | 'technical'>('layman')
   const [evaluation, setEvaluation] = useState<LaymanViewResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -160,20 +178,30 @@ export function LaymanTab({ analysisData, entityType }: LaymanTabProps) {
 
       {/* Main Visualization */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Left: Silhouette/Image */}
+        {/* Left: Silhouette/Image or ActionSummary */}
         <div>
-          {entityType === 'forragem' ? (
-            <ForagePanel
-              color={evaluation.final_color}
-              label={evaluation.short_label}
-              annotation={evaluation.annotation}
-            />
+          {SHOW_SILHOUETTES_IN_LAYMAN ? (
+            // Show animal silhouettes or forage panel
+            entityType === 'forragem' ? (
+              <ForagePanel
+                color={evaluation.final_color}
+                label={evaluation.short_label}
+                annotation={evaluation.annotation}
+              />
+            ) : (
+              <AnimalSilhouette
+                species={getSpeciesFromEntityType(entityType)}
+                color={evaluation.final_color}
+                label={evaluation.short_label}
+                annotation={evaluation.annotation}
+              />
+            )
           ) : (
-            <AnimalSilhouette
-              species={getSpeciesFromEntityType(entityType)}
-              color={evaluation.final_color}
-              label={evaluation.short_label}
-              annotation={evaluation.annotation}
+            // Show ActionSummary with diagnostic recommendations
+            <ActionSummary
+              diagnostic={diagnostic ?? null}
+              loading={loadingDiagnostic}
+              onRequestDiagnostic={onRequestDiagnostic}
             />
           )}
         </div>
