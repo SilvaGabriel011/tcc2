@@ -33,15 +33,32 @@ export async function GET(request: NextRequest, { params }: { params: { analysis
     }
 
     const cacheKey = `diagnostico:${analysisId}`
-    interface DiagnosticoCache {
-      summary: string
-      recommendations: string[]
-      strengths: string[]
-      alerts: string[]
-      insights: Record<string, unknown>
-      metadata: Record<string, unknown>
+
+    // Interface matching the RawDiagnostico type expected by the frontend
+    interface DiagnosticoPayload {
+      diagnostico: string
+      geradoEm: string
+      metodo: string
+      resumoExecutivo?: string
+      analiseNumericas?: Array<{
+        variavel: string
+        status: string
+        interpretacao: string
+        comparacaoLiteratura?: string
+      }>
+      pontosFortes?: string[]
+      pontosAtencao?: string[]
+      recomendacoesPrioritarias?: Array<{
+        titulo: string
+        descricao: string
+        prioridade: string
+      }>
+      conclusao?: string
+      fontes?: string[]
+      generatedBy?: string
     }
-    const cachedDiagnostico = await getCache<DiagnosticoCache>(cacheKey)
+
+    const cachedDiagnostico = await getCache<DiagnosticoPayload>(cacheKey)
 
     if (cachedDiagnostico) {
       return NextResponse.json({
@@ -78,8 +95,11 @@ export async function GET(request: NextRequest, { params }: { params: { analysis
 
     console.log(`✅ Diagnóstico gerado com sucesso (${diagnosticoResult.generatedBy || 'unknown'})`)
 
-    // Preparar resposta no formato esperado pelo frontend
-    const response = {
+    // Preparar resposta no formato esperado pelo frontend (RawDiagnostico)
+    // FIX: The frontend expects data.diagnostico to be the full object, not just a string
+    // Previously, the response was spread at root level which caused the frontend to receive
+    // only the string "Diagnóstico gerado para X" instead of the full diagnostic object
+    const diagnosticoPayload: DiagnosticoPayload = {
       ...diagnosticoResult,
       diagnostico: `Diagnóstico gerado para ${analysis.name}`,
       geradoEm: new Date().toISOString(),
@@ -92,14 +112,16 @@ export async function GET(request: NextRequest, { params }: { params: { analysis
     }
 
     // 💾 MULTI-LEVEL CACHE: Salvar no cache (L1 + L2, 24 horas = 86400s)
-    await setCache(cacheKey, response, {
+    await setCache(cacheKey, diagnosticoPayload, {
       ttl: 86400,
       tags: ['diagnostic', `analysis:${analysisId}`],
     })
 
+    // FIX: Return diagnostico nested under 'diagnostico' key to match frontend expectation
+    // Both cached and non-cached paths now return the same structure
     return NextResponse.json({
       success: true,
-      ...response,
+      diagnostico: diagnosticoPayload,
       cached: false,
     })
   } catch (error) {
