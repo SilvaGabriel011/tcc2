@@ -1348,6 +1348,7 @@ function ResultadosContent() {
                               diagnostico={diagnostico}
                               loading={loadingDiagnostico}
                               error={diagnosticoError}
+                              analysisId={selectedAnalysis?.id}
                               onPrint={handlePrintDiagnostico}
                               onRetry={() => void handleGerarDiagnostico(true)}
                             />
