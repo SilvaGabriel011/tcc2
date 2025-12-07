@@ -77,7 +77,7 @@ export async function GET(request: NextRequest, { params }: { params: { analysis
     const session = await getServerSession(authOptions)
 
     if (!session?.user) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+      return NextResponse.json({ error: 'Não autorizado', code: 'UNAUTHORIZED' }, { status: 401 })
     }
 
     const analysisId = params.analysisId
@@ -106,7 +106,10 @@ export async function GET(request: NextRequest, { params }: { params: { analysis
     })
 
     if (!analysis) {
-      return NextResponse.json({ error: 'Análise não encontrada' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'Análise não encontrada', code: 'ANALYSIS_NOT_FOUND' },
+        { status: 404 }
+      )
     }
 
     const diagnosticCacheKey = `diagnostico:${analysisId}`
@@ -114,14 +117,20 @@ export async function GET(request: NextRequest, { params }: { params: { analysis
 
     if (!cachedDiagnostico) {
       return NextResponse.json(
-        { error: 'Diagnóstico não encontrado. Por favor, gere o diagnóstico primeiro.' },
+        {
+          error: 'Diagnóstico não encontrado. Por favor, gere o diagnóstico primeiro.',
+          code: 'DIAGNOSTIC_NOT_FOUND',
+        },
         { status: 404 }
       )
     }
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { error: 'Serviço de áudio não disponível. Chave da API não configurada.' },
+        {
+          error: 'Serviço de áudio não disponível. Chave da API não configurada.',
+          code: 'OPENAI_API_KEY_MISSING',
+        },
         { status: 503 }
       )
     }
@@ -161,10 +170,68 @@ export async function GET(request: NextRequest, { params }: { params: { analysis
   } catch (error) {
     console.error('❌ Erro ao gerar áudio do diagnóstico:', error)
 
+    // Classify the error for better debugging
+    const anyError = error as Record<string, unknown>
+    const status =
+      typeof anyError?.status === 'number'
+        ? anyError.status
+        : typeof (anyError?.response as Record<string, unknown>)?.status === 'number'
+          ? (anyError.response as Record<string, unknown>).status
+          : undefined
+    const rawMessage =
+      typeof anyError?.message === 'string'
+        ? anyError.message
+        : typeof (anyError?.response as Record<string, unknown>)?.data === 'object'
+          ? JSON.stringify((anyError.response as Record<string, unknown>).data)
+          : undefined
+
+    let code = 'UNKNOWN_ERROR'
+    let message = 'Erro interno ao gerar áudio. Tente novamente em alguns minutos.'
+
+    if (typeof status === 'number') {
+      if (status === 400) {
+        code = 'OPENAI_BAD_REQUEST'
+        message =
+          'O serviço de áudio não conseguiu processar este diagnóstico. O texto pode estar muito longo ou em formato inválido.'
+      } else if (status === 401 || status === 403) {
+        code = 'OPENAI_AUTH_ERROR'
+        message =
+          'Erro de autenticação com o serviço de áudio. A chave da API pode estar inválida ou expirada.'
+      } else if (status === 429) {
+        code = 'OPENAI_RATE_LIMIT'
+        message =
+          'O serviço de áudio está temporariamente indisponível por limite de uso. Tente novamente em alguns minutos.'
+      } else if (status >= 500) {
+        code = 'OPENAI_SERVICE_ERROR'
+        message =
+          'O serviço de áudio está com instabilidade no momento. Tente novamente mais tarde.'
+      }
+    } else if (rawMessage) {
+      // Check for common error patterns in the message
+      if (rawMessage.includes('ENOTFOUND') || rawMessage.includes('ECONNREFUSED')) {
+        code = 'NETWORK_ERROR'
+        message = 'Erro de conexão com o serviço de áudio. Verifique sua conexão com a internet.'
+      } else if (rawMessage.includes('timeout') || rawMessage.includes('ETIMEDOUT')) {
+        code = 'TIMEOUT_ERROR'
+        message = 'O serviço de áudio demorou muito para responder. Tente novamente.'
+      } else if (
+        rawMessage.includes('Redis') ||
+        rawMessage.includes('cache') ||
+        rawMessage.includes('Upstash')
+      ) {
+        code = 'CACHE_ERROR'
+        message =
+          'Erro ao acessar o cache. O serviço de cache pode estar indisponível. Tente novamente.'
+      }
+    }
+
+    console.error(`❌ Erro classificado: code=${code}, status=${status}, rawMessage=${rawMessage}`)
+
     return NextResponse.json(
       {
-        error: 'Erro ao gerar áudio. Tente novamente.',
-        details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined,
+        error: message,
+        code,
+        details: process.env.NODE_ENV === 'development' ? rawMessage : undefined,
       },
       { status: 500 }
     )

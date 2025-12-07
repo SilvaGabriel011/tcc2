@@ -11,7 +11,7 @@ interface DiagnosticAudioPlayerProps {
 export function DiagnosticAudioPlayer({ analysisId, disabled }: DiagnosticAudioPlayerProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<{ message: string; code?: string } | null>(null)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -36,8 +36,43 @@ export function DiagnosticAudioPlayer({ analysisId, disabled }: DiagnosticAudioP
       const response = await fetch(`/api/analise/diagnostico/${analysisId}/audio`)
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || 'Erro ao carregar áudio')
+        let errorMessage = 'Erro ao carregar áudio'
+        let errorCode: string | undefined
+
+        const errorData = await response.json().catch(() => null)
+
+        if (errorData && typeof errorData === 'object') {
+          if (typeof errorData.error === 'string') {
+            errorMessage = errorData.error
+          }
+          if (typeof errorData.code === 'string') {
+            errorCode = errorData.code
+          }
+        } else {
+          // Fallback based on status if there is no JSON body
+          if (response.status === 401) {
+            errorMessage = 'Você precisa estar logado para ouvir o diagnóstico.'
+            errorCode = 'UNAUTHORIZED'
+          } else if (response.status === 404) {
+            errorMessage =
+              'O diagnóstico da IA não foi encontrado. Gere o diagnóstico primeiro e depois tente ouvir.'
+            errorCode = 'NOT_FOUND'
+          } else if (response.status === 503) {
+            errorMessage =
+              'Serviço de áudio temporariamente indisponível. Verifique se a chave da API está configurada.'
+            errorCode = 'SERVICE_UNAVAILABLE'
+          }
+        }
+
+        console.error('Erro ao gerar áudio do diagnóstico:', {
+          code: errorCode,
+          message: errorMessage,
+          status: response.status,
+        })
+
+        const audioError = new Error(errorMessage) as Error & { code?: string }
+        audioError.code = errorCode
+        throw audioError
       }
 
       const blob = await response.blob()
@@ -45,8 +80,11 @@ export function DiagnosticAudioPlayer({ analysisId, disabled }: DiagnosticAudioP
       setAudioUrl(url)
       return url
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao carregar áudio'
-      setError(message)
+      const errorObj = err as { message?: string; code?: string }
+      const message =
+        errorObj?.message || (err instanceof Error ? err.message : 'Erro ao carregar áudio')
+      const code = errorObj?.code
+      setError({ message, code })
       throw err
     } finally {
       setIsLoading(false)
@@ -119,13 +157,18 @@ export function DiagnosticAudioPlayer({ analysisId, disabled }: DiagnosticAudioP
       {error ? (
         <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
           <VolumeX className="h-4 w-4" />
-          <span>{error}</span>
+          <div className="flex flex-col">
+            <span>{error.message}</span>
+            {error.code && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">Código: {error.code}</span>
+            )}
+          </div>
           <button
             onClick={() => {
               setError(null)
               void handlePlay()
             }}
-            className="text-xs underline hover:no-underline"
+            className="text-xs underline hover:no-underline ml-2"
           >
             Tentar novamente
           </button>
