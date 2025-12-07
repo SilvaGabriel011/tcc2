@@ -1340,20 +1340,6 @@ function ResultadosContent() {
                           ),
                         },
                         {
-                          id: 'diagnostic',
-                          label: 'Diagnostico IA',
-                          icon: <Activity className="h-4 w-4" />,
-                          content: (
-                            <TechnicalDiagnosticPanel
-                              diagnostico={diagnostico}
-                              loading={loadingDiagnostico}
-                              error={diagnosticoError}
-                              onPrint={handlePrintDiagnostico}
-                              onRetry={() => void handleGerarDiagnostico(true)}
-                            />
-                          ),
-                        },
-                        {
                           id: 'layman',
                           label: 'Visualizacao Leiga',
                           icon: <User className="h-4 w-4" />,
@@ -1364,6 +1350,20 @@ function ResultadosContent() {
                               diagnostic={toDiagnosticResult(diagnostico)}
                               loadingDiagnostic={loadingDiagnostico}
                               onRequestDiagnostic={() => void handleGerarDiagnostico()}
+                            />
+                          ),
+                        },
+                        {
+                          id: 'diagnostic',
+                          label: 'Diagnostico IA',
+                          icon: <Activity className="h-4 w-4" />,
+                          content: (
+                            <TechnicalDiagnosticPanel
+                              diagnostico={diagnostico}
+                              loading={loadingDiagnostico}
+                              error={diagnosticoError}
+                              onPrint={handlePrintDiagnostico}
+                              onRetry={() => void handleGerarDiagnostico(true)}
                             />
                           ),
                         },
