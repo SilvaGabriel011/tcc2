@@ -97,6 +97,19 @@ export default function AnaliseDataPage() {
     </svg>
   )
 
+  const BeeIcon = () => (
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <ellipse cx="12" cy="12" rx="5" ry="6" />
+      <path d="M7 10 L5 8" strokeLinecap="round" />
+      <path d="M17 10 L19 8" strokeLinecap="round" />
+      <path d="M7 9 L17 9" strokeLinecap="round" />
+      <path d="M7 12 L17 12" strokeLinecap="round" />
+      <path d="M7 15 L17 15" strokeLinecap="round" />
+      <circle cx="10" cy="10" r="0.5" fill="currentColor" />
+      <circle cx="14" cy="10" r="0.5" fill="currentColor" />
+    </svg>
+  )
+
   const speciesOptions = [
     {
       value: 'bovino',
@@ -124,6 +137,12 @@ export default function AnaliseDataPage() {
       label: 'Forragem',
       icon: <Wheat className="w-5 h-5" />,
       color: 'text-green-600',
+    },
+    {
+      value: 'abelhas',
+      label: 'Abelhas',
+      icon: <BeeIcon />,
+      color: 'text-yellow-600',
     },
   ]
 
@@ -205,6 +224,7 @@ export default function AnaliseDataPage() {
       caprino: 'Caprinos',
       piscicultura: 'Peixes',
       forragem: 'Forragem',
+      abelhas: 'Abelhas',
     }
 
     const toastId = toast.loading(

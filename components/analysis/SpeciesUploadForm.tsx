@@ -224,6 +224,16 @@ export function SpeciesUploadForm({
           'fda',
         ]
 
+      case 'bees':
+        return [
+          'colmeia',
+          'producao_mel_colmeia_ano',
+          'populacao_abelhas_colmeia',
+          'quadros_cria',
+          'quadros_mel',
+          'mortalidade_colmeias',
+        ]
+
       default:
         return base
     }
@@ -238,6 +248,7 @@ export function SpeciesUploadForm({
       goat: 'Caprinos',
       aquaculture: 'Piscicultura',
       forage: 'Forragem',
+      bees: 'Abelhas',
     }
     return names[species] || species
   }
@@ -357,6 +368,18 @@ export function SpeciesUploadForm({
             'oxigenio_dissolvido: >5 mg/L',
             'temperatura: 26-30°C',
             'densidade: 5-15 peixes/m³',
+          ],
+        }
+      case 'bees':
+        return {
+          title: 'Métricas de Apicultura',
+          metrics: [
+            'producao_mel: 15-60 kg/colmeia/ano',
+            'populacao_abelhas: 20.000-80.000/colmeia',
+            'quadros_cria: 4-10 quadros',
+            'quadros_mel: 3-12 quadros',
+            'mortalidade_colmeias: <20%/ano',
+            'umidade_mel: 15-20%',
           ],
         }
       default:
