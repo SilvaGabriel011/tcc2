@@ -108,7 +108,7 @@ export function DiagnosticAudioPlayer({ analysisId, disabled }: DiagnosticAudioP
           }
         })
         audioRef.current.addEventListener('error', () => {
-          setError('Erro ao reproduzir áudio')
+          setError({ message: 'Erro ao reproduzir áudio', code: 'AUDIO_PLAYBACK_ERROR' })
           setIsPlaying(false)
         })
       } else {
