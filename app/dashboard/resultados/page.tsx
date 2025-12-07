@@ -1340,6 +1340,20 @@ function ResultadosContent() {
                           ),
                         },
                         {
+                          id: 'layman',
+                          label: 'Visualizacao Leiga',
+                          icon: <User className="h-4 w-4" />,
+                          content: (
+                            <LaymanTab
+                              analysisData={analysisData as Record<string, unknown>}
+                              entityType="gado"
+                              diagnostic={toDiagnosticResult(diagnostico)}
+                              loadingDiagnostic={loadingDiagnostico}
+                              onRequestDiagnostic={() => void handleGerarDiagnostico()}
+                            />
+                          ),
+                        },
+                        {
                           id: 'diagnostic',
                           label: 'Diagnostico IA',
                           icon: <Activity className="h-4 w-4" />,
@@ -1351,20 +1365,6 @@ function ResultadosContent() {
                               analysisId={selectedAnalysis?.id}
                               onPrint={handlePrintDiagnostico}
                               onRetry={() => void handleGerarDiagnostico(true)}
-                            />
-                          ),
-                        },
-                        {
-                          id: 'layman',
-                          label: 'Visualizacao Leiga',
-                          icon: <User className="h-4 w-4" />,
-                          content: (
-                            <LaymanTab
-                              analysisData={analysisData as Record<string, unknown>}
-                              entityType="gado"
-                              diagnostic={toDiagnosticResult(diagnostico)}
-                              loadingDiagnostic={loadingDiagnostico}
-                              onRequestDiagnostic={() => void handleGerarDiagnostico()}
                             />
                           ),
                         },
