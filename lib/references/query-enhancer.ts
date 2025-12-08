@@ -142,18 +142,22 @@ Exemplos:
 - "nutricao bovina" -> correctedPt: "nutrição bovina", englishKeywords: ["cattle nutrition", "bovine nutrition", "beef cattle feeding"]
 - "leite" -> correctedPt: "leite", englishKeywords: ["milk", "dairy", "milk production", "dairy cattle"]`
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.3, // Lower temperature for more consistent results
-      max_tokens: 300,
-      timeout: 5000, // 5 second timeout to avoid blocking the search
-    })
+    const completion = await openai.chat.completions.create(
+      {
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.3, // Lower temperature for more consistent results
+        max_tokens: 300,
+      },
+      {
+        timeout: 5000, // 5 second timeout to avoid blocking the search
+      }
+    )
 
     const responseText = completion.choices[0]?.message?.content || ''
 
@@ -246,7 +250,7 @@ function createFallbackEnhancement(query: string): QueryEnhancementResult {
   }
 
   // Remove duplicates
-  const uniqueEnglish = [...new Set(englishKeywords)]
+  const uniqueEnglish = Array.from(new Set(englishKeywords))
 
   return {
     originalQuery: query,
