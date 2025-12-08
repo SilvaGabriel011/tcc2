@@ -97,7 +97,6 @@ export function BoxPlotChart({
               }
               return null
             }}
-            ypos
           />
           <Legend
             payload={[
