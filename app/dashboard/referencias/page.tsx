@@ -855,15 +855,20 @@ export default function ReferenciasPage() {
                             <ExternalLink className="h-4 w-4 ml-1" />
                           </a>
                           {article.pdfUrl && (
-                            <a
-                              href={article.pdfUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center text-red-600 hover:text-red-700 text-sm font-medium"
-                            >
-                              <FileDown className="h-4 w-4 mr-1" />
-                              PDF
-                            </a>
+                            <div className="inline-flex items-center gap-1">
+                              <a
+                                href={article.pdfUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center text-red-600 hover:text-red-700 text-sm font-medium"
+                              >
+                                <FileDown className="h-4 w-4 mr-1" />
+                                PDF
+                              </a>
+                              <span className="px-1.5 py-0.5 text-xs bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 rounded">
+                                Arquivo
+                              </span>
+                            </div>
                           )}
                           {article.doi && (
                             <a
