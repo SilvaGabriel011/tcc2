@@ -4,7 +4,16 @@
  */
 
 // Entity types
-export type EntityType = 'gado' | 'forragem' | 'bovine' | 'swine' | 'poultry' | 'sheep' | 'goat' | 'fish'
+export type EntityType =
+  | 'gado'
+  | 'forragem'
+  | 'bovine'
+  | 'swine'
+  | 'poultry'
+  | 'sheep'
+  | 'goat'
+  | 'fish'
+  | 'bees'
 
 // Color categories
 export type ColorCategory = 'red' | 'yellow' | 'green'
@@ -14,7 +23,7 @@ export type LabelCategory = 'ruim' | 'ok' | 'ótimo'
 export type MetricCategory = 'excellent' | 'ok' | 'ruim'
 
 // Metric keys
-export type MetricKey = 
+export type MetricKey =
   | 'peso_vs_meta_pct'
   | 'gmd_7d'
   | 'gmd_30d'
@@ -22,6 +31,12 @@ export type MetricKey =
   | 'biomassa_kg_ha'
   | 'cobertura_pct'
   | 'indice_visual'
+  // Bee-specific metrics
+  | 'producao_mel'
+  | 'populacao_abelhas'
+  | 'quadros_cria'
+  | 'taxa_enxameacao'
+  | 'saude_colonia'
 
 /**
  * Metric Values - valores de métricas coletadas
@@ -35,6 +50,12 @@ export interface MetricValues {
   biomassa_kg_ha?: number
   cobertura_pct?: number // 0-100
   indice_visual?: number // 0-100
+  // Bee-specific metrics
+  producao_mel_kg?: number // kg/colmeia/ano
+  populacao_abelhas?: number // número de abelhas
+  quadros_cria?: number // número de quadros
+  taxa_enxameacao_pct?: number // 0-100
+  saude_colonia?: number // 0-100 (índice de saúde)
 }
 
 /**
