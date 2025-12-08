@@ -207,6 +207,8 @@ function ResultadosContent() {
         const targetAnalysis = analyses.find((a) => a.id === analysisId)
         if (targetAnalysis) {
           console.log('[resultados:select:found]', { analysisId, name: targetAnalysis.name })
+          // FIX: Only change analysis if it's actually different
+          const isNewAnalysis = selectedAnalysis?.id !== targetAnalysis.id
           setSelectedAnalysis(targetAnalysis)
           // Check cache for existing diagnostic
           const cached = diagnosticoCache.get(analysisId)
@@ -218,7 +220,11 @@ function ResultadosContent() {
             setDiagnosticoError(null)
           }
           setLoadingDiagnostico(false)
-          setActiveMainTab('technical')
+          // FIX: Only reset to technical tab if this is a NEW analysis selection
+          // Don't reset if user is already viewing diagnostic tab for the same analysis
+          if (isNewAnalysis) {
+            setActiveMainTab('technical')
+          }
         } else {
           console.warn('[resultados:select:not-found]', {
             analysisId,
