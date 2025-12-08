@@ -36,7 +36,7 @@ import { prisma } from '@/lib/prisma'
 import Papa from 'papaparse'
 import { analyzeDataset } from '@/lib/dataAnalysis'
 import { analyzeCorrelations } from '@/lib/correlations/correlation-analysis'
-import { invalidateCache } from '@/lib/cache'
+import { invalidateCache, invalidateCacheTag } from '@/lib/multi-level-cache'
 import { withRateLimit } from '@/lib/rate-limit'
 import { validateUploadedFile, generateUniqueFilename } from '@/lib/upload-security'
 
@@ -269,10 +269,14 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // 🗑️ CACHE: Invalidar cache de resultados do usuário
+    // 🗑️ CACHE: Invalidar cache de resultados do usuário (L1 + L2)
     const cacheKey = `resultados:${session.user.id}`
-    await invalidateCache(cacheKey)
-    console.log('🗑️ Cache de resultados invalidado')
+    await Promise.all([
+      invalidateCache(cacheKey),
+      invalidateCacheTag('analysis'),
+      invalidateCacheTag(`user:${session.user.id}`),
+    ])
+    console.log('🗑️ Cache de resultados invalidado (L1 + L2)')
 
     return NextResponse.json({
       success: true,

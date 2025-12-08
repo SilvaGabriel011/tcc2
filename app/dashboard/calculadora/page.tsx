@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -23,6 +23,26 @@ import { Tabs } from '@/components/tabs'
 export default function CalculadoraPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+
+  // Helper function to save calculation to history
+  const saveCalculation = useCallback(
+    async (
+      calculationType: string,
+      inputValues: Record<string, string | number>,
+      result: string
+    ) => {
+      try {
+        await fetch('/api/calculator/history', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ calculationType, inputValues, result }),
+        })
+      } catch (error) {
+        console.error('Erro ao salvar cálculo:', error)
+      }
+    },
+    []
+  )
 
   // Estados para diferentes calculadoras
   const [arrobaToKg, setArrobaToKg] = useState({ arroba: '', resultado: '' })
@@ -117,7 +137,9 @@ export default function CalculadoraPage() {
     const arroba = parseFloat(arrobaToKg.arroba)
     if (!isNaN(arroba)) {
       const kg = arroba * 15
-      setArrobaToKg({ ...arrobaToKg, resultado: kg.toFixed(2) })
+      const resultado = kg.toFixed(2)
+      setArrobaToKg({ ...arrobaToKg, resultado })
+      void saveCalculation('arroba_to_kg', { arroba }, resultado)
     }
   }
 
@@ -126,7 +148,9 @@ export default function CalculadoraPage() {
     const kg = parseFloat(kgToArroba.kg)
     if (!isNaN(kg)) {
       const arroba = kg / 15
-      setKgToArroba({ ...kgToArroba, resultado: arroba.toFixed(4) })
+      const resultado = arroba.toFixed(4)
+      setKgToArroba({ ...kgToArroba, resultado })
+      void saveCalculation('kg_to_arroba', { kg }, resultado)
     }
   }
 
@@ -136,7 +160,9 @@ export default function CalculadoraPage() {
     const bezerros = parseFloat(taxaNascimento.bezerrosNascidos)
     if (!isNaN(femeas) && !isNaN(bezerros) && femeas > 0) {
       const taxa = (bezerros / femeas) * 100
-      setTaxaNascimento({ ...taxaNascimento, resultado: taxa.toFixed(2) })
+      const resultado = taxa.toFixed(2)
+      setTaxaNascimento({ ...taxaNascimento, resultado })
+      void saveCalculation('taxa_nascimento', { femeas, bezerros }, resultado)
     }
   }
 
@@ -146,7 +172,9 @@ export default function CalculadoraPage() {
     const ganho = parseFloat(conversaoAlimentar.ganhoPeso)
     if (!isNaN(consumo) && !isNaN(ganho) && ganho > 0) {
       const conversao = consumo / ganho
-      setConversaoAlimentar({ ...conversaoAlimentar, resultado: conversao.toFixed(2) })
+      const resultado = conversao.toFixed(2)
+      setConversaoAlimentar({ ...conversaoAlimentar, resultado })
+      void saveCalculation('conversao_alimentar', { consumo, ganho }, resultado)
     }
   }
 
@@ -157,7 +185,9 @@ export default function CalculadoraPage() {
     const dias = parseFloat(ganhoPesoDiario.dias)
     if (!isNaN(inicial) && !isNaN(final) && !isNaN(dias) && dias > 0) {
       const gpd = (final - inicial) / dias
-      setGanhoPesoDiario({ ...ganhoPesoDiario, resultado: gpd.toFixed(3) })
+      const resultado = gpd.toFixed(3)
+      setGanhoPesoDiario({ ...ganhoPesoDiario, resultado })
+      void saveCalculation('ganho_peso_diario', { inicial, final, dias }, resultado)
     }
   }
 
@@ -167,7 +197,9 @@ export default function CalculadoraPage() {
     const vivo = parseFloat(rendimentoCarcaca.pesoVivo)
     if (!isNaN(carcaca) && !isNaN(vivo) && vivo > 0) {
       const rendimento = (carcaca / vivo) * 100
-      setRendimentoCarcaca({ ...rendimentoCarcaca, resultado: rendimento.toFixed(2) })
+      const resultado = rendimento.toFixed(2)
+      setRendimentoCarcaca({ ...rendimentoCarcaca, resultado })
+      void saveCalculation('rendimento_carcaca', { carcaca, vivo }, resultado)
     }
   }
 
@@ -177,7 +209,9 @@ export default function CalculadoraPage() {
     const femeas = parseFloat(taxaDesmame.femeasCobertas)
     if (!isNaN(desmamados) && !isNaN(femeas) && femeas > 0) {
       const taxa = (desmamados / femeas) * 100
-      setTaxaDesmame({ ...taxaDesmame, resultado: taxa.toFixed(2) })
+      const resultado = taxa.toFixed(2)
+      setTaxaDesmame({ ...taxaDesmame, resultado })
+      void saveCalculation('taxa_desmame', { desmamados, femeas }, resultado)
     }
   }
 
@@ -190,7 +224,9 @@ export default function CalculadoraPage() {
       const pesoTotal = numAnimais * pesoMedio
       const ua = pesoTotal / 450
       const uaHa = ua / area
-      setLotacaoAnimal({ ...lotacaoAnimal, resultado: uaHa.toFixed(2) })
+      const resultado = uaHa.toFixed(2)
+      setLotacaoAnimal({ ...lotacaoAnimal, resultado })
+      void saveCalculation('lotacao_animal', { numAnimais, pesoMedio, area }, resultado)
     }
   }
 
@@ -199,7 +235,9 @@ export default function CalculadoraPage() {
     if (!isNaN(peso) && peso > 0) {
       // Consumo MS estimado: 2.5% do peso vivo
       const consumo = peso * 0.025
-      setConsumoMateriaSeca({ ...consumoMateriaSeca, resultado: consumo.toFixed(2) })
+      const resultado = consumo.toFixed(2)
+      setConsumoMateriaSeca({ ...consumoMateriaSeca, resultado })
+      void saveCalculation('consumo_materia_seca', { peso }, resultado)
     }
   }
 
@@ -208,7 +246,9 @@ export default function CalculadoraPage() {
     const posParto = parseFloat(intervaloPartos.diasPosPartoCio)
     if (!isNaN(posParto) && posParto >= 0) {
       const intervalo = gestacao + posParto
-      setIntervaloPartos({ ...intervaloPartos, resultado: intervalo.toFixed(0) })
+      const resultado = intervalo.toFixed(0)
+      setIntervaloPartos({ ...intervaloPartos, resultado })
+      void saveCalculation('intervalo_partos', { gestacao, posParto }, resultado)
     }
   }
 
@@ -218,7 +258,9 @@ export default function CalculadoraPage() {
     if (!isNaN(peso) && !isNaN(idade) && idade > 0) {
       // Fórmula: PA205 = (Peso / Idade) * 205
       const pesoAjust = (peso / idade) * 205
-      setPesoAjustado205({ ...pesoAjustado205, resultado: pesoAjust.toFixed(2) })
+      const resultado = pesoAjust.toFixed(2)
+      setPesoAjustado205({ ...pesoAjustado205, resultado })
+      void saveCalculation('peso_ajustado_205', { peso, idade }, resultado)
     }
   }
 
@@ -227,7 +269,9 @@ export default function CalculadoraPage() {
     const peso = parseFloat(custoArroba.pesoArroba)
     if (!isNaN(custo) && !isNaN(peso) && peso > 0) {
       const custoArrobaCalc = custo / peso
-      setCustoArroba({ ...custoArroba, resultado: custoArrobaCalc.toFixed(2) })
+      const resultado = custoArrobaCalc.toFixed(2)
+      setCustoArroba({ ...custoArroba, resultado })
+      void saveCalculation('custo_arroba', { custo, peso }, resultado)
     }
   }
 
@@ -248,6 +292,11 @@ export default function CalculadoraPage() {
         resultadoCOT: cot.toFixed(2),
         resultadoCTP: ctp.toFixed(2),
       })
+      void saveCalculation(
+        'analise_custos',
+        { cv, cf, mof },
+        `COE: ${coe.toFixed(2)}, COT: ${cot.toFixed(2)}, CTP: ${ctp.toFixed(2)}`
+      )
     }
   }
 
@@ -266,12 +315,21 @@ export default function CalculadoraPage() {
       const mlPercent = ((ml / rb) * 100).toFixed(1)
       const lucroPercent = ((lucro / rb) * 100).toFixed(1)
 
+      const margemBrutaStr = `R$ ${mb.toFixed(2)} (${mbPercent}%)`
+      const margemLiquidaStr = `R$ ${ml.toFixed(2)} (${mlPercent}%)`
+      const lucroStr = `R$ ${lucro.toFixed(2)} (${lucroPercent}%)`
+
       setMargemLucro({
         ...margemLucro,
-        margemBruta: `R$ ${mb.toFixed(2)} (${mbPercent}%)`,
-        margemLiquida: `R$ ${ml.toFixed(2)} (${mlPercent}%)`,
-        lucro: `R$ ${lucro.toFixed(2)} (${lucroPercent}%)`,
+        margemBruta: margemBrutaStr,
+        margemLiquida: margemLiquidaStr,
+        lucro: lucroStr,
       })
+      void saveCalculation(
+        'margem_lucro',
+        { rb, coe, cot, ctp },
+        `MB: ${margemBrutaStr}, ML: ${margemLiquidaStr}, Lucro: ${lucroStr}`
+      )
     }
   }
 
@@ -282,10 +340,12 @@ export default function CalculadoraPage() {
 
     if (!isNaN(cf) && !isNaN(pv) && !isNaN(cv) && pv - cv > 0) {
       const pe = cf / (pv - cv)
+      const resultado = pe.toFixed(2)
       setPontoEquilibrio({
         ...pontoEquilibrio,
-        resultado: pe.toFixed(2),
+        resultado,
       })
+      void saveCalculation('ponto_equilibrio', { cf, pv, cv }, resultado)
     }
   }
 
@@ -297,11 +357,19 @@ export default function CalculadoraPage() {
       const roiPercent = ((lucro / invest) * 100).toFixed(2)
       const payback = lucro > 0 ? (invest / lucro).toFixed(2) : 'N/A'
 
+      const resultadoROI = `${roiPercent}%`
+      const resultadoPayback = payback !== 'N/A' ? `${payback} anos` : payback
+
       setRoi({
         ...roi,
-        resultadoROI: `${roiPercent}%`,
-        resultadoPayback: payback !== 'N/A' ? `${payback} anos` : payback,
+        resultadoROI,
+        resultadoPayback,
       })
+      void saveCalculation(
+        'roi',
+        { invest, lucro },
+        `ROI: ${resultadoROI}, Payback: ${resultadoPayback}`
+      )
     }
   }
 

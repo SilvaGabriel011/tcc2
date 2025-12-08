@@ -203,33 +203,215 @@ export class LaymanService {
       farm_id: farmId,
       entity_type: entityType,
       metric_values: {
-        peso_kg: getMeanValue('PESO_ATUAL_KG', 'peso_atual_kg', 'peso', 'peso_kg'),
-        gmd_7d_kg_per_day: getMeanValue('GPD', 'gmd_7d', 'gmd_30d'),
-        gmd_30d_kg_per_day: getMeanValue('GPD', 'gmd_30d', 'gmd_7d'),
-        bcs: getMeanValue('ESCORE_CORPORAL', 'escore_corporal', 'bcs'),
-        biomassa_kg_ha: getMeanValue('BIOMASSA_KG_HA', 'biomassa_kg_ha', 'biomassa'),
-        cobertura_pct: getMeanValue('COBERTURA_PCT', 'cobertura_pct', 'cobertura'),
-        indice_visual: getMeanValue('INDICE_VISUAL', 'indice_visual', 'indice'),
+        // Generic metrics (all species)
+        peso_kg: getMeanValue(
+          'PESO_ATUAL_KG',
+          'peso_atual_kg',
+          'peso',
+          'peso_kg',
+          'PESO',
+          'peso_vivo'
+        ),
+        gmd_7d_kg_per_day: getMeanValue('GPD', 'gmd_7d', 'gmd_30d', 'gpd', 'ganho_peso_diario'),
+        gmd_30d_kg_per_day: getMeanValue('GPD', 'gmd_30d', 'gmd_7d', 'gpd', 'ganho_peso_diario'),
+        bcs: getMeanValue(
+          'ESCORE_CORPORAL',
+          'escore_corporal',
+          'bcs',
+          'ECC',
+          'ecc',
+          'condicao_corporal'
+        ),
+        biomassa_kg_ha: getMeanValue('BIOMASSA_KG_HA', 'biomassa_kg_ha', 'biomassa', 'BIOMASSA'),
+        cobertura_pct: getMeanValue('COBERTURA_PCT', 'cobertura_pct', 'cobertura', 'COBERTURA'),
+        indice_visual: getMeanValue('INDICE_VISUAL', 'indice_visual', 'indice', 'INDICE'),
+
+        // Bovine-specific metrics
+        peso_nascimento_kg: getMeanValue(
+          'PESO_NASCIMENTO',
+          'peso_nascimento',
+          'peso_nasc',
+          'birth_weight',
+          'peso_ao_nascer'
+        ),
+        peso_desmame_kg: getMeanValue(
+          'PESO_DESMAME',
+          'peso_desmame',
+          'peso_desmama',
+          'weaning_weight',
+          'peso_ao_desmame'
+        ),
+        peso_abate_kg: getMeanValue(
+          'PESO_ABATE',
+          'peso_abate',
+          'peso_final',
+          'slaughter_weight',
+          'final_weight'
+        ),
+        producao_leite_l: getMeanValue(
+          'PRODUCAO_LEITE',
+          'producao_leite',
+          'leite',
+          'milk_production',
+          'producao_leiteira'
+        ),
+        gordura_leite_pct: getMeanValue(
+          'GORDURA_LEITE',
+          'gordura_leite',
+          'gordura',
+          'milk_fat',
+          'fat'
+        ),
+        proteina_leite_pct: getMeanValue(
+          'PROTEINA_LEITE',
+          'proteina_leite',
+          'proteina',
+          'milk_protein',
+          'protein'
+        ),
+        conversao_alimentar: getMeanValue(
+          'CONVERSAO_ALIMENTAR',
+          'conversao_alimentar',
+          'ca',
+          'fcr',
+          'feed_conversion',
+          'conversao'
+        ),
+
+        // Swine-specific metrics
+        espessura_toucinho_mm: getMeanValue(
+          'ESPESSURA_TOUCINHO',
+          'espessura_toucinho',
+          'toucinho',
+          'backfat',
+          'fat_thickness'
+        ),
+        rendimento_carcaca_pct: getMeanValue(
+          'RENDIMENTO_CARCACA',
+          'rendimento_carcaca',
+          'rendimento',
+          'carcass_yield',
+          'dressing_percentage'
+        ),
+        leitoes_nascidos: getMeanValue(
+          'LEITOES_NASCIDOS',
+          'leitoes_nascidos_vivos',
+          'born_alive',
+          'leitoes_vivos',
+          'piglets_born_alive',
+          'tamanho_leitegada'
+        ),
+        mortalidade_pct: getMeanValue(
+          'MORTALIDADE',
+          'mortalidade',
+          'mortality',
+          'morte',
+          'death_rate',
+          'taxa_mortalidade'
+        ),
+
+        // Poultry-specific metrics
+        peso_final_ave_kg: getMeanValue(
+          'PESO_FINAL',
+          'peso_final',
+          'peso_abate',
+          'peso_21d',
+          'peso_42d',
+          'final_weight'
+        ),
+        iep: getMeanValue(
+          'IEP',
+          'iep',
+          'epi',
+          'production_efficiency_index',
+          'indice_eficiencia',
+          'eficiencia_produtiva'
+        ),
+        viabilidade_pct: getMeanValue(
+          'VIABILIDADE',
+          'viabilidade',
+          'viability',
+          'taxa_sobrevivencia',
+          'survival_rate'
+        ),
+        producao_ovos_pct: getMeanValue(
+          'PRODUCAO_OVOS',
+          'producao_ovos',
+          'egg_production',
+          'postura',
+          'laying_rate'
+        ),
+        peso_ovo_g: getMeanValue('PESO_OVO', 'peso_ovo', 'egg_weight', 'peso_medio_ovo'),
+
+        // Sheep/Goat-specific metrics
+        peso_la_kg: getMeanValue('PESO_LA', 'peso_la', 'wool_weight', 'la', 'producao_la'),
+        producao_leite_cabra_l: getMeanValue(
+          'PRODUCAO_LEITE_CABRA',
+          'producao_leite',
+          'leite_cabra',
+          'goat_milk',
+          'milk_production'
+        ),
+
+        // Aquaculture-specific metrics
+        peso_final_peixe_kg: getMeanValue(
+          'PESO_FINAL_PEIXE',
+          'peso_final',
+          'peso_abate',
+          'fish_weight',
+          'peso_peixe'
+        ),
+        sobrevivencia_pct: getMeanValue(
+          'SOBREVIVENCIA',
+          'sobrevivencia',
+          'survival',
+          'taxa_sobrevivencia',
+          'survival_rate'
+        ),
+        densidade_estocagem: getMeanValue(
+          'DENSIDADE_ESTOCAGEM',
+          'densidade_estocagem',
+          'densidade',
+          'stocking_density',
+          'density'
+        ),
+        oxigenio_dissolvido_mg: getMeanValue(
+          'OXIGENIO_DISSOLVIDO',
+          'oxigenio_dissolvido',
+          'od',
+          'do',
+          'dissolved_oxygen',
+          'oxigenio'
+        ),
+
         // Bee-specific metrics
         producao_mel_kg: getMeanValue(
           'PRODUCAO_MEL',
           'producao_mel',
           'producao_mel_colmeia_ano',
-          'mel_kg'
+          'mel_kg',
+          'honey_production'
         ),
         populacao_abelhas: getMeanValue(
           'POPULACAO_ABELHAS',
           'populacao_abelhas_colmeia',
           'populacao',
-          'num_abelhas'
+          'num_abelhas',
+          'bee_population'
         ),
-        quadros_cria: getMeanValue('QUADROS_CRIA', 'quadros_cria', 'cria_quadros'),
-        taxa_enxameacao_pct: getMeanValue('TAXA_ENXAMEACAO', 'taxa_enxameacao', 'enxameacao_pct'),
+        quadros_cria: getMeanValue('QUADROS_CRIA', 'quadros_cria', 'cria_quadros', 'brood_frames'),
+        taxa_enxameacao_pct: getMeanValue(
+          'TAXA_ENXAMEACAO',
+          'taxa_enxameacao',
+          'enxameacao_pct',
+          'swarming_rate'
+        ),
         saude_colonia: getMeanValue(
           'SAUDE_COLONIA',
           'saude_colonia',
           'indice_saude',
-          'higienicidade'
+          'higienicidade',
+          'colony_health'
         ),
       },
     }

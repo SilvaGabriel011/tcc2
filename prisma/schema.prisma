@@ -37,9 +37,10 @@ model User {
   updatedAt         DateTime  @updatedAt
 
   // Relations
-  projects        Project[]
-  auditLogs       AuditLog[]
-  savedReferences SavedReference[]
+  projects           Project[]
+  auditLogs          AuditLog[]
+  savedReferences    SavedReference[]
+  calculatorHistory  CalculatorHistory[]
 
   @@index([email])
   @@index([createdAt])
@@ -585,4 +586,30 @@ model TimeSeriesData {
   @@index([datasetId, timestamp])
   @@index([datasetId, metric])
   @@map("timeseries_data")
+}
+
+/// EN: Calculator history - tracks zootechnical calculator usage by users
+/// PT-BR: Histórico da calculadora - rastreia o uso da calculadora zootécnica pelos usuários
+model CalculatorHistory {
+  id              String   @id @default(cuid())
+  userId          String
+  /// EN: Type of calculation performed (e.g., 'arroba_to_kg', 'taxa_nascimento', 'conversao_alimentar')
+  /// PT-BR: Tipo de cálculo realizado (ex: 'arroba_to_kg', 'taxa_nascimento', 'conversao_alimentar')
+  calculationType String
+  /// EN: Input values as JSON string
+  /// PT-BR: Valores de entrada como string JSON
+  inputValues     String
+  /// EN: Result of the calculation
+  /// PT-BR: Resultado do cálculo
+  result          String
+  createdAt       DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([calculationType])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@map("calculator_history")
 }

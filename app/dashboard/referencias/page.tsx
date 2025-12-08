@@ -88,6 +88,11 @@ export default function ReferenciasPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [isFromUrlPreview, setIsFromUrlPreview] = useState(false)
 
+  // State for delete article dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [articleToDelete, setArticleToDelete] = useState<Article | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   useEffect(() => {
     if (session) {
       void loadSavedArticles()
@@ -315,18 +320,20 @@ export default function ReferenciasPage() {
     openSaveDialog(article)
   }
 
-  const handleUnsaveArticle = async (articleUrl: string, articleTitle?: string) => {
-    // Confirmação antes de remover
-    const article = savedArticles.find((a) => a.url === articleUrl)
-    const title = articleTitle || article?.title || 'este artigo'
+  // Open delete confirmation dialog
+  const openDeleteDialog = (article: Article) => {
+    setArticleToDelete(article)
+    setDeleteDialogOpen(true)
+  }
 
-    if (
-      !confirm(
-        `Tem certeza que deseja remover "${title}" da sua biblioteca?\n\nEsta ação não pode ser desfeita.`
-      )
-    ) {
+  // Actually delete the article (called from dialog confirmation)
+  const handleConfirmDelete = async () => {
+    if (!articleToDelete) {
       return
     }
+
+    const articleUrl = articleToDelete.url
+    setIsDeleting(true)
 
     try {
       const response = await fetch('/api/referencias/unsave', {
@@ -344,6 +351,10 @@ export default function ReferenciasPage() {
       }
     } catch (error) {
       console.error('Erro ao remover artigo:', error)
+    } finally {
+      setIsDeleting(false)
+      setDeleteDialogOpen(false)
+      setArticleToDelete(null)
     }
   }
 
@@ -531,9 +542,11 @@ export default function ReferenciasPage() {
                             </span>
                             <button
                               onClick={() => {
-                                void (article.saved
-                                  ? handleUnsaveArticle(article.url)
-                                  : handleSaveArticle(article))
+                                if (article.saved) {
+                                  openDeleteDialog(article)
+                                } else {
+                                  handleSaveArticle(article)
+                                }
                               }}
                               className={`p-1 rounded ${
                                 article.saved
@@ -759,9 +772,7 @@ export default function ReferenciasPage() {
                                   : 'Crossref'}
                             </span>
                             <button
-                              onClick={() => {
-                                void handleUnsaveArticle(article.url)
-                              }}
+                              onClick={() => openDeleteDialog(article)}
                               className="p-1 rounded text-red-600 hover:text-red-700"
                             >
                               <BookmarkCheck className="h-5 w-5" />
@@ -844,15 +855,20 @@ export default function ReferenciasPage() {
                             <ExternalLink className="h-4 w-4 ml-1" />
                           </a>
                           {article.pdfUrl && (
-                            <a
-                              href={article.pdfUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center text-red-600 hover:text-red-700 text-sm font-medium"
-                            >
-                              <FileDown className="h-4 w-4 mr-1" />
-                              PDF
-                            </a>
+                            <div className="inline-flex items-center gap-1">
+                              <a
+                                href={article.pdfUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center text-red-600 hover:text-red-700 text-sm font-medium"
+                              >
+                                <FileDown className="h-4 w-4 mr-1" />
+                                PDF
+                              </a>
+                              <span className="px-1.5 py-0.5 text-xs bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 rounded">
+                                Arquivo
+                              </span>
+                            </div>
                           )}
                           {article.doi && (
                             <a
@@ -992,6 +1008,53 @@ export default function ReferenciasPage() {
                   <BookmarkCheck className="h-4 w-4" />
                   Salvar na Biblioteca
                 </>
+              )}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Article Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open)
+          if (!open) {
+            setArticleToDelete(null)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Remover artigo da biblioteca</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja remover
+              {articleToDelete ? ` "${articleToDelete.title}"` : ' este artigo'} da sua biblioteca?
+              Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <button
+              onClick={() => {
+                setDeleteDialogOpen(false)
+                setArticleToDelete(null)
+              }}
+              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground border border rounded-md"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => void handleConfirmDelete()}
+              disabled={isDeleting}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 rounded-md flex items-center gap-2"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Removendo...
+                </>
+              ) : (
+                'OK'
               )}
             </button>
           </DialogFooter>
