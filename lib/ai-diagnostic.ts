@@ -68,31 +68,50 @@ export interface DiagnosticResult {
  * Generate AI-powered diagnostic using OpenAI (priority) or Gemini (fallback)
  */
 export async function generateAIDiagnostic(input: DiagnosticInput): Promise<DiagnosticResult> {
+  // Debug: Log which API keys are configured
+  const hasOpenAI = !!process.env.OPENAI_API_KEY
+  const hasGemini = !!(process.env.GOOGLE_GEMINI_API_KEY || process.env.GEMINI_API_KEY)
+  console.log('[AI-DIAGNOSTIC] API keys configured:', {
+    openai: hasOpenAI,
+    gemini: hasGemini,
+    openaiKeyLength: process.env.OPENAI_API_KEY?.length || 0,
+  })
+
   // OpenAI is now the primary AI provider for diagnostics
   if (process.env.OPENAI_API_KEY) {
     try {
-      console.log('🤖 Attempting diagnostic generation with OpenAI (primary)...')
+      console.log('[AI-DIAGNOSTIC] Attempting diagnostic generation with OpenAI (primary)...')
       const result = await generateWithOpenAI(input)
-      console.log('✅ Diagnostic generated successfully with OpenAI')
+      console.log('[AI-DIAGNOSTIC] Diagnostic generated successfully with OpenAI')
       return { ...result, generatedBy: 'openai' }
     } catch (error) {
-      console.warn('⚠️ OpenAI failed, trying Gemini fallback:', (error as Error).message)
+      console.warn(
+        '[AI-DIAGNOSTIC] OpenAI failed, trying Gemini fallback:',
+        (error as Error).message
+      )
     }
+  } else {
+    console.log('[AI-DIAGNOSTIC] OpenAI API key not found, skipping OpenAI')
   }
 
   // Gemini is now the fallback AI provider
   if (process.env.GOOGLE_GEMINI_API_KEY || process.env.GEMINI_API_KEY) {
     try {
-      console.log('🤖 Attempting diagnostic generation with Gemini (fallback)...')
+      console.log('[AI-DIAGNOSTIC] Attempting diagnostic generation with Gemini (fallback)...')
       const result = await generateWithGemini(input)
-      console.log('✅ Diagnostic generated successfully with Gemini')
+      console.log('[AI-DIAGNOSTIC] Diagnostic generated successfully with Gemini')
       return { ...result, generatedBy: 'gemini' }
     } catch (error) {
-      console.warn('⚠️ Gemini failed, using rule-based fallback:', (error as Error).message)
+      console.warn(
+        '[AI-DIAGNOSTIC] Gemini failed, using rule-based fallback:',
+        (error as Error).message
+      )
     }
+  } else {
+    console.log('[AI-DIAGNOSTIC] Gemini API key not found, skipping Gemini')
   }
 
-  console.log('📋 Using rule-based diagnostic generation (no AI available)')
+  console.log('[AI-DIAGNOSTIC] Using rule-based diagnostic generation (no AI available)')
 
   const refs = input.references
     ? {
