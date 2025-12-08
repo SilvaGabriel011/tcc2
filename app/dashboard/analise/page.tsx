@@ -412,10 +412,11 @@ export default function AnaliseDataPage() {
                   de referência.
                 </p>
                 <MultiSpeciesTabs>
-                  {(species, subtype) => (
+                  {(species, subtype, _referenceData, isReady) => (
                     <SpeciesUploadForm
                       species={species}
                       subtype={subtype}
+                      isReady={isReady}
                       onAnalysisComplete={(result) => {
                         /* console.log('[analise:complete]', { 
                           hasAnalysis: !!result.analysis,
