@@ -409,6 +409,12 @@ function generateRecommendations(
           'Ajustar fotoperíodo conforme fase produtiva, intensidade luminosa adequada, distribuição uniforme.',
         prioridade: 'Baixa',
       },
+      bees: {
+        titulo: 'Monitorar Saúde das Colmeias',
+        descricao:
+          'Realizar inspeções regulares para detectar doenças e pragas, avaliar força da colônia, verificar qualidade da rainha e disponibilidade de alimento.',
+        prioridade: 'Alta',
+      },
     }
 
   if (speciesRecommendations[species] && recommendations.length < 3) {
@@ -511,6 +517,8 @@ function getSpeciesName(species: string): string {
     goat: 'caprinos',
     aquaculture: 'peixes',
     forage: 'forragem',
+    bees: 'abelhas',
+    abelhas: 'abelhas',
   }
 
   return names[species] || species

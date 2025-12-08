@@ -60,12 +60,24 @@ export async function GET(request: NextRequest, { params }: { params: { analysis
 
     const cachedDiagnostico = await getCache<DiagnosticoPayload>(cacheKey)
 
-    if (cachedDiagnostico) {
+    // Validate cached data has the expected shape before using it
+    // This prevents issues with stale cache entries from before format changes
+    const isValidCachedDiagnostico =
+      cachedDiagnostico &&
+      typeof cachedDiagnostico === 'object' &&
+      'diagnostico' in cachedDiagnostico &&
+      ('resumoExecutivo' in cachedDiagnostico || 'recomendacoesPrioritarias' in cachedDiagnostico)
+
+    if (isValidCachedDiagnostico) {
       return NextResponse.json({
         success: true,
         diagnostico: cachedDiagnostico,
         cached: true,
       })
+    } else if (cachedDiagnostico) {
+      // Invalid cache entry - invalidate it so it gets regenerated
+      console.warn(`⚠️ Invalid cached diagnostic for ${analysisId}, regenerating...`)
+      await setCache(cacheKey, null, { ttl: 1 }) // Expire immediately
     }
 
     const data = JSON.parse(analysis.data)
