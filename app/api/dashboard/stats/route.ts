@@ -15,12 +15,9 @@ export async function GET() {
   try {
     // Verificar autenticação
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Não autorizado' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
     const userId = session.user.id
@@ -43,30 +40,12 @@ export async function GET() {
       },
     })
 
-    // Para cálculos, vamos contar datasets que têm pelo menos 1 variável numérica
-    // (isso indica que foi feita análise estatística)
-    const datasets = await prisma.dataset.findMany({
+    // Buscar quantidade de cálculos realizados na calculadora zootécnica
+    const calculationsCount = await prisma.calculatorHistory.count({
       where: {
-        project: {
-          ownerId: userId,
-        },
-      },
-      select: {
-        data: true,
+        userId,
       },
     })
-
-    let calculationsCount = 0
-    for (const dataset of datasets) {
-      try {
-        const data = JSON.parse(dataset.data)
-        if (data.numericStats && Object.keys(data.numericStats).length > 0) {
-          calculationsCount++
-        }
-      } catch {
-        // Ignorar erros de parse
-      }
-    }
 
     const stats = {
       analysesCount,
@@ -82,9 +61,6 @@ export async function GET() {
     })
   } catch (error) {
     logger.error('Erro ao buscar estatísticas do dashboard', error)
-    return NextResponse.json(
-      { error: 'Erro ao buscar estatísticas' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro ao buscar estatísticas' }, { status: 500 })
   }
 }
