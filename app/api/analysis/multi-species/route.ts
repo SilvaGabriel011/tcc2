@@ -33,7 +33,7 @@ import {
   createAnalysisError as _createAnalysisError,
 } from '@/lib/analysis-errors'
 import { setProgress } from '@/lib/progress/server'
-import { invalidateCacheTag } from '@/lib/multi-level-cache'
+import { invalidateCacheTag, invalidateCache } from '@/lib/multi-level-cache'
 
 export const maxDuration = 60
 
@@ -426,7 +426,10 @@ export async function POST(request: NextRequest) {
     // Invalidate cache so new analysis appears immediately in history
     await invalidateCacheTag('analysis')
     await invalidateCacheTag(`user:${session.user.id}`)
-    console.log('🗑️ [DEBUG] Cache invalidated for user:', session.user.id)
+    // Invalidate diagnostic cache for this specific analysis to ensure fresh diagnostic generation
+    await invalidateCache(`diagnostico:${analysis.id}`)
+    await invalidateCacheTag(`analysis:${analysis.id}`)
+    console.log('🗑️ [DEBUG] Cache invalidated for user and analysis:', session.user.id, analysis.id)
 
     await setProgress(
       analysisId,

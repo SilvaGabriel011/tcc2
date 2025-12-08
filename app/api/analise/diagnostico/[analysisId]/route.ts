@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateAIDiagnostic } from '@/lib/ai-diagnostic'
-import { getCache, setCache } from '@/lib/multi-level-cache'
+import { getCache, setCache, invalidateCache } from '@/lib/multi-level-cache'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -17,6 +17,10 @@ export async function GET(request: NextRequest, { params }: { params: { analysis
     }
 
     const analysisId = params.analysisId
+
+    // Check if force regeneration is requested via query parameter
+    const { searchParams } = new URL(request.url)
+    const forceRegenerate = searchParams.get('force') === 'true'
 
     // Buscar análise no banco garantindo propriedade do projeto
     const analysis = await prisma.dataset.findFirst({
@@ -58,26 +62,35 @@ export async function GET(request: NextRequest, { params }: { params: { analysis
       generatedBy?: string
     }
 
-    const cachedDiagnostico = await getCache<DiagnosticoPayload>(cacheKey)
+    // If force regeneration is requested, invalidate the cache first
+    if (forceRegenerate) {
+      console.log('🔄 Force regeneration requested, invalidating cache...')
+      await invalidateCache(cacheKey)
+    }
 
-    // Validate cached data has the expected shape before using it
-    // This prevents issues with stale cache entries from before format changes
-    const isValidCachedDiagnostico =
-      cachedDiagnostico &&
-      typeof cachedDiagnostico === 'object' &&
-      'diagnostico' in cachedDiagnostico &&
-      ('resumoExecutivo' in cachedDiagnostico || 'recomendacoesPrioritarias' in cachedDiagnostico)
+    // Only check cache if not forcing regeneration
+    if (!forceRegenerate) {
+      const cachedDiagnostico = await getCache<DiagnosticoPayload>(cacheKey)
 
-    if (isValidCachedDiagnostico) {
-      return NextResponse.json({
-        success: true,
-        diagnostico: cachedDiagnostico,
-        cached: true,
-      })
-    } else if (cachedDiagnostico) {
-      // Invalid cache entry - invalidate it so it gets regenerated
-      console.warn(`⚠️ Invalid cached diagnostic for ${analysisId}, regenerating...`)
-      await setCache(cacheKey, null, { ttl: 1 }) // Expire immediately
+      // Validate cached data has the expected shape before using it
+      // This prevents issues with stale cache entries from before format changes
+      const isValidCachedDiagnostico =
+        cachedDiagnostico &&
+        typeof cachedDiagnostico === 'object' &&
+        'diagnostico' in cachedDiagnostico &&
+        ('resumoExecutivo' in cachedDiagnostico || 'recomendacoesPrioritarias' in cachedDiagnostico)
+
+      if (isValidCachedDiagnostico) {
+        return NextResponse.json({
+          success: true,
+          diagnostico: cachedDiagnostico,
+          cached: true,
+        })
+      } else if (cachedDiagnostico) {
+        // Invalid cache entry - invalidate it so it gets regenerated
+        console.warn(`⚠️ Invalid cached diagnostic for ${analysisId}, regenerating...`)
+        await setCache(cacheKey, null, { ttl: 1 }) // Expire immediately
+      }
     }
 
     const data = JSON.parse(analysis.data)

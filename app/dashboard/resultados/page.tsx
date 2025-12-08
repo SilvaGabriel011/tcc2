@@ -357,7 +357,11 @@ function ResultadosContent() {
     const toastId = toast.loading('Gerando diagnostico...')
 
     try {
-      const response = await fetch(`/api/analise/diagnostico/${analysisId}`)
+      // Pass force parameter to API when regeneration is requested
+      const url = forceRegenerate
+        ? `/api/analise/diagnostico/${analysisId}?force=true`
+        : `/api/analise/diagnostico/${analysisId}`
+      const response = await fetch(url)
 
       // FIX: Check if analysis is still the same (race condition)
       if (selectedAnalysis?.id !== analysisId) {
