@@ -78,6 +78,9 @@ export default function ReferenciasPage() {
     text: string
   } | null>(null)
 
+  // State for loading saved articles
+  const [isLoadingSavedArticles, setIsLoadingSavedArticles] = useState(true)
+
   // State for save article dialog with rename option
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [articleToSave, setArticleToSave] = useState<Article | null>(null)
@@ -92,12 +95,15 @@ export default function ReferenciasPage() {
   }, [session])
 
   const loadSavedArticles = async () => {
+    setIsLoadingSavedArticles(true)
     try {
       const response = await fetch('/api/referencias/saved')
       const data = await response.json()
       setSavedArticles(data.articles || [])
     } catch (error) {
       console.error('Erro ao carregar artigos salvos:', error)
+    } finally {
+      setIsLoadingSavedArticles(false)
     }
   }
 
@@ -716,7 +722,15 @@ export default function ReferenciasPage() {
                 )}
               </div>
 
-              {savedArticles.length > 0 ? (
+              {isLoadingSavedArticles ? (
+                <div className="bg-card shadow rounded-lg p-8 text-center">
+                  <Loader2 className="mx-auto h-12 w-12 text-green-600 animate-spin mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    Carregando artigos salvos...
+                  </h3>
+                  <p className="text-muted-foreground">Aguarde enquanto buscamos sua biblioteca.</p>
+                </div>
+              ) : savedArticles.length > 0 ? (
                 <div className="bg-card shadow rounded-lg p-6">
                   <h3 className="text-lg font-semibold text-foreground mb-4">
                     Sua Biblioteca ({savedArticles.length} artigos salvos)
