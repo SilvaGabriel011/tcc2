@@ -98,9 +98,16 @@ export function BoxPlotChart({
               return null
             }}
           />
-          <Legend />
+          <Legend
+            payload={[
+              { value: 'Q1', type: 'square', color: colors.chart2 },
+              { value: 'Mediana', type: 'square', color: colors.chart1 },
+              { value: 'Q3', type: 'square', color: colors.chart3 },
+            ]}
+          />
           {/* Representa o box plot usando áreas empilhadas com cores distintas */}
-          <Bar dataKey="min" stackId="a" fill={colors.muted} name="Mínimo" />
+          {/* Barra base invisível para posicionar o boxplot no valor mínimo */}
+          <Bar dataKey="min" stackId="a" fill="transparent" legendType="none" />
           <Bar
             dataKey={(d: BoxPlotData) => d.q1 - d.min}
             stackId="a"
@@ -124,9 +131,9 @@ export function BoxPlotChart({
           <Bar
             dataKey={(d: BoxPlotData) => d.max - d.q3}
             stackId="a"
-            fill={colors.muted}
-            opacity={0.8}
-            name="Máximo"
+            fill={colors.chart2}
+            opacity={0.5}
+            legendType="none"
           />
         </ComposedChart>
       </ResponsiveContainer>
@@ -172,18 +179,57 @@ export function PieChartComponent({
     chartData.push({ name: 'Outros', value: others })
   }
 
+  const renderCustomLabel = ({
+    cx,
+    cy,
+    midAngle,
+    outerRadius,
+    name,
+    value,
+  }: {
+    cx: number
+    cy: number
+    midAngle: number
+    outerRadius: number
+    name: string
+    value: number
+  }) => {
+    const RADIAN = Math.PI / 180
+    const radius = outerRadius + 25
+    const x = cx + radius * Math.cos(-midAngle * RADIAN)
+    const y = cy + radius * Math.sin(-midAngle * RADIAN)
+
+    const isLeftSide = x < cx
+    const textAnchor = isLeftSide ? 'end' : 'start'
+
+    const labelText = `${name}: ${value}`
+
+    return (
+      <text
+        x={x}
+        y={y}
+        textAnchor={textAnchor}
+        dominantBaseline="central"
+        className="fill-foreground text-xs"
+        style={{ fontSize: '12px' }}
+      >
+        {labelText}
+      </text>
+    )
+  }
+
   return (
     <div>
       {title && <h4 className="text-md font-medium text-foreground mb-4">{title}</h4>}
       <ResponsiveContainer width="100%" height={400}>
-        <PieChart>
+        <PieChart margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
           <Pie
             data={chartData}
             cx="50%"
             cy="50%"
             labelLine={true}
-            label={(entry) => `${entry.name}: ${entry.value}`}
-            outerRadius={120}
+            label={renderCustomLabel}
+            outerRadius={100}
             fill={colors.primary}
             dataKey="value"
           >
