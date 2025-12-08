@@ -6,19 +6,16 @@
  *     - Color-coded visualizations (red/yellow/green)
  *     - Simple language
  *     - Action summary based on diagnostic analysis
- *     - Toggle between layman and technical views
  * PT-BR: Exibe dados de análise em formato intuitivo e acessível usando:
  *        - Visualizações codificadas por cores (vermelho/amarelo/verde)
  *        - Linguagem simples
  *        - Resumo de ações baseado na análise diagnóstica
- *        - Alternância entre visualizações leiga e técnica
  */
 
 'use client'
 
 import { useState, useEffect } from 'react'
 import { AlertCircle, Info } from 'lucide-react'
-import { LaymanToggle } from './LaymanToggle'
 import { MetricCard } from './MetricCard'
 import { ColorLegend } from './ColorLegend'
 import { ActionSummary } from './ActionSummary'
@@ -73,7 +70,6 @@ export function LaymanTab({
   loadingDiagnostic,
   onRequestDiagnostic,
 }: LaymanTabProps) {
-  const [viewMode, setViewMode] = useState<'layman' | 'technical'>('layman')
   const [evaluation, setEvaluation] = useState<LaymanViewResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -161,15 +157,12 @@ export function LaymanTab({
 
   return (
     <div className="space-y-6">
-      {/* Header with Toggle */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Visualização Leiga</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Interpretação simplificada e universal dos dados
-          </p>
-        </div>
-        <LaymanToggle mode={viewMode} onChange={setViewMode} />
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">Visualização Leiga</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Interpretação simplificada e universal dos dados
+        </p>
       </div>
 
       {/* Color Legend */}
@@ -197,28 +190,10 @@ export function LaymanTab({
         {/* Right: Metric Cards */}
         <div className="space-y-4">
           {evaluation.metric_summaries.map((metric) => (
-            <MetricCard key={metric.metric_key} metric={metric} viewMode={viewMode} />
+            <MetricCard key={metric.metric_key} metric={metric} viewMode="layman" />
           ))}
         </div>
       </div>
-
-      {/* Technical View Link (if in layman mode) */}
-      {viewMode === 'layman' && evaluation.technical_view_url && (
-        <div className="bg-muted/50 rounded-lg p-4 border border-border">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Info className="h-5 w-5 text-muted-foreground mr-2" />
-              <span className="text-sm text-foreground">Quer ver mais detalhes técnicos?</span>
-            </div>
-            <button
-              onClick={() => setViewMode('technical')}
-              className="text-sm text-primary hover:text-primary/80 font-medium"
-            >
-              Ver Versão Técnica →
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Info Box */}
       <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-900">
