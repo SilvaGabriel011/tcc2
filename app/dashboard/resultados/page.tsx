@@ -192,6 +192,9 @@ function ResultadosContent() {
     }
   }, [session])
 
+  // Effect 1: Select analysis based on URL and analyses list
+  // This effect handles analysis selection and tab reset ONLY when the analysis changes
+  // It does NOT depend on diagnosticoCache to avoid resetting tabs when diagnostics are generated
   useEffect(() => {
     const analysisId = searchParams.get('id')
 
@@ -207,23 +210,15 @@ function ResultadosContent() {
         const targetAnalysis = analyses.find((a) => a.id === analysisId)
         if (targetAnalysis) {
           console.log('[resultados:select:found]', { analysisId, name: targetAnalysis.name })
-          // FIX: Only change analysis if it's actually different
           const isNewAnalysis = selectedAnalysis?.id !== targetAnalysis.id
-          setSelectedAnalysis(targetAnalysis)
-          // Check cache for existing diagnostic
-          const cached = diagnosticoCache.get(analysisId)
-          if (cached) {
-            setDiagnostico(cached)
-            setDiagnosticoError(null)
-          } else {
+
+          if (isNewAnalysis || !selectedAnalysis) {
+            setSelectedAnalysis(targetAnalysis)
+            // Only reset tab and clear diagnostic state when selecting a NEW analysis
+            setActiveMainTab('technical')
             setDiagnostico(null)
             setDiagnosticoError(null)
-          }
-          setLoadingDiagnostico(false)
-          // FIX: Only reset to technical tab if this is a NEW analysis selection
-          // Don't reset if user is already viewing diagnostic tab for the same analysis
-          if (isNewAnalysis) {
-            setActiveMainTab('technical')
+            setLoadingDiagnostico(false)
           }
         } else {
           console.warn('[resultados:select:not-found]', {
@@ -238,12 +233,30 @@ function ResultadosContent() {
         }
       } else {
         console.log('[resultados:select:no-url-id]', { selectingFirst: true })
-        setSelectedAnalysis(analyses[0])
+        if (!selectedAnalysis) {
+          setSelectedAnalysis(analyses[0])
+        }
       }
     } else {
       console.log('[resultados:select:empty-list]', { analysisId })
     }
-  }, [analyses, searchParams, diagnosticoCache])
+  }, [analyses, searchParams, selectedAnalysis?.id])
+
+  // Effect 2: Hydrate diagnostic from cache when selectedAnalysis changes
+  // This effect is separate so that updating diagnosticoCache doesn't trigger tab reset
+  useEffect(() => {
+    if (!selectedAnalysis) {
+      return
+    }
+
+    const cached = diagnosticoCache.get(selectedAnalysis.id)
+    if (cached && !diagnostico) {
+      console.log('[resultados:hydrate-diagnostic]', { analysisId: selectedAnalysis.id })
+      setDiagnostico(cached)
+      setDiagnosticoError(null)
+      setLoadingDiagnostico(false)
+    }
+  }, [selectedAnalysis?.id, diagnosticoCache, diagnostico])
 
   const fetchAnalyses = async () => {
     console.log('[resultados:fetchAnalyses:start]', { timestamp: new Date().toISOString() })
