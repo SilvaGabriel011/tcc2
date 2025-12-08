@@ -817,37 +817,36 @@ function ResultadosContent() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               {/* Lista de Análises */}
               <div className="lg:col-span-1 print:hidden">
-                <div className="bg-card shadow rounded-lg p-4">
-                  <h3 className="text-lg font-medium text-foreground mb-4">Análises Realizadas</h3>
-                  <div className="space-y-2">
-                    {analyses.map((analysis) => (
-                      <div
-                        key={analysis.id}
-                        className={`relative group rounded-md transition-colors border ${
-                          selectedAnalysis?.id === analysis.id
-                            ? 'bg-green-100 dark:bg-green-950/30 border-green-300 dark:border-green-900'
-                            : 'hover:bg-background border'
-                        }`}
-                      >
+                <div className="bg-card shadow rounded-lg p-4 space-y-4">
+                  {/* Análise Atual - Seção destacada */}
+                  {selectedAnalysis && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                        <h3 className="text-sm font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide">
+                          Análise Atual
+                        </h3>
+                      </div>
+                      <div className="relative group rounded-md transition-colors border-2 bg-green-50 dark:bg-green-950/40 border-green-400 dark:border-green-700 shadow-sm">
                         <button
                           onClick={() => {
-                            router.push(`/dashboard/resultados?id=${analysis.id}`, {
+                            router.push(`/dashboard/resultados?id=${selectedAnalysis.id}`, {
                               scroll: false,
                             })
                           }}
                           className="w-full text-left p-3 pr-12"
                         >
                           <div className="font-medium text-sm text-foreground truncate">
-                            {analysis.name}
+                            {selectedAnalysis.name}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {new Date(analysis.createdAt).toLocaleDateString('pt-BR')}
+                            {new Date(selectedAnalysis.createdAt).toLocaleDateString('pt-BR')}
                           </div>
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            void handleDeleteAnalysis(analysis.id, analysis.name)
+                            void handleDeleteAnalysis(selectedAnalysis.id, selectedAnalysis.name)
                           }}
                           className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
                           title="Deletar análise"
@@ -855,8 +854,58 @@ function ResultadosContent() {
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
+
+                  {/* Divisor visual */}
+                  {analyses.filter((a) => a.id !== selectedAnalysis?.id).length > 0 && (
+                    <div className="border-t border-gray-200 dark:border-gray-700" />
+                  )}
+
+                  {/* Histórico - Análises anteriores */}
+                  {analyses.filter((a) => a.id !== selectedAnalysis?.id).length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
+                        Histórico
+                      </h3>
+                      <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                        {analyses
+                          .filter((analysis) => analysis.id !== selectedAnalysis?.id)
+                          .map((analysis) => (
+                            <div
+                              key={analysis.id}
+                              className="relative group rounded-md transition-colors border hover:bg-background hover:border-gray-300 dark:hover:border-gray-600"
+                            >
+                              <button
+                                onClick={() => {
+                                  router.push(`/dashboard/resultados?id=${analysis.id}`, {
+                                    scroll: false,
+                                  })
+                                }}
+                                className="w-full text-left p-3 pr-12"
+                              >
+                                <div className="font-medium text-sm text-foreground truncate">
+                                  {analysis.name}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {new Date(analysis.createdAt).toLocaleDateString('pt-BR')}
+                                </div>
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  void handleDeleteAnalysis(analysis.id, analysis.name)
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Deletar análise"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
