@@ -2,18 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { invalidateCache } from '@/lib/cache'
+import { invalidateCache } from '@/lib/multi-level-cache'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { analysisId: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { analysisId: string } }) {
   try {
     const session = await getServerSession(authOptions)
-    
+
     if (!session?.user) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
@@ -25,9 +22,9 @@ export async function DELETE(
       where: {
         id: analysisId,
         project: {
-          ownerId: session.user.id
-        }
-      }
+          ownerId: session.user.id,
+        },
+      },
     })
 
     if (!analysis) {
@@ -40,8 +37,8 @@ export async function DELETE(
     // Deletar análise
     await prisma.dataset.delete({
       where: {
-        id: analysisId
-      }
+        id: analysisId,
+      },
     })
 
     console.log(`✅ Análise ${analysisId} deletada por ${session.user.email}`)
@@ -49,24 +46,20 @@ export async function DELETE(
     // 🗑️ CACHE: Invalidar cache de resultados e diagnóstico
     const resultadosCacheKey = `resultados:${session.user.id}`
     const diagnosticoCacheKey = `diagnostico:${analysisId}`
-    await Promise.all([
-      invalidateCache(resultadosCacheKey),
-      invalidateCache(diagnosticoCacheKey)
-    ])
+    await Promise.all([invalidateCache(resultadosCacheKey), invalidateCache(diagnosticoCacheKey)])
     console.log('🗑️ Cache invalidado: resultados e diagnóstico')
 
     return NextResponse.json({
       success: true,
-      message: 'Análise deletada com sucesso'
+      message: 'Análise deletada com sucesso',
     })
-
   } catch (error) {
     console.error('❌ Erro ao deletar análise:', error)
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Erro ao deletar análise',
-        details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+        details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined,
       },
       { status: 500 }
     )
