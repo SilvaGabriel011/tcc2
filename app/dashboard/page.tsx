@@ -12,6 +12,7 @@ import {
   BookOpen,
   FileSpreadsheet,
   TrendingUp,
+  RefreshCw,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 
@@ -183,6 +184,20 @@ export default function DashboardPage() {
         </div>
 
         {/* Estatísticas Rápidas */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-foreground">Estatísticas Rápidas</h2>
+          <button
+            onClick={() => {
+              void fetchStats()
+            }}
+            disabled={loadingStats}
+            className="inline-flex items-center px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 text-foreground/80 bg-card hover:bg-background rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Atualizar estatísticas"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loadingStats ? 'animate-spin' : ''}`} />
+            <span className="ml-1.5">Atualizar</span>
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-card overflow-hidden shadow rounded-lg border">
             <div className="p-5">

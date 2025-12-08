@@ -16,25 +16,35 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
-    const cacheKey = `resultados:${session.user.id}`
-    const cachedResults = await getCache<{
-      analyses: Array<{
-        id: string
-        name: string
-        filename: string
-        data: string
-        metadata: string | null
-        createdAt: Date
-        updatedAt: Date
-      }>
-    }>(cacheKey)
+    // Check for force refresh parameter to bypass cache
+    const url = new URL(request.url)
+    const forceRefresh = url.searchParams.get('force') === 'true'
 
-    if (cachedResults) {
-      return NextResponse.json({
-        success: true,
-        analyses: cachedResults.analyses,
-        cached: true,
-      })
+    const cacheKey = `resultados:${session.user.id}`
+
+    // Only check cache if not forcing refresh
+    if (!forceRefresh) {
+      const cachedResults = await getCache<{
+        analyses: Array<{
+          id: string
+          name: string
+          filename: string
+          data: string
+          metadata: string | null
+          createdAt: Date
+          updatedAt: Date
+        }>
+      }>(cacheKey)
+
+      if (cachedResults) {
+        return NextResponse.json({
+          success: true,
+          analyses: cachedResults.analyses,
+          cached: true,
+        })
+      }
+    } else {
+      console.log('🔄 Force refresh requested, bypassing cache')
     }
 
     // Get pagination parameters

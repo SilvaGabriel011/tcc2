@@ -19,6 +19,7 @@ import {
   User,
   Table,
   TrendingUp,
+  RefreshCw,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Tabs } from '@/components/tabs'
@@ -177,6 +178,7 @@ function ResultadosContent() {
     updatedAt: string
   } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [diagnostico, setDiagnostico] = useState<RawDiagnostico | null>(null)
   const [loadingDiagnostico, setLoadingDiagnostico] = useState(false)
   const [showLaymanDevModal, setShowLaymanDevModal] = useState(false)
@@ -262,22 +264,31 @@ function ResultadosContent() {
     }
   }, [selectedAnalysis?.id, diagnosticoCache, diagnostico])
 
-  const fetchAnalyses = async () => {
-    console.log('[resultados:fetchAnalyses:start]', { timestamp: new Date().toISOString() })
+  const fetchAnalyses = async (force = false) => {
+    console.log('[resultados:fetchAnalyses:start]', { timestamp: new Date().toISOString(), force })
     try {
-      const response = await fetch('/api/analise/resultados')
+      if (force) {
+        setRefreshing(true)
+      }
+      const url = force ? '/api/analise/resultados?force=true' : '/api/analise/resultados'
+      const response = await fetch(url)
       console.log('[resultados:fetchAnalyses:response]', {
         status: response.status,
         ok: response.ok,
+        force,
       })
 
       const data = await response.json()
       console.log('[resultados:fetchAnalyses:success]', {
         count: data.analyses?.length || 0,
         ids: data.analyses?.map((a: { id: string }) => a.id) || [],
+        cached: data.cached,
       })
 
       setAnalyses(data.analyses || [])
+      if (force) {
+        toast.success('Dados atualizados com sucesso!')
+      }
     } catch (error) {
       console.error('[resultados:fetchAnalyses:error]', {
         error: error instanceof Error ? error.message : String(error),
@@ -286,6 +297,7 @@ function ResultadosContent() {
       toast.error('Erro ao carregar análises. Por favor, recarregue a página.')
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
 
@@ -814,11 +826,24 @@ function ResultadosContent() {
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Resultados das Análises</h1>
-              <p className="text-muted-foreground mt-2">
-                Visualize e exporte os resultados das suas análises zootécnicas
-              </p>
+            <div className="flex items-center gap-4">
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Resultados das Análises</h1>
+                <p className="text-muted-foreground mt-2">
+                  Visualize e exporte os resultados das suas análises zootécnicas
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  void fetchAnalyses(true)
+                }}
+                disabled={refreshing}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-foreground/80 bg-card hover:bg-background rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed print:hidden"
+                title="Recarregar dados"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                <span className="ml-2 hidden sm:inline">Recarregar</span>
+              </button>
             </div>
 
             {selectedAnalysis && (
