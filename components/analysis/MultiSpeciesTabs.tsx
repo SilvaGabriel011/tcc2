@@ -238,7 +238,12 @@ interface ReferenceData {
 
 interface MultiSpeciesTabsProps {
   onSpeciesChange?: (species: Species, subtype?: string) => void
-  children?: (species: Species, subtype?: string, referenceData?: ReferenceData) => React.ReactNode
+  children?: (
+    species: Species,
+    subtype?: string,
+    referenceData?: ReferenceData,
+    isReady?: boolean
+  ) => React.ReactNode
 }
 
 export function MultiSpeciesTabs({ onSpeciesChange, children }: MultiSpeciesTabsProps) {
@@ -319,6 +324,18 @@ export function MultiSpeciesTabs({ onSpeciesChange, children }: MultiSpeciesTabs
     const activeSubtype = isActiveSpecies
       ? species.subtypes?.find((st) => st.id === selectedSubtype)
       : species.subtypes?.[0]
+
+    // Verificar se o subtipo é válido para esta espécie
+    const isSubtypeValidForSpecies =
+      !species.subtypes ||
+      species.subtypes.length === 0 ||
+      species.subtypes.some((st) => st.id === selectedSubtype)
+
+    // O formulário está pronto quando:
+    // 1. É a espécie ativa
+    // 2. O subtipo é válido para esta espécie (ou a espécie não tem subtipos)
+    // 3. Os dados de referência foram carregados (não está em loading)
+    const isReady = isActiveSpecies && isSubtypeValidForSpecies && !loading
 
     return {
       id: species.id,
@@ -440,7 +457,7 @@ export function MultiSpeciesTabs({ onSpeciesChange, children }: MultiSpeciesTabs
           {/* Área de Conteúdo Dinâmico */}
           <div className="mt-6">
             {children ? (
-              children(species.id as Species, selectedSubtype, referenceData ?? undefined)
+              children(species.id as Species, selectedSubtype, referenceData ?? undefined, isReady)
             ) : (
               <div className="text-center py-12 bg-card dark:bg-gray-800 rounded-lg border dark:border-gray-700">
                 <Activity className="w-12 h-12 mx-auto text-muted-foreground dark:text-gray-400 mb-4" />

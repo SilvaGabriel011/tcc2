@@ -23,6 +23,7 @@ interface SpeciesUploadFormProps {
   subtype?: string
   projectId?: string
   onAnalysisComplete?: (result: AnalysisResult) => void
+  isReady?: boolean
 }
 
 export function SpeciesUploadForm({
@@ -30,6 +31,7 @@ export function SpeciesUploadForm({
   subtype,
   projectId,
   onAnalysisComplete,
+  isReady = true,
 }: SpeciesUploadFormProps) {
   const [file, setFile] = useState<File | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -65,6 +67,7 @@ export function SpeciesUploadForm({
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
     },
     maxFiles: 1,
+    disabled: !isReady,
   })
 
   const handleAnalyze = async () => {
@@ -547,13 +550,13 @@ export function SpeciesUploadForm({
         onClick={() => {
           void handleAnalyze()
         }}
-        disabled={!file || isAnalyzing}
+        disabled={!file || isAnalyzing || !isReady}
         className={`
           w-full py-3 px-4 rounded-lg font-medium
           transition-all duration-200
           flex items-center justify-center gap-2
           ${
-            !file || isAnalyzing
+            !file || isAnalyzing || !isReady
               ? 'bg-muted text-muted-foreground cursor-not-allowed dark:bg-gray-800 dark:text-gray-500'
               : 'bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-primary dark:text-white dark:hover:bg-primary/90'
           }
@@ -564,6 +567,8 @@ export function SpeciesUploadForm({
             <Loader2 className="w-5 h-5 animate-spin" />
             Analisando dados de {getSpeciesName()}...
           </>
+        ) : !isReady ? (
+          <>Aguarde o carregamento dos dados de referência...</>
         ) : (
           <>Analisar Dados</>
         )}
