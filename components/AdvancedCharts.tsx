@@ -61,7 +61,15 @@ export function BoxPlotChart({
         <ComposedChart data={boxPlotData}>
           <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
           <XAxis dataKey="name" stroke={colors.mutedForeground} />
-          <YAxis stroke={colors.mutedForeground} />
+          <YAxis
+            stroke={colors.mutedForeground}
+            label={{
+              value: 'Valores',
+              angle: -90,
+              position: 'insideLeft',
+              style: { textAnchor: 'middle', fill: colors.mutedForeground },
+            }}
+          />
           <Tooltip
             content={({ active, payload }) => {
               if (active && payload?.[0]) {
