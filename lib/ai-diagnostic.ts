@@ -65,28 +65,30 @@ export interface DiagnosticResult {
 }
 
 /**
- * Generate AI-powered diagnostic using Gemini or OpenAI
+ * Generate AI-powered diagnostic using OpenAI (priority) or Gemini (fallback)
  */
 export async function generateAIDiagnostic(input: DiagnosticInput): Promise<DiagnosticResult> {
-  if (process.env.GOOGLE_GEMINI_API_KEY || process.env.GEMINI_API_KEY) {
-    try {
-      console.log('🤖 Attempting diagnostic generation with Gemini...')
-      const result = await generateWithGemini(input)
-      console.log('✅ Diagnostic generated successfully with Gemini')
-      return { ...result, generatedBy: 'gemini' }
-    } catch (error) {
-      console.warn('⚠️ Gemini failed, trying OpenAI fallback:', (error as Error).message)
-    }
-  }
-
+  // OpenAI is now the primary AI provider for diagnostics
   if (process.env.OPENAI_API_KEY) {
     try {
-      console.log('🤖 Attempting diagnostic generation with OpenAI...')
+      console.log('🤖 Attempting diagnostic generation with OpenAI (primary)...')
       const result = await generateWithOpenAI(input)
       console.log('✅ Diagnostic generated successfully with OpenAI')
       return { ...result, generatedBy: 'openai' }
     } catch (error) {
-      console.warn('⚠️ OpenAI failed, using rule-based fallback:', (error as Error).message)
+      console.warn('⚠️ OpenAI failed, trying Gemini fallback:', (error as Error).message)
+    }
+  }
+
+  // Gemini is now the fallback AI provider
+  if (process.env.GOOGLE_GEMINI_API_KEY || process.env.GEMINI_API_KEY) {
+    try {
+      console.log('🤖 Attempting diagnostic generation with Gemini (fallback)...')
+      const result = await generateWithGemini(input)
+      console.log('✅ Diagnostic generated successfully with Gemini')
+      return { ...result, generatedBy: 'gemini' }
+    } catch (error) {
+      console.warn('⚠️ Gemini failed, using rule-based fallback:', (error as Error).message)
     }
   }
 
