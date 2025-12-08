@@ -92,7 +92,7 @@ export function EnhancedScatterPlot({
   const categoryColor = getCategoryColor()
 
   return (
-    <div className="w-full bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-md p-4 mb-6">
+    <div className="w-full bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-md p-4 mb-6 overflow-hidden">
       {title && (
         <div className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
           <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h4>
@@ -200,7 +200,7 @@ export function EnhancedScatterPlot({
 
       {/* Statistics summary */}
       <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
           <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
               N
@@ -227,7 +227,7 @@ export function EnhancedScatterPlot({
             <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
               Equação
             </div>
-            <div className="text-sm font-mono text-gray-900 dark:text-gray-100 mt-1">
+            <div className="text-sm font-mono text-gray-900 dark:text-gray-100 mt-1 break-words">
               y = {slope.toFixed(3)}x + {intercept.toFixed(3)}
             </div>
           </div>
