@@ -1,18 +1,18 @@
 /**
  * Multi-Level Cache Manager for AgroInsight
- * 
+ *
  * Implements a sophisticated caching strategy with multiple cache levels:
  * - L1: In-memory LRU cache (fastest, limited size)
  * - L2: Redis distributed cache (fast, shared across instances)
  * - L3: Database (fallback)
- * 
+ *
  * Features:
  * - Automatic cache promotion (L2 -> L1 on access)
  * - Cache warming for frequently accessed data
  * - TTL management per cache level
  * - Cache statistics and monitoring
  * - Graceful degradation on cache failures
- * 
+ *
  * Benefits:
  * - Ultra-fast response times for hot data (L1)
  * - Reduced Redis load through L1 caching
@@ -62,7 +62,7 @@ class LRUCache<T> {
 
   get(key: string): T | null {
     const node = this.cache.get(key)
-    
+
     if (!node) {
       this.misses++
       return null
@@ -95,7 +95,9 @@ class LRUCache<T> {
 
   remove(key: string): void {
     const node = this.cache.get(key)
-    if (!node) return
+    if (!node) {
+      return
+    }
 
     this.removeNode(node)
     this.cache.delete(key)
@@ -113,9 +115,10 @@ class LRUCache<T> {
       capacity: this.capacity,
       hits: this.hits,
       misses: this.misses,
-      hitRate: this.hits + this.misses > 0 
-        ? (this.hits / (this.hits + this.misses) * 100).toFixed(2) + '%'
-        : '0%'
+      hitRate:
+        this.hits + this.misses > 0
+          ? `${((this.hits / (this.hits + this.misses)) * 100).toFixed(2)}%`
+          : '0%',
     }
   }
 
@@ -154,7 +157,9 @@ class LRUCache<T> {
   }
 
   private evictLRU(): void {
-    if (!this.tail) return
+    if (!this.tail) {
+      return
+    }
 
     this.cache.delete(this.tail.key)
     this.removeNode(this.tail)
@@ -226,7 +231,7 @@ class MultiLevelCacheManager {
     try {
       return new Redis({
         url: redisUrl,
-        token: redisToken
+        token: redisToken,
       })
     } catch (error) {
       console.error('❌ Failed to initialize Redis:', error)
@@ -238,7 +243,9 @@ class MultiLevelCacheManager {
    * Get value from cache (checks L1 first, then L2)
    */
   async get<T>(key: string, config: MultiLevelCacheConfig = {}): Promise<T | null> {
-    if (!this.enabled) return null
+    if (!this.enabled) {
+      return null
+    }
 
     if (!config.skipL1 && !config.l2Only) {
       const l1Value = this.l1Cache.get(key)
@@ -251,19 +258,33 @@ class MultiLevelCacheManager {
     if (this.redis && !config.l1Only) {
       try {
         const l2Value = await this.redis.get(key)
-        
+
         if (l2Value !== null) {
           this.l2Stats.hits++
           console.log(`✅ L2 Cache HIT: ${key}`)
-          
+
+          // Parse JSON string if needed - Upstash may return data as string
+          // when it was stored with JSON.stringify
+          let parsedValue: T
+          if (typeof l2Value === 'string') {
+            try {
+              parsedValue = JSON.parse(l2Value) as T
+            } catch {
+              // If parsing fails, use the raw value
+              parsedValue = l2Value as T
+            }
+          } else {
+            parsedValue = l2Value as T
+          }
+
           if (!config.skipL1) {
             const ttl = config.ttl || 3600
-            this.l1Cache.set(key, l2Value, ttl)
+            this.l1Cache.set(key, parsedValue, ttl)
           }
-          
-          return l2Value as T
+
+          return parsedValue
         }
-        
+
         this.l2Stats.misses++
       } catch (error) {
         this.l2Stats.errors++
@@ -278,12 +299,10 @@ class MultiLevelCacheManager {
   /**
    * Set value in cache (stores in both L1 and L2)
    */
-  async set(
-    key: string,
-    value: unknown,
-    config: MultiLevelCacheConfig = {}
-  ): Promise<void> {
-    if (!this.enabled) return
+  async set(key: string, value: unknown, config: MultiLevelCacheConfig = {}): Promise<void> {
+    if (!this.enabled) {
+      return
+    }
 
     const ttl = config.ttl || 3600
 
@@ -295,7 +314,7 @@ class MultiLevelCacheManager {
     if (this.redis && !config.l1Only) {
       try {
         await this.redis.setex(key, ttl, JSON.stringify(value))
-        
+
         // Store tags for group invalidation
         if (config.tags && config.tags.length > 0) {
           for (const tag of config.tags) {
@@ -304,7 +323,7 @@ class MultiLevelCacheManager {
             await this.redis.expire(tagKey, ttl)
           }
         }
-        
+
         console.log(`💾 L2 Cache SET: ${key} (TTL: ${ttl}s)`)
       } catch (error) {
         this.l2Stats.errors++
@@ -318,7 +337,7 @@ class MultiLevelCacheManager {
    */
   async invalidate(key: string): Promise<void> {
     this.l1Cache.remove(key)
-    
+
     if (this.redis) {
       try {
         await this.redis.del(key)
@@ -333,7 +352,9 @@ class MultiLevelCacheManager {
    * Invalidate all keys with a specific tag
    */
   async invalidateTag(tag: string): Promise<void> {
-    if (!this.redis) return
+    if (!this.redis) {
+      return
+    }
 
     const tagKey = `tag:${tag}`
 
@@ -342,11 +363,11 @@ class MultiLevelCacheManager {
       const keys = await this.redis.smembers(tagKey)
 
       if (keys.length > 0) {
-        keys.forEach(key => this.l1Cache.remove(key))
-        
+        keys.forEach((key) => this.l1Cache.remove(key))
+
         await this.redis.del(...keys)
         await this.redis.del(tagKey)
-        
+
         console.log(`🗑️ Cache tag invalidated: ${tag} (${keys.length} keys)`)
       }
     } catch (error) {
@@ -357,13 +378,15 @@ class MultiLevelCacheManager {
   /**
    * Warm cache with frequently accessed data
    */
-  async warm(entries: Array<{ key: string; value: unknown; config?: MultiLevelCacheConfig }>): Promise<void> {
+  async warm(
+    entries: Array<{ key: string; value: unknown; config?: MultiLevelCacheConfig }>
+  ): Promise<void> {
     console.log(`🔥 Warming cache with ${entries.length} entries...`)
-    
+
     for (const entry of entries) {
       await this.set(entry.key, entry.value, entry.config)
     }
-    
+
     console.log(`✅ Cache warming completed`)
   }
 
@@ -374,9 +397,10 @@ class MultiLevelCacheManager {
     const l1Stats = this.l1Cache.getStats()
     const totalHits = parseInt(l1Stats.hits.toString()) + this.l2Stats.hits
     const totalMisses = parseInt(l1Stats.misses.toString()) + this.l2Stats.misses
-    const overallHitRate = totalHits + totalMisses > 0
-      ? (totalHits / (totalHits + totalMisses) * 100).toFixed(2) + '%'
-      : '0%'
+    const overallHitRate =
+      totalHits + totalMisses > 0
+        ? `${((totalHits / (totalHits + totalMisses)) * 100).toFixed(2)}%`
+        : '0%'
 
     return {
       l1: l1Stats,
@@ -384,8 +408,8 @@ class MultiLevelCacheManager {
       overall: {
         totalHits,
         totalMisses,
-        hitRate: overallHitRate
-      }
+        hitRate: overallHitRate,
+      },
     }
   }
 
@@ -394,7 +418,7 @@ class MultiLevelCacheManager {
    */
   async clear(): Promise<void> {
     this.l1Cache.clear()
-    
+
     if (this.redis) {
       try {
         await this.redis.flushdb()
@@ -424,23 +448,20 @@ class MultiLevelCacheManager {
 export const multiLevelCache = new MultiLevelCacheManager(100)
 
 // Export convenience functions
-export const getCache = <T>(key: string, config?: MultiLevelCacheConfig) => 
+export const getCache = <T>(key: string, config?: MultiLevelCacheConfig) =>
   multiLevelCache.get<T>(key, config)
 
-export const setCache = (key: string, value: unknown, config?: MultiLevelCacheConfig) => 
+export const setCache = (key: string, value: unknown, config?: MultiLevelCacheConfig) =>
   multiLevelCache.set(key, value, config)
 
-export const invalidateCache = (key: string) => 
-  multiLevelCache.invalidate(key)
+export const invalidateCache = (key: string) => multiLevelCache.invalidate(key)
 
-export const invalidateCacheTag = (tag: string) => 
-  multiLevelCache.invalidateTag(tag)
+export const invalidateCacheTag = (tag: string) => multiLevelCache.invalidateTag(tag)
 
-export const warmCache = (entries: Array<{ key: string; value: unknown; config?: MultiLevelCacheConfig }>) => 
-  multiLevelCache.warm(entries)
+export const warmCache = (
+  entries: Array<{ key: string; value: unknown; config?: MultiLevelCacheConfig }>
+) => multiLevelCache.warm(entries)
 
-export const getCacheStats = () => 
-  multiLevelCache.getStats()
+export const getCacheStats = () => multiLevelCache.getStats()
 
-export const clearAllCaches = () => 
-  multiLevelCache.clear()
+export const clearAllCaches = () => multiLevelCache.clear()

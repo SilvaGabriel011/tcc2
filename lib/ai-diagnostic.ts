@@ -321,6 +321,8 @@ function getSpeciesDisplayName(species: string, subtype?: string): string {
     goat: 'Caprinos',
     aquaculture: 'Aquicultura',
     forage: 'Forragem',
+    bees: 'Abelhas',
+    abelhas: 'Abelhas',
     gado: 'Bovinos',
     unknown: 'Produção Animal',
   }

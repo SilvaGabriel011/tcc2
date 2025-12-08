@@ -98,6 +98,19 @@ interface RawDiagnostico {
   generatedBy?: string
 }
 
+// Check if a diagnostic has valid structured data
+function isValidDiagnostico(raw: RawDiagnostico | null): boolean {
+  if (!raw) {
+    return false
+  }
+  // A valid diagnostic must be an object with at least resumoExecutivo or recomendacoesPrioritarias
+  return (
+    typeof raw === 'object' &&
+    (!!raw.resumoExecutivo ||
+      (Array.isArray(raw.recomendacoesPrioritarias) && raw.recomendacoesPrioritarias.length > 0))
+  )
+}
+
 // Convert raw diagnostico to DiagnosticResult for LaymanTab
 function toDiagnosticResult(raw: RawDiagnostico | null): DiagnosticResult | null {
   if (!raw) {
@@ -106,7 +119,7 @@ function toDiagnosticResult(raw: RawDiagnostico | null): DiagnosticResult | null
 
   // If the diagnostic doesn't have structured data, return null
   // so ActionSummary shows the "generate diagnostic" prompt
-  if (!raw.resumoExecutivo && !raw.recomendacoesPrioritarias) {
+  if (!isValidDiagnostico(raw)) {
     return null
   }
 
@@ -330,7 +343,9 @@ function ResultadosContent() {
     if (loadingDiagnostico) {
       return
     }
-    if (diagnostico && !forceRegenerate) {
+    // Only skip if we have a VALID diagnostic (not just any truthy value)
+    // This prevents getting stuck with malformed cached data
+    if (isValidDiagnostico(diagnostico) && !forceRegenerate) {
       return
     }
 
@@ -418,7 +433,14 @@ function ResultadosContent() {
   // NEW: Auto-trigger diagnostic generation when entering diagnostic tab
   // eslint-disable-next-line react-hooks/exhaustive-deps -- handleGerarDiagnostico is stable, selectedAnalysis?.id is the key dependency
   useEffect(() => {
-    if (activeMainTab === 'diagnostic' && !diagnostico && !loadingDiagnostico && selectedAnalysis) {
+    // Trigger if we don't have a VALID diagnostic (not just any truthy value)
+    // This ensures regeneration when cached data is malformed
+    if (
+      activeMainTab === 'diagnostic' &&
+      !isValidDiagnostico(diagnostico) &&
+      !loadingDiagnostico &&
+      selectedAnalysis
+    ) {
       void handleGerarDiagnostico()
     }
   }, [activeMainTab, diagnostico, loadingDiagnostico, selectedAnalysis?.id])
