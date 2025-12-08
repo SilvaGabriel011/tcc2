@@ -1,54 +1,85 @@
 /**
  * Layman Evaluation API
  * POST /api/layman/evaluate
- * 
+ *
  * Evaluates metrics and generates annotations for layman visualization
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import type { EvaluationRequest, EvaluationResponse, MetricKey, MetricCategory } from '@/lib/layman/types'
+import type {
+  EvaluationRequest,
+  EvaluationResponse,
+  MetricKey,
+  MetricCategory,
+} from '@/lib/layman/types'
 
 export const dynamic = 'force-dynamic'
 
 // Default thresholds (TODO: Load from database per farm)
 const DEFAULT_THRESHOLDS = {
   peso_vs_meta_pct: {
-    excellent: { min: 1.00, max: 10.0 },
+    excellent: { min: 1.0, max: 10.0 },
     ok: { min: 0.95, max: 0.999 },
-    ruim: { min: 0.0, max: 0.949 }
+    ruim: { min: 0.0, max: 0.949 },
   },
   gmd_7d: {
     excellent: { min: 0.6, max: 10.0 },
     ok: { min: 0.3, max: 0.599 },
-    ruim: { min: 0.0, max: 0.299 }
+    ruim: { min: 0.0, max: 0.299 },
   },
   gmd_30d: {
     excellent: { min: 0.5, max: 10.0 },
     ok: { min: 0.25, max: 0.499 },
-    ruim: { min: 0.0, max: 0.249 }
+    ruim: { min: 0.0, max: 0.249 },
   },
   bcs: {
     excellent: { min: 3.5, max: 5.0 },
     ok: { min: 2.5, max: 3.49 },
-    ruim: { min: 0.0, max: 2.49 }
+    ruim: { min: 0.0, max: 2.49 },
   },
   biomassa_kg_ha: {
     excellent: { min: 2500, max: 100000 },
     ok: { min: 1500, max: 2499 },
-    ruim: { min: 0, max: 1499 }
+    ruim: { min: 0, max: 1499 },
   },
   cobertura_pct: {
     excellent: { min: 80, max: 100 },
     ok: { min: 60, max: 79 },
-    ruim: { min: 0, max: 59 }
+    ruim: { min: 0, max: 59 },
   },
   indice_visual: {
     excellent: { min: 70, max: 100 },
     ok: { min: 50, max: 69 },
-    ruim: { min: 0, max: 49 }
-  }
+    ruim: { min: 0, max: 49 },
+  },
+  // Bee-specific thresholds (based on EMBRAPA Meio-Norte references)
+  producao_mel: {
+    excellent: { min: 30, max: 100 },
+    ok: { min: 15, max: 29.99 },
+    ruim: { min: 0, max: 14.99 },
+  },
+  populacao_abelhas: {
+    excellent: { min: 40000, max: 100000 },
+    ok: { min: 20000, max: 39999 },
+    ruim: { min: 0, max: 19999 },
+  },
+  quadros_cria: {
+    excellent: { min: 7, max: 15 },
+    ok: { min: 4, max: 6.99 },
+    ruim: { min: 0, max: 3.99 },
+  },
+  taxa_enxameacao: {
+    excellent: { min: 0, max: 10 },
+    ok: { min: 10.01, max: 20 },
+    ruim: { min: 20.01, max: 100 },
+  },
+  saude_colonia: {
+    excellent: { min: 85, max: 100 },
+    ok: { min: 70, max: 84.99 },
+    ruim: { min: 0, max: 69.99 },
+  },
 }
 
 /**
@@ -56,9 +87,11 @@ const DEFAULT_THRESHOLDS = {
  */
 function evaluateMetric(value: number, metricKey: string): MetricCategory {
   const thresholds = DEFAULT_THRESHOLDS[metricKey as keyof typeof DEFAULT_THRESHOLDS]
-  
-  if (!thresholds) return 'ok'
-  
+
+  if (!thresholds) {
+    return 'ok'
+  }
+
   if (value >= thresholds.excellent.min && value <= thresholds.excellent.max) {
     return 'excellent'
   }
@@ -72,7 +105,9 @@ function evaluateMetric(value: number, metricKey: string): MetricCategory {
  * Calculate peso_vs_meta_pct from peso and meta_peso
  */
 function calculatePesoVsMeta(peso_kg?: number, meta_peso_kg?: number): number | undefined {
-  if (!peso_kg || !meta_peso_kg || meta_peso_kg === 0) return undefined
+  if (!peso_kg || !meta_peso_kg || meta_peso_kg === 0) {
+    return undefined
+  }
   return peso_kg / meta_peso_kg
 }
 
@@ -80,8 +115,12 @@ function calculatePesoVsMeta(peso_kg?: number, meta_peso_kg?: number): number | 
  * Determine final color using priority rule (worst metric wins)
  */
 function determineFinalColor(categories: MetricCategory[]): 'red' | 'yellow' | 'green' {
-  if (categories.includes('ruim')) return 'red'
-  if (categories.includes('ok')) return 'yellow'
+  if (categories.includes('ruim')) {
+    return 'red'
+  }
+  if (categories.includes('ok')) {
+    return 'yellow'
+  }
   return 'green'
 }
 
@@ -93,40 +132,66 @@ function getDisplayLabel(metricKey: string, category: MetricCategory): string {
     peso_vs_meta_pct: {
       excellent: 'Peso acima da meta',
       ok: 'Peso próximo da meta',
-      ruim: 'Peso baixo'
+      ruim: 'Peso baixo',
     },
     gmd_7d: {
       excellent: 'Ganho excelente (7d)',
       ok: 'Ganho ok (7d)',
-      ruim: 'Ganho baixo (7d)'
+      ruim: 'Ganho baixo (7d)',
     },
     gmd_30d: {
       excellent: 'Ganho excelente (30d)',
       ok: 'Ganho ok (30d)',
-      ruim: 'Ganho baixo (30d)'
+      ruim: 'Ganho baixo (30d)',
     },
     bcs: {
       excellent: 'Condição corporal excelente',
       ok: 'Condição corporal ok',
-      ruim: 'Condição corporal ruim'
+      ruim: 'Condição corporal ruim',
     },
     biomassa_kg_ha: {
       excellent: 'Biomassa excelente',
       ok: 'Biomassa adequada',
-      ruim: 'Biomassa baixa'
+      ruim: 'Biomassa baixa',
     },
     cobertura_pct: {
       excellent: 'Cobertura excelente',
       ok: 'Cobertura adequada',
-      ruim: 'Cobertura insuficiente'
+      ruim: 'Cobertura insuficiente',
     },
     indice_visual: {
       excellent: 'Índice visual excelente',
       ok: 'Índice visual adequado',
-      ruim: 'Índice visual ruim'
-    }
+      ruim: 'Índice visual ruim',
+    },
+    // Bee-specific labels
+    producao_mel: {
+      excellent: 'Produção de mel excelente',
+      ok: 'Produção de mel adequada',
+      ruim: 'Produção de mel baixa',
+    },
+    populacao_abelhas: {
+      excellent: 'População excelente',
+      ok: 'População adequada',
+      ruim: 'População baixa',
+    },
+    quadros_cria: {
+      excellent: 'Cria excelente',
+      ok: 'Cria adequada',
+      ruim: 'Cria insuficiente',
+    },
+    taxa_enxameacao: {
+      excellent: 'Enxameação controlada',
+      ok: 'Enxameação moderada',
+      ruim: 'Enxameação alta',
+    },
+    saude_colonia: {
+      excellent: 'Saúde da colônia excelente',
+      ok: 'Saúde da colônia ok',
+      ruim: 'Saúde da colônia ruim',
+    },
   }
-  
+
   return labels[metricKey]?.[category] || `${metricKey} ${category}`
 }
 
@@ -141,9 +206,15 @@ function getMetricUnit(metricKey: string): string {
     bcs: '',
     biomassa_kg_ha: 'kg/ha',
     cobertura_pct: '%',
-    indice_visual: ''
+    indice_visual: '',
+    // Bee-specific units
+    producao_mel: 'kg/colmeia/ano',
+    populacao_abelhas: 'abelhas',
+    quadros_cria: 'quadros',
+    taxa_enxameacao: '%',
+    saude_colonia: '%',
   }
-  
+
   return units[metricKey] || ''
 }
 
@@ -152,30 +223,21 @@ export async function POST(request: NextRequest) {
     // Authenticate
     const session = await getServerSession(authOptions)
     if (!session) {
-      return NextResponse.json(
-        { error: 'Não autorizado' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     }
 
     // Parse request body
     const body: EvaluationRequest = await request.json()
-    
+
     // Validate required fields
     if (!body.entity_id || !body.farm_id || !body.entity_type) {
-      return NextResponse.json(
-        { error: 'Campos obrigatórios faltando' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Campos obrigatórios faltando' }, { status: 400 })
     }
 
     const { entity_id, metric_values } = body
 
     // Calculate derived metrics
-    const peso_vs_meta = calculatePesoVsMeta(
-      metric_values.peso_kg,
-      metric_values.meta_peso_kg
-    )
+    const peso_vs_meta = calculatePesoVsMeta(metric_values.peso_kg, metric_values.meta_peso_kg)
 
     // Evaluate each metric
     const metric_summaries = []
@@ -189,7 +251,7 @@ export async function POST(request: NextRequest) {
         metric_key: 'peso_vs_meta_pct',
         value: peso_vs_meta,
         category,
-        display_label: getDisplayLabel('peso_vs_meta_pct', category)
+        display_label: getDisplayLabel('peso_vs_meta_pct', category),
       })
     }
 
@@ -200,7 +262,13 @@ export async function POST(request: NextRequest) {
       { key: 'bcs', value: metric_values.bcs },
       { key: 'biomassa_kg_ha', value: metric_values.biomassa_kg_ha },
       { key: 'cobertura_pct', value: metric_values.cobertura_pct },
-      { key: 'indice_visual', value: metric_values.indice_visual }
+      { key: 'indice_visual', value: metric_values.indice_visual },
+      // Bee-specific metrics
+      { key: 'producao_mel', value: metric_values.producao_mel_kg },
+      { key: 'populacao_abelhas', value: metric_values.populacao_abelhas },
+      { key: 'quadros_cria', value: metric_values.quadros_cria },
+      { key: 'taxa_enxameacao', value: metric_values.taxa_enxameacao_pct },
+      { key: 'saude_colonia', value: metric_values.saude_colonia },
     ]
 
     for (const { key, value } of metricsToEvaluate) {
@@ -211,7 +279,7 @@ export async function POST(request: NextRequest) {
           metric_key: key,
           value,
           category,
-          display_label: getDisplayLabel(key, category)
+          display_label: getDisplayLabel(key, category),
         })
       }
     }
@@ -224,7 +292,7 @@ export async function POST(request: NextRequest) {
       metric_key: summary.metric_key,
       category: summary.category,
       value: summary.value,
-      unit: getMetricUnit(summary.metric_key)
+      unit: getMetricUnit(summary.metric_key),
     }))
 
     // Build response
@@ -236,24 +304,22 @@ export async function POST(request: NextRequest) {
         mode: 'composition_metadata',
         composition_metadata: {
           silhouette_type: body.entity_type,
-          overlay_color: final_color === 'green' ? '#22c55e' : final_color === 'yellow' ? '#eab308' : '#ef4444',
+          overlay_color:
+            final_color === 'green' ? '#22c55e' : final_color === 'yellow' ? '#eab308' : '#ef4444',
           badges,
           label_position: {
             x: 85,
-            y: 15
-          }
-        }
+            y: 15,
+          },
+        },
       },
       metric_summaries,
-      thresholds_version: 'v2025-11-04-01'
+      thresholds_version: 'v2025-11-04-01',
     }
 
     return NextResponse.json(response, { status: 200 })
   } catch (error) {
     console.error('Error in layman evaluate:', error)
-    return NextResponse.json(
-      { error: 'Erro ao avaliar métricas' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro ao avaliar métricas' }, { status: 500 })
   }
 }

@@ -1,6 +1,6 @@
 /**
  * Layman Service - API calls for Layman Visualization
- * 
+ *
  * Handles all API interactions for the layman visualization feature:
  * - Evaluate metrics and get annotations
  * - Fetch and update thresholds
@@ -16,7 +16,7 @@ import type {
   FarmThresholds,
   ThresholdConfig,
   ThresholdHistoryResponse,
-  EntityType
+  EntityType,
 } from '@/lib/layman/types'
 
 export class LaymanService {
@@ -81,7 +81,10 @@ export class LaymanService {
   /**
    * Refresh annotation for an entity
    */
-  async refreshAnnotation(entityId: string, force: boolean = false): Promise<{ task_id: string; status: string }> {
+  async refreshAnnotation(
+    entityId: string,
+    force: boolean = false
+  ): Promise<{ task_id: string; status: string }> {
     const response = await fetch(`/api/layman/annotations/${entityId}/refresh`, {
       method: 'POST',
       headers: {
@@ -124,7 +127,13 @@ export class LaymanService {
     farmId: string,
     thresholds: ThresholdConfig[],
     preview: boolean = false
-  ): Promise<{ farm_id: string; version: string; applied: boolean; preview: boolean; errors: string[] }> {
+  ): Promise<{
+    farm_id: string
+    version: string
+    applied: boolean
+    preview: boolean
+    errors: string[]
+  }> {
     const response = await fetch(`/api/layman/thresholds?farmId=${farmId}`, {
       method: 'PUT',
       headers: {
@@ -153,7 +162,9 @@ export class LaymanService {
     })
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Failed to get threshold history' }))
+      const error = await response
+        .json()
+        .catch(() => ({ error: 'Failed to get threshold history' }))
       throw new Error(error.error || `HTTP ${response.status}`)
     }
 
@@ -171,10 +182,11 @@ export class LaymanService {
   ): EvaluationRequest {
     // Safely extract metrics from analysis data
     const numericStats = analysisData.numericStats
-    const metrics = (numericStats && typeof numericStats === 'object') 
-      ? numericStats as Record<string, { mean?: number }>
-      : {}
-    
+    const metrics =
+      numericStats && typeof numericStats === 'object'
+        ? (numericStats as Record<string, { mean?: number }>)
+        : {}
+
     // Helper function to safely get mean value with multiple possible field names
     const getMeanValue = (...keys: string[]): number | undefined => {
       for (const key of keys) {
@@ -185,7 +197,7 @@ export class LaymanService {
       }
       return undefined
     }
-    
+
     return {
       entity_id: `analysis_${Date.now()}`,
       farm_id: farmId,
@@ -198,7 +210,28 @@ export class LaymanService {
         biomassa_kg_ha: getMeanValue('BIOMASSA_KG_HA', 'biomassa_kg_ha', 'biomassa'),
         cobertura_pct: getMeanValue('COBERTURA_PCT', 'cobertura_pct', 'cobertura'),
         indice_visual: getMeanValue('INDICE_VISUAL', 'indice_visual', 'indice'),
-      }
+        // Bee-specific metrics
+        producao_mel_kg: getMeanValue(
+          'PRODUCAO_MEL',
+          'producao_mel',
+          'producao_mel_colmeia_ano',
+          'mel_kg'
+        ),
+        populacao_abelhas: getMeanValue(
+          'POPULACAO_ABELHAS',
+          'populacao_abelhas_colmeia',
+          'populacao',
+          'num_abelhas'
+        ),
+        quadros_cria: getMeanValue('QUADROS_CRIA', 'quadros_cria', 'cria_quadros'),
+        taxa_enxameacao_pct: getMeanValue('TAXA_ENXAMEACAO', 'taxa_enxameacao', 'enxameacao_pct'),
+        saude_colonia: getMeanValue(
+          'SAUDE_COLONIA',
+          'saude_colonia',
+          'indice_saude',
+          'higienicidade'
+        ),
+      },
     }
   }
 }
