@@ -20,9 +20,18 @@ import {
   Tag,
   Hash,
   Quote,
+  Pencil,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { ReferencesLoadingSkeleton } from '@/components/skeleton'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 interface Article {
   id: string
@@ -68,6 +77,13 @@ export default function ReferenciasPage() {
     type: 'success' | 'error'
     text: string
   } | null>(null)
+
+  // State for save article dialog with rename option
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false)
+  const [articleToSave, setArticleToSave] = useState<Article | null>(null)
+  const [customTitle, setCustomTitle] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [isFromUrlPreview, setIsFromUrlPreview] = useState(false)
 
   useEffect(() => {
     if (session) {
@@ -181,21 +197,30 @@ export default function ReferenciasPage() {
     setAddByUrlMessage(null)
 
     try {
+      // First, fetch preview to get metadata and validate URL
       const response = await fetch('/api/referencias/add-by-url', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: addByUrlInput }),
+        body: JSON.stringify({ url: addByUrlInput, preview: true }),
       })
 
       const data = await response.json()
 
-      if (response.ok) {
+      if (response.ok && data.success) {
+        // Open save dialog with preview data
+        const previewArticle: Article = {
+          ...data.article,
+          authors: Array.isArray(data.article.authors)
+            ? data.article.authors
+            : [data.article.authors],
+        }
+        setArticleToSave(previewArticle)
+        setCustomTitle(previewArticle.title)
+        setIsFromUrlPreview(true)
+        setSaveDialogOpen(true)
         setAddByUrlMessage({ type: 'success', text: data.message })
-        setAddByUrlInput('')
-        // Recarregar artigos salvos
-        await loadSavedArticles()
       } else {
         setAddByUrlMessage({ type: 'error', text: data.error })
       }
@@ -208,24 +233,80 @@ export default function ReferenciasPage() {
     }
   }
 
-  const handleSaveArticle = async (article: Article) => {
+  // Open save dialog with article info and editable title
+  const openSaveDialog = (article: Article) => {
+    setArticleToSave(article)
+    setCustomTitle(article.title)
+    setIsFromUrlPreview(false)
+    setSaveDialogOpen(true)
+  }
+
+  // Actually save the article with the custom title
+  const handleConfirmSave = async () => {
+    if (!articleToSave) {
+      return
+    }
+
+    setIsSaving(true)
     try {
-      const response = await fetch('/api/referencias/save', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(article),
-      })
+      const finalTitle = customTitle.trim() || articleToSave.title
+
+      let response: Response
+
+      if (isFromUrlPreview) {
+        // For URL preview, call add-by-url API with custom title
+        response = await fetch('/api/referencias/add-by-url', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url: articleToSave.url,
+            customTitle: finalTitle,
+          }),
+        })
+      } else {
+        // For search results, call save API
+        const articleWithCustomTitle = {
+          ...articleToSave,
+          title: finalTitle,
+        }
+        response = await fetch('/api/referencias/save', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(articleWithCustomTitle),
+        })
+      }
 
       if (response.ok) {
         // Atualizar estado local
-        setArticles(articles.map((a) => (a.id === article.id ? { ...a, saved: true } : a)))
-        setSavedArticles([...savedArticles, { ...article, saved: true }])
+        if (!isFromUrlPreview) {
+          setArticles(articles.map((a) => (a.id === articleToSave.id ? { ...a, saved: true } : a)))
+        }
+        const savedArticle = { ...articleToSave, title: finalTitle, saved: true }
+        setSavedArticles([...savedArticles, savedArticle])
+        setSaveDialogOpen(false)
+        setArticleToSave(null)
+        setCustomTitle('')
+        setIsFromUrlPreview(false)
+        // Clear URL input if it was from URL preview
+        if (isFromUrlPreview) {
+          setAddByUrlInput('')
+          await loadSavedArticles()
+        }
       }
     } catch (error) {
       console.error('Erro ao salvar artigo:', error)
+    } finally {
+      setIsSaving(false)
     }
+  }
+
+  // Legacy function kept for compatibility - now opens dialog
+  const handleSaveArticle = (article: Article) => {
+    openSaveDialog(article)
   }
 
   const handleUnsaveArticle = async (articleUrl: string, articleTitle?: string) => {
@@ -795,6 +876,113 @@ export default function ReferenciasPage() {
           )}
         </div>
       </div>
+
+      {/* Save Article Dialog with Rename Option */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bookmark className="h-5 w-5 text-green-600" />
+              Salvar Artigo na Biblioteca
+            </DialogTitle>
+            <DialogDescription>
+              Revise o título do artigo antes de salvar. Você pode editá-lo para facilitar a
+              identificação na sua biblioteca.
+            </DialogDescription>
+          </DialogHeader>
+
+          {articleToSave && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  Título do Artigo
+                  <Pencil className="h-3 w-3 text-muted-foreground" />
+                </label>
+                <input
+                  type="text"
+                  value={customTitle}
+                  onChange={(e) => setCustomTitle(e.target.value)}
+                  className="w-full px-3 py-2 border border rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
+                  placeholder="Digite o título do artigo..."
+                />
+                {customTitle !== articleToSave.title && (
+                  <p className="text-xs text-muted-foreground">
+                    Título original: {articleToSave.title.substring(0, 100)}
+                    {articleToSave.title.length > 100 && '...'}
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <User className="h-4 w-4 mr-2" />
+                  {Array.isArray(articleToSave.authors)
+                    ? articleToSave.authors.slice(0, 2).join(', ')
+                    : articleToSave.authors}
+                  {Array.isArray(articleToSave.authors) &&
+                    articleToSave.authors.length > 2 &&
+                    ' et al.'}
+                </div>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    {articleToSave.year}
+                  </span>
+                  <span className="flex items-center">
+                    <FileText className="h-4 w-4 mr-1" />
+                    {articleToSave.journal}
+                  </span>
+                </div>
+                <span
+                  className={`inline-block px-2 py-1 text-xs rounded-full ${
+                    articleToSave.source === 'scholar'
+                      ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300'
+                      : articleToSave.source === 'pubmed'
+                        ? 'bg-purple-100 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300'
+                        : 'bg-orange-100 dark:bg-orange-950/50 text-orange-800 dark:text-orange-300'
+                  }`}
+                >
+                  {articleToSave.source === 'scholar'
+                    ? 'Google Scholar'
+                    : articleToSave.source === 'pubmed'
+                      ? 'PubMed'
+                      : 'Crossref'}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <button
+              onClick={() => {
+                setSaveDialogOpen(false)
+                setArticleToSave(null)
+                setCustomTitle('')
+              }}
+              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground border border rounded-md"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => void handleConfirmSave()}
+              disabled={isSaving || !customTitle.trim()}
+              className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 rounded-md flex items-center gap-2"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <BookmarkCheck className="h-4 w-4" />
+                  Salvar na Biblioteca
+                </>
+              )}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
