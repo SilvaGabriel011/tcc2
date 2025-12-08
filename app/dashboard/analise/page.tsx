@@ -323,12 +323,14 @@ export default function AnaliseDataPage() {
             </div>
             <div className="flex items-center space-x-4">
               <ThemeToggle />
-              <span className="text-foreground/80">Bem-vindo, {session.user.name}</span>
+              <span className="text-foreground/80">
+                Bem-vindo, <span className="font-semibold text-primary">{session.user.name}</span>
+              </span>
               <button
                 onClick={() => {
                   void router.push('/api/auth/signout')
                 }}
-                className="text-foreground/60 hover:text-foreground"
+                className="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors"
               >
                 Sair
               </button>
