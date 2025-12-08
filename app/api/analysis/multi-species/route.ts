@@ -377,11 +377,25 @@ export async function POST(request: NextRequest) {
       message: 'Salvando resultados...',
     })
 
+    // Calculate valid rows (rows with at least one non-empty value)
+    const validRows = parsed.data.filter((row) =>
+      Object.values(row as Record<string, unknown>).some(
+        (val) => val !== null && val !== undefined && val !== ''
+      )
+    ).length
+
+    // Extract zootechnical variables from variablesInfo
+    const zootechnicalVariables = Object.entries(fullAnalysis.variablesInfo)
+      .filter(([, info]) => info.isZootechnical)
+      .map(([name]) => name)
+
     console.log('🔍 [DEBUG] Dataset info:', {
       projectId: finalProjectId,
       species,
       subtype,
       dataRows: parsed.data.length,
+      validRows,
+      zootechnicalCount: zootechnicalVariables.length,
       secureFilename,
     })
 
@@ -398,6 +412,7 @@ export async function POST(request: NextRequest) {
           numericStats: statistics.numericStats || fullAnalysis.numericStats, // Formato correto para StatsTable
           categoricalStats: fullAnalysis.categoricalStats, // Análise categórica
           variablesInfo: fullAnalysis.variablesInfo, // Informação sobre variáveis
+          zootechnicalVariables, // Lista de variáveis zootécnicas
           references,
           interpretation,
           correlations: {
@@ -412,6 +427,8 @@ export async function POST(request: NextRequest) {
           subtype,
           totalRows: parsed.data.length,
           totalColumns: Object.keys(parsed.data[0] || {}).length,
+          validRows,
+          zootechnicalCount: zootechnicalVariables.length,
           analyzedAt: new Date().toISOString(),
           version: '2.0',
           correlationId,
