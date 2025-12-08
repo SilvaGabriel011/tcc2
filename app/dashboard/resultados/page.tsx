@@ -180,6 +180,10 @@ function ResultadosContent() {
   const [diagnostico, setDiagnostico] = useState<RawDiagnostico | null>(null)
   const [loadingDiagnostico, setLoadingDiagnostico] = useState(false)
   const [showLaymanDevModal, setShowLaymanDevModal] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [analysisToDelete, setAnalysisToDelete] = useState<{ id: string; name: string } | null>(
+    null
+  )
 
   // NEW: State for 3-tab structure
   const [activeMainTab, setActiveMainTab] = useState<MainTabId>('technical')
@@ -285,14 +289,19 @@ function ResultadosContent() {
     }
   }
 
-  const handleDeleteAnalysis = async (analysisId: string, analysisName: string) => {
-    if (
-      !confirm(
-        `Tem certeza que deseja deletar a análise "${analysisName}"?\n\nEsta ação não pode ser desfeita.`
-      )
-    ) {
+  const openDeleteModal = (analysisId: string, analysisName: string) => {
+    setAnalysisToDelete({ id: analysisId, name: analysisName })
+    setDeleteModalOpen(true)
+  }
+
+  const handleDeleteAnalysis = async () => {
+    if (!analysisToDelete) {
       return
     }
+
+    const { id: analysisId } = analysisToDelete
+    setDeleteModalOpen(false)
+    setAnalysisToDelete(null)
 
     const toastId = toast.loading('Deletando análise...')
 
@@ -727,6 +736,50 @@ function ResultadosContent() {
         </Dialog.Portal>
       </Dialog.Root>
 
+      {/* Delete Confirmation Modal */}
+      <Dialog.Root open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md z-50 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-start mb-4">
+              <Trash2 className="h-6 w-6 text-red-600 dark:text-red-400 mr-3 mt-0.5 flex-shrink-0" />
+              <div>
+                <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  Confirmar Exclusão
+                </Dialog.Title>
+                <Dialog.Description className="text-sm text-gray-700 dark:text-gray-300">
+                  Tem certeza que deseja deletar a análise{' '}
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">
+                    &quot;{analysisToDelete?.name}&quot;
+                  </span>
+                  ?
+                  <br />
+                  <br />
+                  <span className="text-red-600 dark:text-red-400 font-medium">
+                    Esta ação não pode ser desfeita.
+                  </span>
+                </Dialog.Description>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <Dialog.Close asChild>
+                <button className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-md text-sm font-medium transition-colors">
+                  Cancelar
+                </button>
+              </Dialog.Close>
+              <button
+                onClick={() => {
+                  void handleDeleteAnalysis()
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition-colors"
+              >
+                Deletar
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
       {/* Navigation */}
       <nav className="bg-card shadow-sm print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -846,7 +899,7 @@ function ResultadosContent() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            void handleDeleteAnalysis(selectedAnalysis.id, selectedAnalysis.name)
+                            openDeleteModal(selectedAnalysis.id, selectedAnalysis.name)
                           }}
                           className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
                           title="Deletar análise"
@@ -894,7 +947,7 @@ function ResultadosContent() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
-                                  void handleDeleteAnalysis(analysis.id, analysis.name)
+                                  openDeleteModal(analysis.id, analysis.name)
                                 }}
                                 className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
                                 title="Deletar análise"
