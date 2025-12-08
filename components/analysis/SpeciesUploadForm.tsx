@@ -414,43 +414,63 @@ export function SpeciesUploadForm({
         </div>
       </div>
 
-      {/* Dropzone */}
+      {/* Dropzone - Área de Upload em Destaque */}
       <div
         {...getRootProps()}
         className={`
-          border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
-          transition-all duration-200
-          dark:bg-gray-900 dark:border-gray-700
+          relative border-2 border-dashed rounded-xl p-10 text-center cursor-pointer
+          transition-all duration-300 ease-in-out
+          shadow-lg hover:shadow-xl
           ${
             isDragActive
-              ? 'border-primary bg-primary/5 dark:bg-primary/10'
-              : 'border-border hover:border-primary/50 dark:hover:border-primary/50'
+              ? 'border-primary bg-primary/10 dark:bg-primary/15 scale-[1.02] shadow-primary/20'
+              : file
+                ? 'bg-green-50 dark:bg-green-950/30 border-green-500 dark:border-green-500 shadow-green-500/10'
+                : 'dropzone-highlight border-primary/50 dark:border-primary/40 hover:border-primary hover:scale-[1.01]'
           }
-          ${file ? 'bg-green-50 dark:bg-green-950/20 border-green-500 dark:border-green-600' : ''}
         `}
       >
         <input {...getInputProps()} />
 
-        <div className="flex flex-col items-center gap-4">
+        {/* Decorative corner accents */}
+        {!file && (
+          <>
+            <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-primary/60 rounded-tl" />
+            <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-primary/60 rounded-tr" />
+            <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-primary/60 rounded-bl" />
+            <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-primary/60 rounded-br" />
+          </>
+        )}
+
+        <div className="flex flex-col items-center gap-5">
           {file ? (
             <>
-              <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-500" />
+              <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-full">
+                <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400" />
+              </div>
               <div>
-                <p className="font-medium text-foreground dark:text-gray-200">{file.name}</p>
-                <p className="text-sm text-muted-foreground dark:text-gray-400">
-                  {(file.size / 1024).toFixed(1)} KB
+                <p className="font-semibold text-lg text-foreground dark:text-gray-100">
+                  {file.name}
+                </p>
+                <p className="text-sm text-muted-foreground dark:text-gray-400 mt-1">
+                  {(file.size / 1024).toFixed(1)} KB - Pronto para análise
                 </p>
               </div>
             </>
           ) : (
             <>
-              <Upload className="w-12 h-12 text-muted-foreground dark:text-gray-400" />
-              <div>
-                <p className="font-medium text-foreground dark:text-gray-200">
-                  Arraste o arquivo de {getSpeciesName()} ou clique para selecionar
+              <div className="p-4 bg-primary/10 dark:bg-primary/20 rounded-full dropzone-icon-float">
+                <Upload className="w-14 h-14 text-primary dark:text-primary" />
+              </div>
+              <div className="space-y-2">
+                <p className="font-semibold text-lg text-foreground dark:text-gray-100">
+                  Arraste o arquivo de {getSpeciesName()} ou{' '}
+                  <span className="text-primary underline underline-offset-2">
+                    clique para selecionar
+                  </span>
                 </p>
-                <p className="text-sm text-muted-foreground dark:text-gray-400 mt-1">
-                  Formatos aceitos: CSV, XLS, XLSX
+                <p className="text-sm text-muted-foreground dark:text-gray-400">
+                  Formatos aceitos: <span className="font-medium">CSV, XLS, XLSX</span>
                 </p>
               </div>
             </>
