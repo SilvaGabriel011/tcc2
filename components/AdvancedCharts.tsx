@@ -99,32 +99,33 @@ export function BoxPlotChart({
             }}
           />
           <Legend />
-          {/* Representa o box plot usando áreas empilhadas */}
+          {/* Representa o box plot usando áreas empilhadas com cores distintas */}
           <Bar dataKey="min" stackId="a" fill={colors.muted} name="Mínimo" />
           <Bar
             dataKey={(d: BoxPlotData) => d.q1 - d.min}
             stackId="a"
             fill={colors.chart2}
-            opacity={0.6}
+            opacity={0.7}
             name="Q1"
           />
           <Bar
             dataKey={(d: BoxPlotData) => d.median - d.q1}
             stackId="a"
-            fill={colors.chart2}
+            fill={colors.chart1}
             name="Mediana"
           />
           <Bar
             dataKey={(d: BoxPlotData) => d.q3 - d.median}
             stackId="a"
-            fill={colors.chart2}
-            opacity={0.6}
+            fill={colors.chart3}
+            opacity={0.7}
             name="Q3"
           />
           <Bar
             dataKey={(d: BoxPlotData) => d.max - d.q3}
             stackId="a"
             fill={colors.muted}
+            opacity={0.8}
             name="Máximo"
           />
         </ComposedChart>
