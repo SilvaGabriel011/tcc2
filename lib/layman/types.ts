@@ -31,6 +31,33 @@ export type MetricKey =
   | 'biomassa_kg_ha'
   | 'cobertura_pct'
   | 'indice_visual'
+  // Bovine-specific metrics
+  | 'peso_nascimento'
+  | 'peso_desmame'
+  | 'peso_abate'
+  | 'producao_leite'
+  | 'gordura_leite'
+  | 'proteina_leite'
+  | 'conversao_alimentar'
+  // Swine-specific metrics
+  | 'espessura_toucinho'
+  | 'rendimento_carcaca'
+  | 'leitoes_nascidos'
+  | 'mortalidade'
+  // Poultry-specific metrics
+  | 'peso_final_ave'
+  | 'iep'
+  | 'viabilidade'
+  | 'producao_ovos'
+  | 'peso_ovo'
+  // Sheep/Goat-specific metrics
+  | 'peso_la'
+  | 'producao_leite_cabra'
+  // Aquaculture-specific metrics
+  | 'peso_final_peixe'
+  | 'sobrevivencia'
+  | 'densidade_estocagem'
+  | 'oxigenio_dissolvido'
   // Bee-specific metrics
   | 'producao_mel'
   | 'populacao_abelhas'
@@ -50,6 +77,33 @@ export interface MetricValues {
   biomassa_kg_ha?: number
   cobertura_pct?: number // 0-100
   indice_visual?: number // 0-100
+  // Bovine-specific metrics
+  peso_nascimento_kg?: number
+  peso_desmame_kg?: number
+  peso_abate_kg?: number
+  producao_leite_l?: number // L/dia
+  gordura_leite_pct?: number // %
+  proteina_leite_pct?: number // %
+  conversao_alimentar?: number // kg/kg
+  // Swine-specific metrics
+  espessura_toucinho_mm?: number
+  rendimento_carcaca_pct?: number // %
+  leitoes_nascidos?: number
+  mortalidade_pct?: number // %
+  // Poultry-specific metrics
+  peso_final_ave_kg?: number
+  iep?: number // índice de eficiência produtiva
+  viabilidade_pct?: number // %
+  producao_ovos_pct?: number // %
+  peso_ovo_g?: number // g
+  // Sheep/Goat-specific metrics
+  peso_la_kg?: number
+  producao_leite_cabra_l?: number // L/dia
+  // Aquaculture-specific metrics
+  peso_final_peixe_kg?: number
+  sobrevivencia_pct?: number // %
+  densidade_estocagem?: number // peixes/m³
+  oxigenio_dissolvido_mg?: number // mg/L
   // Bee-specific metrics
   producao_mel_kg?: number // kg/colmeia/ano
   populacao_abelhas?: number // número de abelhas
