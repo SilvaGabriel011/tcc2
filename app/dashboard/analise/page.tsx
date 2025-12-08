@@ -344,11 +344,18 @@ export default function AnaliseDataPage() {
         <div className="px-4 py-6 sm:px-0">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-3xl font-bold text-foreground">Análise de Dados Zootécnicos</h1>
-            <div className="flex items-center gap-3">
+
+            {/* Seção Run Demo - Geração de dados de teste */}
+            <div className="relative flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 border-2 border-dashed border-amber-400 dark:border-amber-600 rounded-xl">
+              {/* Badge Run Demo */}
+              <div className="absolute -top-3 left-4 px-3 py-0.5 bg-amber-500 dark:bg-amber-600 text-white text-xs font-bold rounded-full shadow-sm uppercase tracking-wide">
+                Run Demo
+              </div>
+
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/30 border-2 border-purple-200 dark:border-purple-800 rounded-lg text-sm font-medium text-foreground hover:from-purple-100 hover:to-purple-150 dark:hover:from-purple-900/40 dark:hover:to-purple-800/40 transition-all duration-200 shadow-sm hover:shadow-md min-w-[180px]"
+                  className="flex items-center gap-3 px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-amber-300 dark:border-amber-700 rounded-lg text-sm font-medium text-foreground hover:border-amber-400 dark:hover:border-amber-600 transition-all duration-200 shadow-sm hover:shadow-md min-w-[180px]"
                   title="Selecione a espécie para gerar dados de teste"
                 >
                   <span className={`${selectedOption.color} flex-shrink-0`}>
@@ -356,12 +363,12 @@ export default function AnaliseDataPage() {
                   </span>
                   <span className="flex-1 text-left font-semibold">{selectedOption.label}</span>
                   <ChevronDown
-                    className={`w-4 h-4 text-purple-600 dark:text-purple-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
+                    className={`w-4 h-4 text-amber-600 dark:text-amber-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
                   />
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute z-50 mt-2 w-full min-w-[240px] bg-card dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-800 rounded-lg shadow-xl overflow-hidden">
+                  <div className="absolute z-50 mt-2 w-full min-w-[240px] bg-card dark:bg-gray-800 border-2 border-amber-300 dark:border-amber-700 rounded-lg shadow-xl overflow-hidden">
                     {speciesOptions.map((option) => (
                       <button
                         key={option.value}
@@ -371,13 +378,13 @@ export default function AnaliseDataPage() {
                         }}
                         className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-all duration-150 ${
                           selectedSpecies === option.value
-                            ? 'bg-purple-100 dark:bg-purple-900/50 border-l-4 border-purple-600'
-                            : 'hover:bg-purple-50 dark:hover:bg-purple-950/30 border-l-4 border-transparent'
+                            ? 'bg-amber-100 dark:bg-amber-900/50 border-l-4 border-amber-600'
+                            : 'hover:bg-amber-50 dark:hover:bg-amber-950/30 border-l-4 border-transparent'
                         }`}
                       >
                         <span className={`${option.color} flex-shrink-0`}>{option.icon}</span>
                         <span
-                          className={`font-medium ${selectedSpecies === option.value ? 'text-purple-900 dark:text-purple-100' : 'text-foreground'}`}
+                          className={`font-medium ${selectedSpecies === option.value ? 'text-amber-900 dark:text-amber-100' : 'text-foreground'}`}
                         >
                           {option.label}
                         </span>
@@ -388,11 +395,11 @@ export default function AnaliseDataPage() {
               </div>
               <button
                 onClick={handleGenerateTestData}
-                className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+                className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
                 title="Gera um arquivo CSV com dados fictícios para você testar o sistema"
               >
                 <Beaker className="h-4 w-4" />
-                <span>🧪 Gerar CSV de Exemplo</span>
+                <span>Gerar CSV de Exemplo</span>
               </button>
             </div>
           </div>
