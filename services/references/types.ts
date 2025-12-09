@@ -96,8 +96,11 @@ export interface SearchOptions {
 export interface SearchProvider {
   /**
    * Search for articles based on query and options
+   * @param query - The search query string
+   * @param options - Search options (pagination, filters, etc.)
+   * @param processedQuery - Optional pre-processed query from the unified pipeline
    */
-  search(query: string, options?: SearchOptions): Promise<Article[]>
+  search(query: string, options?: SearchOptions, processedQuery?: unknown): Promise<Article[]>
 
   /**
    * Get a specific article by its ID

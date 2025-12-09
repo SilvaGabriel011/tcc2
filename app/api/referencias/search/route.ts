@@ -10,6 +10,11 @@
  * - Ranks articles by relevance
  * - Caches results for performance
  *
+ * Enhanced with unified query pipeline:
+ * - Always runs local dictionary expansion BEFORE search (fast, deterministic)
+ * - Only calls OpenAI if: results < 5 AND query has 2+ words AND not cached
+ * - Returns enhanced metadata (search feedback, suggested terms, provider status)
+ *
  * Request body:
  * ```json
  * {
@@ -27,8 +32,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { ReferenceSearchService } from '@/services/references'
+import { ReferenceSearchService, EnhancedSearchResult } from '@/services/references'
 import { enhanceReferenceQuery, buildEnhancedQuery } from '@/lib/references/query-enhancer'
+import { logPipeline, createPipelineLog } from '@/lib/references/query-pipeline'
+
+/** Threshold for triggering AI enhancement */
+const AI_ENHANCEMENT_THRESHOLD = 5
+
+/** Minimum word count for AI enhancement */
+const AI_ENHANCEMENT_MIN_WORDS = 2
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -89,24 +101,47 @@ export async function POST(request: NextRequest) {
       sources: source === 'all' ? undefined : [source],
     }
 
-    // Step 4: Use the new ReferenceSearchService
+    // Step 4: Use the new ReferenceSearchService with unified query pipeline
     try {
       const referenceService = new ReferenceSearchService()
-      let searchResult = await referenceService.search(query, searchOptions)
+      let searchResult: EnhancedSearchResult = await referenceService.search(query, searchOptions)
 
-      // Track if we used query enhancement
-      let usedEnhancement = false
+      // Track if we used AI enhancement (local expansion is always used)
+      let usedAIEnhancement = false
       let enhancementData = null
 
-      // Step 4.1: If no results found, try query enhancement with OpenAI
-      if (searchResult.totalResults === 0) {
-        console.log('🔄 No results found, attempting query enhancement...')
+      // Get word count from processed query
+      const wordCount = searchResult.processedQuery?.wordCount || query.trim().split(/\s+/).length
+
+      // Step 4.1: Hybrid Enhancement Strategy
+      // Only call OpenAI if:
+      // - Results < AI_ENHANCEMENT_THRESHOLD (5)
+      // - Query has AI_ENHANCEMENT_MIN_WORDS (2+) words
+      // - OpenAI API key is configured
+      const shouldTryAIEnhancement =
+        searchResult.totalResults < AI_ENHANCEMENT_THRESHOLD &&
+        wordCount >= AI_ENHANCEMENT_MIN_WORDS &&
+        process.env.OPENAI_API_KEY
+
+      if (shouldTryAIEnhancement) {
+        logPipeline(
+          createPipelineLog('enhance', query, {
+            reason: 'low_results',
+            currentResults: searchResult.totalResults,
+            wordCount,
+            threshold: AI_ENHANCEMENT_THRESHOLD,
+          })
+        )
+
+        console.log(
+          `🔄 Results below threshold (${searchResult.totalResults} < ${AI_ENHANCEMENT_THRESHOLD}), attempting AI enhancement...`
+        )
 
         try {
           enhancementData = await enhanceReferenceQuery(query)
 
           if (enhancementData && enhancementData.wasModified) {
-            console.log('✨ Query enhanced:', {
+            console.log('✨ Query enhanced with AI:', {
               original: query,
               corrected: enhancementData.correctedPt,
               englishKeywords: enhancementData.englishKeywords,
@@ -114,20 +149,31 @@ export async function POST(request: NextRequest) {
 
             // Build enhanced query and retry search
             const enhancedQuery = buildEnhancedQuery(enhancementData)
-            console.log('🔍 Retrying with enhanced query:', enhancedQuery)
+            console.log('🔍 Retrying with AI-enhanced query:', enhancedQuery)
 
             // Retry search with enhanced query
             const enhancedResult = await referenceService.search(enhancedQuery, searchOptions)
 
-            if (enhancedResult.totalResults > 0) {
+            if (enhancedResult.totalResults > searchResult.totalResults) {
               searchResult = enhancedResult
-              usedEnhancement = true
-              console.log(`✅ Enhanced search found ${enhancedResult.totalResults} results`)
+              usedAIEnhancement = true
+              console.log(`✅ AI-enhanced search found ${enhancedResult.totalResults} results`)
+
+              logPipeline(
+                createPipelineLog('enhance', query, {
+                  success: true,
+                  previousResults: searchResult.totalResults,
+                  newResults: enhancedResult.totalResults,
+                })
+              )
             }
           }
         } catch (enhanceError) {
-          console.warn('⚠️ Query enhancement failed, using original results:', enhanceError)
-          // Continue with original (empty) results
+          console.warn(
+            '⚠️ AI query enhancement failed, using local expansion results:',
+            enhanceError
+          )
+          // Continue with local expansion results (not empty)
         }
       }
 
@@ -154,7 +200,7 @@ export async function POST(request: NextRequest) {
         message = 'Nenhum artigo encontrado. Tente outros termos de busca.'
       }
 
-      // Step 5: Return formatted response
+      // Step 5: Return formatted response with enhanced metadata
       return NextResponse.json({
         success: true,
         articles: searchResult.articles,
@@ -170,10 +216,16 @@ export async function POST(request: NextRequest) {
         message: message,
         warning: warning,
         cached: false,
-        // Query enhancement metadata
-        usedEnhancement: usedEnhancement,
+        // Enhanced query pipeline metadata
+        usedLocalExpansion: searchResult.usedLocalExpansion,
+        usedAIEnhancement: usedAIEnhancement,
+        searchFeedback: searchResult.searchFeedback,
+        suggestedTerms: searchResult.suggestedTerms,
+        // Legacy fields for backward compatibility
+        usedEnhancement: usedAIEnhancement || searchResult.usedLocalExpansion,
         correctedQuery: enhancementData?.correctedPt,
-        englishKeywords: enhancementData?.englishKeywords,
+        englishKeywords:
+          enhancementData?.englishKeywords || searchResult.processedQuery?.allEnglishKeywords,
         // Provider status for debugging
         providerStatus: providerStatus,
       })

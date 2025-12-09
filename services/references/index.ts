@@ -3,6 +3,11 @@
  *
  * Orchestrates searches across multiple scientific article providers,
  * handles deduplication, validation, and result ranking.
+ *
+ * Enhanced with unified query pipeline for better PT→EN translation support.
+ * Implements hybrid enhancement strategy:
+ * - Always runs local dictionary expansion BEFORE search
+ * - Only calls OpenAI if results < 5 AND query has 2+ words AND not cached
  */
 
 import { Article, SearchOptions, SearchResult, SearchProvider, ProviderSearchStatus } from './types'
@@ -10,6 +15,30 @@ import PubMedProvider from './providers/pubmed.provider'
 import CrossrefProvider from './providers/crossref.provider'
 import GoogleScholarProvider from './providers/scholar.provider'
 import { getCache, setCache } from '@/lib/multi-level-cache'
+import {
+  ProcessedQuery,
+  processQuery,
+  formatSearchFeedback,
+  getSuggestedTerms,
+  logPipeline,
+  createPipelineLog,
+} from '@/lib/references/query-pipeline'
+
+/**
+ * Extended search result with query pipeline metadata
+ */
+export interface EnhancedSearchResult extends SearchResult {
+  /** Processed query information */
+  processedQuery?: ProcessedQuery
+  /** Human-readable search feedback */
+  searchFeedback?: string
+  /** Suggested related terms */
+  suggestedTerms?: string[]
+  /** Whether local dictionary expansion was used */
+  usedLocalExpansion?: boolean
+  /** Whether AI enhancement was used */
+  usedAIEnhancement?: boolean
+}
 
 export class ReferenceSearchService {
   private providers: Map<string, SearchProvider>
@@ -36,16 +65,39 @@ export class ReferenceSearchService {
 
   /**
    * Main search method that queries all enabled providers
+   * Uses unified query pipeline for PT→EN translation before search
    */
-  async search(query: string, options: SearchOptions = {}): Promise<SearchResult> {
+  async search(query: string, options: SearchOptions = {}): Promise<EnhancedSearchResult> {
     const startTime = Date.now()
 
-    const cacheKey = this.generateCacheKey(query, options)
-    const cached = await getCache<SearchResult>(cacheKey)
+    // Step 1: Process query through unified pipeline (local dictionary expansion)
+    // This happens BEFORE search, not after zero results
+    const processed = processQuery(query)
+
+    logPipeline(
+      createPipelineLog('normalize', query, {
+        normalizedPt: processed.normalizedPt,
+        wordCount: processed.wordCount,
+        hasTranslations: processed.hasTranslations,
+        mainPhrase: processed.mainPhrase,
+        phraseTranslations: processed.phraseTranslations.slice(0, 3),
+      })
+    )
+
+    // Generate cache key based on processed query for better cache hits
+    const cacheKey = this.generateCacheKey(processed.normalizedPt, options)
+    const cached = await getCache<EnhancedSearchResult>(cacheKey)
 
     if (cached) {
       console.log('📚 Reference search cache hit:', cacheKey)
-      return { ...cached, searchTime: Date.now() - startTime }
+      return {
+        ...cached,
+        searchTime: Date.now() - startTime,
+        processedQuery: processed,
+        searchFeedback: formatSearchFeedback(processed),
+        suggestedTerms: getSuggestedTerms(processed),
+        usedLocalExpansion: processed.hasTranslations,
+      }
     }
 
     // Determine which providers to use
@@ -54,7 +106,7 @@ export class ReferenceSearchService {
     // Track provider status for each search
     const providerStatus: ProviderSearchStatus[] = []
 
-    // Search all providers in parallel
+    // Step 2: Search all providers in parallel with processed query
     const searchPromises = providersToUse.map(async (providerName) => {
       const provider = this.providers.get(providerName)
       if (!provider) {
@@ -70,7 +122,8 @@ export class ReferenceSearchService {
 
       try {
         console.log(`🔍 Searching ${providerName} for: ${query}`)
-        const results = await provider.search(query, options)
+        // Pass processed query to providers that support it
+        const results = await provider.search(query, options, processed)
         console.log(`✅ ${providerName} returned ${results.length} results`)
         providerStatus.push({ name: providerName, ok: true, resultCount: results.length })
         return results
@@ -97,7 +150,12 @@ export class ReferenceSearchService {
     const deduplicatedArticles = this.deduplicateArticles(combinedArticles)
 
     // Calculate relevance scores and sort
-    const scoredArticles = this.scoreAndSortArticles(deduplicatedArticles, query)
+    // Include English keywords in scoring for better relevance
+    const scoredArticles = this.scoreAndSortArticles(
+      deduplicatedArticles,
+      query,
+      processed.allEnglishKeywords
+    )
 
     // Apply pagination
     const { limit = 10, offset = 0 } = options
@@ -108,8 +166,8 @@ export class ReferenceSearchService {
     // Note: allProvidersFailed is available for future use in error messaging
     const _allProvidersFailed = providerStatus.every((p) => !p.ok)
 
-    // Prepare result
-    const searchResult: SearchResult = {
+    // Prepare result with enhanced metadata
+    const searchResult: EnhancedSearchResult = {
       articles: paginatedArticles,
       totalResults: scoredArticles.length,
       page: Math.floor(offset / limit) + 1,
@@ -120,6 +178,15 @@ export class ReferenceSearchService {
       searchTime: Date.now() - startTime,
       sources: providersToUse,
       providerStatus: providerStatus,
+      // Enhanced metadata from query pipeline
+      processedQuery: processed,
+      searchFeedback: formatSearchFeedback(processed),
+      suggestedTerms: getSuggestedTerms(processed),
+      usedLocalExpansion: processed.hasTranslations,
+      usedAIEnhancement: false, // Will be set by API route if AI enhancement is used
+      // Legacy fields for backward compatibility
+      originalQuery: query,
+      englishKeywords: processed.allEnglishKeywords,
     }
 
     // Cache strategy: Don't cache empty results when providers failed
@@ -275,10 +342,18 @@ export class ReferenceSearchService {
 
   /**
    * Calculate relevance score and sort articles
+   * Enhanced to include English keyword matching from query pipeline
    */
-  private scoreAndSortArticles(articles: Article[], query: string): Article[] {
+  private scoreAndSortArticles(
+    articles: Article[],
+    query: string,
+    englishKeywords: string[] = []
+  ): Article[] {
     const queryLower = query.toLowerCase()
     const queryTerms = queryLower.split(/\s+/)
+
+    // Combine original query terms with English translations for matching
+    const allSearchTerms = [...queryTerms, ...englishKeywords.map((k) => k.toLowerCase())]
 
     const scoredArticles = articles.map((article) => {
       let score = 0
@@ -286,35 +361,52 @@ export class ReferenceSearchService {
       // Title match (highest weight)
       const titleLower = article.title.toLowerCase()
       if (titleLower.includes(queryLower)) {
-        score += 20 // Exact phrase match
-      } else {
-        // Check individual terms
-        queryTerms.forEach((term) => {
-          if (titleLower.includes(term)) {
-            score += 5
-          }
-        })
+        score += 20 // Exact phrase match in Portuguese
       }
+
+      // Check English keyword matches in title (high weight)
+      for (const keyword of englishKeywords) {
+        if (titleLower.includes(keyword.toLowerCase())) {
+          score += 15 // English translation match
+          break // Only count once
+        }
+      }
+
+      // Check individual terms in title
+      queryTerms.forEach((term) => {
+        if (titleLower.includes(term)) {
+          score += 5
+        }
+      })
 
       // Abstract match
       if (article.abstract) {
         const abstractLower = article.abstract.toLowerCase()
         if (abstractLower.includes(queryLower)) {
           score += 10
-        } else {
-          queryTerms.forEach((term) => {
-            if (abstractLower.includes(term)) {
-              score += 2
-            }
-          })
         }
+
+        // Check English keyword matches in abstract
+        for (const keyword of englishKeywords) {
+          if (abstractLower.includes(keyword.toLowerCase())) {
+            score += 8 // English translation match in abstract
+            break
+          }
+        }
+
+        // Check individual terms
+        allSearchTerms.forEach((term) => {
+          if (abstractLower.includes(term)) {
+            score += 2
+          }
+        })
       }
 
-      // Keywords match
+      // Keywords match (article keywords vs search terms)
       if (article.keywords) {
         article.keywords.forEach((keyword) => {
           const keywordLower = keyword.toLowerCase()
-          queryTerms.forEach((term) => {
+          allSearchTerms.forEach((term) => {
             if (keywordLower.includes(term)) {
               score += 3
             }

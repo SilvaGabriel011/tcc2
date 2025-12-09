@@ -21,6 +21,10 @@ import {
   Hash,
   Quote,
   Pencil,
+  Sparkles,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
 } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { ReferencesLoadingSkeleton } from '@/components/skeleton'
@@ -93,6 +97,16 @@ export default function ReferenciasPage() {
   const [articleToDelete, setArticleToDelete] = useState<Article | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  // State for search metadata (query pipeline feedback)
+  const [searchFeedback, setSearchFeedback] = useState<string | null>(null)
+  const [suggestedTerms, setSuggestedTerms] = useState<string[]>([])
+  const [providerStatus, setProviderStatus] = useState<
+    Array<{ name: string; ok: boolean; resultCount: number; error?: string }>
+  >([])
+  const [usedAIEnhancement, setUsedAIEnhancement] = useState(false)
+  const [usedLocalExpansion, setUsedLocalExpansion] = useState(false)
+  const [englishKeywords, setEnglishKeywords] = useState<string[]>([])
+
   useEffect(() => {
     if (session) {
       void loadSavedArticles()
@@ -155,6 +169,22 @@ export default function ReferenciasPage() {
 
         setHasMore(data.hasMore)
         setCurrentPage(pageToLoad)
+
+        // Update search metadata from query pipeline
+        if (data.searchFeedback) {
+          setSearchFeedback(data.searchFeedback)
+        }
+        if (data.suggestedTerms) {
+          setSuggestedTerms(data.suggestedTerms)
+        }
+        if (data.providerStatus) {
+          setProviderStatus(data.providerStatus)
+        }
+        setUsedAIEnhancement(data.usedAIEnhancement || false)
+        setUsedLocalExpansion(data.usedLocalExpansion || false)
+        if (data.englishKeywords) {
+          setEnglishKeywords(data.englishKeywords)
+        }
       }
     } catch (error) {
       console.error('Erro na pesquisa:', error)
@@ -505,6 +535,87 @@ export default function ReferenciasPage() {
                 </div>
               </div>
 
+              {/* Search Feedback Section */}
+              {!isSearching && (searchFeedback || providerStatus.length > 0) && (
+                <div className="bg-card shadow rounded-lg p-4 space-y-3">
+                  {/* Search Feedback - What was searched */}
+                  {searchFeedback && (
+                    <div className="flex items-start gap-2">
+                      <Search className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-muted-foreground">{searchFeedback}</p>
+                    </div>
+                  )}
+
+                  {/* Provider Status */}
+                  {providerStatus.length > 0 && (
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="text-xs text-muted-foreground">Fontes:</span>
+                      {providerStatus.map((provider) => (
+                        <div
+                          key={provider.name}
+                          className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
+                            provider.ok
+                              ? 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300'
+                              : 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300'
+                          }`}
+                        >
+                          {provider.ok ? (
+                            <CheckCircle className="h-3 w-3" />
+                          ) : (
+                            <XCircle className="h-3 w-3" />
+                          )}
+                          <span className="capitalize">{provider.name}</span>
+                          {provider.ok && (
+                            <span className="text-xs opacity-75">({provider.resultCount})</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* AI Enhancement Badge */}
+                  {usedAIEnhancement && (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
+                        <Sparkles className="h-3 w-3" />
+                        Busca aprimorada com IA
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Local Expansion Badge (when AI not used but dictionary was) */}
+                  {!usedAIEnhancement && usedLocalExpansion && englishKeywords.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300">
+                        <AlertCircle className="h-3 w-3" />
+                        Tradução automática aplicada
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Suggested Terms Chips */}
+                  {suggestedTerms.length > 0 && (
+                    <div className="flex items-start gap-2 flex-wrap">
+                      <span className="text-xs text-muted-foreground mt-1">
+                        Termos relacionados:
+                      </span>
+                      {suggestedTerms.slice(0, 6).map((term, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setSearchTerm(term)
+                            void handleSearch(true)
+                          }}
+                          className="text-xs px-2 py-1 rounded-full bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {term}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Loading Skeleton */}
               {isSearching && articles.length === 0 && <ReferencesLoadingSkeleton />}
 
@@ -671,16 +782,65 @@ export default function ReferenciasPage() {
                 </div>
               )}
 
-              {/* Empty State */}
+              {/* Empty State - Enhanced with search explanation */}
               {!isSearching && articles.length === 0 && searchTerm && (
                 <div className="bg-card shadow rounded-lg p-8 text-center">
                   <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium text-foreground mb-2">
                     Nenhum artigo encontrado
                   </h3>
-                  <p className="text-muted-foreground">
+
+                  {/* Show what was searched */}
+                  {searchFeedback && (
+                    <p className="text-sm text-muted-foreground mb-4">{searchFeedback}</p>
+                  )}
+
+                  {/* Show provider status if any failed */}
+                  {providerStatus.some((p) => !p.ok) && (
+                    <div className="mb-4">
+                      <p className="text-sm text-amber-600 dark:text-amber-400">
+                        Algumas fontes não responderam. Tente novamente em alguns instantes.
+                      </p>
+                    </div>
+                  )}
+
+                  <p className="text-muted-foreground mb-4">
                     Tente usar termos diferentes ou mais específicos para sua pesquisa.
                   </p>
+
+                  {/* Suggestions */}
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm text-muted-foreground">Sugestões:</p>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>
+                        Use termos em inglês (ex: &quot;milk production&quot; em vez de
+                        &quot;produção de leite&quot;)
+                      </li>
+                      <li>Tente termos mais específicos ou mais gerais</li>
+                      <li>Verifique a ortografia dos termos</li>
+                    </ul>
+                  </div>
+
+                  {/* Suggested terms if available */}
+                  {suggestedTerms.length > 0 && (
+                    <div className="mt-6">
+                      <p className="text-sm text-muted-foreground mb-2">Termos relacionados:</p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {suggestedTerms.slice(0, 6).map((term, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              setSearchTerm(term)
+                              void handleSearch(true)
+                            }}
+                            className="text-sm px-3 py-1 rounded-full bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                          >
+                            {term}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

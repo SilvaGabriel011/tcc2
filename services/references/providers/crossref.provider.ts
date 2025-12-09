@@ -1,96 +1,194 @@
 /**
  * Crossref Provider for Scientific Article Search
- * 
+ *
  * This provider integrates with Crossref REST API to search and retrieve
  * metadata for scholarly articles across millions of publications.
- * 
+ *
  * API Documentation: https://api.crossref.org
  * No API key required for basic usage (polite pool)
+ *
+ * Enhanced with unified query pipeline for better PT→EN translation support.
  */
 
 import axios, { AxiosInstance } from 'axios'
 import { Article, SearchOptions, SearchProvider } from '@/services/references/types'
+import {
+  ProcessedQuery,
+  processQuery,
+  buildProviderQueries,
+  logPipeline,
+  createPipelineLog,
+} from '@/lib/references/query-pipeline'
+
+/**
+ * Crossref API response types
+ */
+interface CrossrefAuthor {
+  family?: string
+  given?: string
+  name?: string
+}
+
+interface CrossrefDateParts {
+  'date-parts'?: number[][]
+}
+
+interface CrossrefLicense {
+  URL?: string
+  'content-version'?: string
+}
+
+interface CrossrefLink {
+  URL?: string
+  'content-type'?: string
+}
+
+interface CrossrefItem {
+  DOI?: string
+  title?: string | string[]
+  author?: CrossrefAuthor[]
+  abstract?: string
+  'container-title'?: string | string[]
+  URL?: string
+  link?: CrossrefLink[]
+  subject?: string[]
+  ISSN?: string[]
+  volume?: string
+  issue?: string
+  page?: string
+  language?: string
+  'is-referenced-by-count'?: number
+  'published-print'?: CrossrefDateParts
+  'published-online'?: CrossrefDateParts
+  published?: CrossrefDateParts
+  created?: CrossrefDateParts
+  license?: CrossrefLicense | CrossrefLicense[]
+  type?: string
+}
 
 export class CrossrefProvider implements SearchProvider {
   private readonly name = 'crossref'
   private readonly baseUrl = 'https://api.crossref.org'
   private readonly client: AxiosInstance
-  
+
   constructor() {
     this.client = axios.create({
       baseURL: this.baseUrl,
       timeout: 15000,
       headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'AgroInsight/1.0 (mailto:contact@agroinsight.com; Agricultural Research Platform)'
-      }
+        Accept: 'application/json',
+        'User-Agent':
+          'AgroInsight/1.0 (mailto:contact@agroinsight.com; Agricultural Research Platform)',
+      },
     })
   }
-  
+
   /**
    * Search for articles in Crossref database
+   * Uses unified query pipeline for PT→EN translation with query.title support
    */
-  async search(query: string, options: SearchOptions = {}): Promise<Article[]> {
+  async search(
+    query: string,
+    options: SearchOptions = {},
+    processedQuery?: ProcessedQuery
+  ): Promise<Article[]> {
+    const startTime = Date.now()
+
     try {
-      const { 
-        limit = 10, 
-        offset = 0,
-        yearFrom,
-        yearTo,
-        publicationType
-      } = options
-      
+      const { limit = 10, offset = 0, yearFrom, yearTo, publicationType } = options
+
+      // Use provided processed query or process the query through pipeline
+      const processed = processedQuery || processQuery(query)
+
+      // Build provider-specific queries
+      const providerQueries = buildProviderQueries(processed)
+
+      // Log pipeline activity
+      logPipeline(
+        createPipelineLog('translate', query, {
+          hasTranslations: processed.hasTranslations,
+          phraseTranslations: processed.phraseTranslations,
+          crossrefTitleQuery: providerQueries.crossref.titleQuery.substring(0, 100),
+        })
+      )
+
       // Build query parameters
-      const params: any = {
-        query: query,
+      // Use translated title query if translations exist, otherwise use original
+      const params: Record<string, string | number> = {
         rows: limit,
         offset: offset,
         sort: 'relevance',
-        order: 'desc'
+        order: 'desc',
       }
-      
+
+      // Use query.title for translated phrases (better precision)
+      // and generic query for broader recall
+      if (processed.hasTranslations) {
+        // Use query.title with English translation for better matching
+        params['query.title'] = providerQueries.crossref.titleQuery
+        // Also add generic query for broader coverage
+        params.query = providerQueries.crossref.genericQuery
+      } else {
+        // Fallback to original query
+        params.query = query
+      }
+
       // Add year filter
       if (yearFrom || yearTo) {
         const fromYear = yearFrom || 1900
         const toYear = yearTo || new Date().getFullYear()
         params.filter = `from-pub-date:${fromYear},until-pub-date:${toYear}`
       }
-      
+
       // Add publication type filter
       if (publicationType && publicationType !== 'all') {
         const typeMap: Record<string, string> = {
-          'research': 'journal-article',
-          'review': 'review-article',
+          research: 'journal-article',
+          review: 'review-article',
           'meta-analysis': 'review',
-          'case-study': 'case-report'
+          'case-study': 'case-report',
         }
-        
+
         if (typeMap[publicationType]) {
           const existingFilter = params.filter || ''
-          params.filter = existingFilter 
+          params.filter = existingFilter
             ? `${existingFilter},type:${typeMap[publicationType]}`
             : `type:${typeMap[publicationType]}`
         }
       }
-      
+
       console.log(`🔍 Crossref searching: "${query}" with params:`, params)
-      
+
       const response = await this.client.get('/works', {
         params,
-        timeout: 10000
+        timeout: 10000,
       })
-      
+
       const items = response.data?.message?.items || []
+
+      logPipeline(
+        createPipelineLog(
+          'search',
+          query,
+          {
+            provider: 'crossref',
+            resultCount: items.length,
+            usedTitleQuery: processed.hasTranslations,
+            titleQuery: params['query.title']?.toString().substring(0, 100),
+          },
+          Date.now() - startTime
+        )
+      )
+
       console.log(`✅ Crossref returned ${items.length} results`)
-      
-      return items.map((item: any) => this.transformToArticle(item))
-      
+
+      return items.map((item: unknown) => this.transformToArticle(item as CrossrefItem))
     } catch (error) {
       console.error('❌ Crossref search error:', error)
       return []
     }
   }
-  
+
   /**
    * Get article details by DOI
    */
@@ -103,71 +201,81 @@ export class CrossrefProvider implements SearchProvider {
       return null
     }
   }
-  
+
   /**
    * Validate if an article exists in Crossref
    */
   async validateArticle(doi?: string, title?: string): Promise<boolean> {
-    if (!doi && !title) return false
-    
+    if (!doi && !title) {
+      return false
+    }
+
     try {
       if (doi) {
         const response = await this.client.get(`/works/${doi}`)
         return response.status === 200
       }
-      
+
       if (title) {
         const response = await this.client.get('/works', {
           params: {
             'query.bibliographic': title,
-            rows: 1
-          }
+            rows: 1,
+          },
         })
         return response.data?.message?.items?.length > 0
       }
-      
+
       return false
     } catch (error) {
       console.error('Crossref validation error:', error)
       return false
     }
   }
-  
+
   /**
    * Transform Crossref API response to standard Article format
    */
-  private transformToArticle(item: any): Article {
+  private transformToArticle(item: CrossrefItem): Article {
     // Extract DOI
     const doi = item.DOI || undefined
-    
-    // Extract title (usually an array with one element)
-    const title = Array.isArray(item.title) && item.title.length > 0
-      ? item.title[0]
-      : item.title || 'Título não disponível'
-    
+
+    // Extract title (usually an array with one element) - normalize to string
+    const rawTitle = item.title
+    const title: string =
+      Array.isArray(rawTitle) && rawTitle.length > 0
+        ? rawTitle[0]
+        : typeof rawTitle === 'string'
+          ? rawTitle
+          : 'Título não disponível'
+
     // Extract authors
     const authors = this.extractAuthors(item.author)
-    
+
     // Extract year from published date
     const year = this.extractYear(item)
-    
+
     // Extract abstract
     const abstract = item.abstract || this.generateAbstractFromTitle(title)
-    
-    // Journal/container title
-    const journal = Array.isArray(item['container-title']) && item['container-title'].length > 0
-      ? item['container-title'][0]
-      : item['container-title'] || 'Journal não especificado'
-    
+
+    // Journal/container title - normalize to string
+    const rawJournal = item['container-title']
+    const journal: string =
+      Array.isArray(rawJournal) && rawJournal.length > 0
+        ? rawJournal[0]
+        : typeof rawJournal === 'string'
+          ? rawJournal
+          : 'Journal não especificado'
+
     // Build URL
     const url = doi ? `https://doi.org/${doi}` : item.URL || item.link?.[0]?.URL || '#'
-    
+
     // Extract keywords/subjects
     const keywords = item.subject || undefined
-    
+
     // Check if open access
     const openAccess = this.checkOpenAccess(item)
-    
+
     return {
       id: `crossref-${doi || Date.now()}`,
       title: this.cleanText(title),
@@ -190,19 +298,19 @@ export class CrossrefProvider implements SearchProvider {
       verified: true,
       validationSource: 'Crossref API',
       openAccess: openAccess,
-      publicationType: this.mapPublicationType(item.type)
+      publicationType: this.mapPublicationType(item.type ?? 'other'),
     }
   }
-  
+
   /**
    * Extract authors from Crossref format
    */
-  private extractAuthors(authorField: any): string[] {
+  private extractAuthors(authorField: CrossrefAuthor[] | undefined): string[] {
     if (!authorField || !Array.isArray(authorField)) {
       return ['Autor não disponível']
     }
-    
-    return authorField.map(author => {
+
+    return authorField.map((author) => {
       if (author.family && author.given) {
         return `${author.family}, ${author.given}`
       }
@@ -215,38 +323,34 @@ export class CrossrefProvider implements SearchProvider {
       return 'Autor não disponível'
     })
   }
-  
+
   /**
    * Extract publication year
    */
-  private extractYear(item: any): number {
+  private extractYear(item: CrossrefItem): number {
     // Try published-print first, then published-online, then created
     const dateFields = [
       item['published-print'],
       item['published-online'],
       item.published,
-      item.created
+      item.created,
     ]
-    
+
     for (const dateField of dateFields) {
       if (dateField?.['date-parts']?.[0]?.[0]) {
         return dateField['date-parts'][0][0]
       }
     }
-    
+
     return new Date().getFullYear()
   }
-  
+
   /**
    * Extract published date as string
    */
-  private extractPublishedDate(item: any): string | undefined {
-    const dateFields = [
-      item['published-print'],
-      item['published-online'],
-      item.published
-    ]
-    
+  private extractPublishedDate(item: CrossrefItem): string | undefined {
+    const dateFields = [item['published-print'], item['published-online'], item.published]
+
     for (const dateField of dateFields) {
       if (dateField?.['date-parts']?.[0]) {
         const parts = dateField['date-parts'][0]
@@ -259,48 +363,51 @@ export class CrossrefProvider implements SearchProvider {
         }
       }
     }
-    
+
     return undefined
   }
-  
+
   /**
    * Check if article is open access
    */
-  private checkOpenAccess(item: any): boolean {
+  private checkOpenAccess(item: CrossrefItem): boolean {
     // Check various open access indicators
     if (item.license) {
       const licenses = Array.isArray(item.license) ? item.license : [item.license]
-      return licenses.some((lic: any) => 
-        lic.URL?.includes('creativecommons.org') ||
-        lic['content-version'] === 'vor' ||
-        lic['content-version'] === 'am'
+      return licenses.some(
+        (lic: CrossrefLicense) =>
+          lic.URL?.includes('creativecommons.org') ||
+          lic['content-version'] === 'vor' ||
+          lic['content-version'] === 'am'
       )
     }
-    
+
     if (item.link) {
-      return item.link.some((link: any) => 
-        link['content-type'] === 'application/pdf' ||
-        link['content-type'] === 'unspecified'
+      return item.link.some(
+        (link: CrossrefLink) =>
+          link['content-type'] === 'application/pdf' || link['content-type'] === 'unspecified'
       )
     }
-    
+
     return false
   }
-  
+
   /**
    * Extract PDF URL if available
    */
-  private extractPdfUrl(item: any): string | undefined {
+  private extractPdfUrl(item: CrossrefItem): string | undefined {
     if (item.link) {
-      const pdfLink = item.link.find((link: any) => 
-        link['content-type'] === 'application/pdf'
+      const pdfLink = item.link.find(
+        (link: CrossrefLink) => link['content-type'] === 'application/pdf'
       )
-      if (pdfLink?.URL) return pdfLink.URL
+      if (pdfLink?.URL) {
+        return pdfLink.URL
+      }
     }
-    
+
     return undefined
   }
-  
+
   /**
    * Map Crossref publication type to our type
    */
@@ -309,29 +416,31 @@ export class CrossrefProvider implements SearchProvider {
       'journal-article': 'research',
       'proceedings-article': 'research',
       'review-article': 'review',
-      'review': 'review',
-      'case-report': 'case-study'
+      review: 'review',
+      'case-report': 'case-study',
     }
-    
+
     return typeMap[type] || 'other'
   }
-  
+
   /**
    * Generate a simple abstract from title if abstract is not available
    */
   private generateAbstractFromTitle(title: string): string {
     return `Resumo não disponível. Título: ${title}. Acesse o artigo completo para mais informações.`
   }
-  
+
   /**
    * Clean text by removing HTML tags and extra whitespace
    */
   private cleanText(text: string): string {
-    if (!text) return ''
-    
+    if (!text) {
+      return ''
+    }
+
     return text
       .replace(/<[^>]*>/g, '') // Remove HTML tags
-      .replace(/\s+/g, ' ')    // Normalize whitespace
+      .replace(/\s+/g, ' ') // Normalize whitespace
       .trim()
   }
 }
