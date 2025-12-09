@@ -514,7 +514,10 @@ export default function ReferenciasPage() {
                     </select>
                   </div>
 
-                  <div className="md:w-32 flex items-end">
+                  <div className="md:w-32">
+                    <label className="block text-sm font-medium text-foreground/80 mb-2 invisible">
+                      Ação
+                    </label>
                     <button
                       onClick={() => {
                         void handleSearch(true)
