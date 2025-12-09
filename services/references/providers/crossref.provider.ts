@@ -182,7 +182,7 @@ export class CrossrefProvider implements SearchProvider {
 
       console.log(`✅ Crossref returned ${items.length} results`)
 
-      return items.map((item: unknown) => this.transformToArticle(item))
+      return items.map((item: unknown) => this.transformToArticle(item as CrossrefItem))
     } catch (error) {
       console.error('❌ Crossref search error:', error)
       return []
@@ -240,11 +240,14 @@ export class CrossrefProvider implements SearchProvider {
     // Extract DOI
     const doi = item.DOI || undefined
 
-    // Extract title (usually an array with one element)
-    const title =
-      Array.isArray(item.title) && item.title.length > 0
-        ? item.title[0]
-        : item.title || 'Título não disponível'
+    // Extract title (usually an array with one element) - normalize to string
+    const rawTitle = item.title
+    const title: string =
+      Array.isArray(rawTitle) && rawTitle.length > 0
+        ? rawTitle[0]
+        : typeof rawTitle === 'string'
+          ? rawTitle
+          : 'Título não disponível'
 
     // Extract authors
     const authors = this.extractAuthors(item.author)
@@ -255,11 +258,14 @@ export class CrossrefProvider implements SearchProvider {
     // Extract abstract
     const abstract = item.abstract || this.generateAbstractFromTitle(title)
 
-    // Journal/container title
-    const journal =
-      Array.isArray(item['container-title']) && item['container-title'].length > 0
-        ? item['container-title'][0]
-        : item['container-title'] || 'Journal não especificado'
+    // Journal/container title - normalize to string
+    const rawJournal = item['container-title']
+    const journal: string =
+      Array.isArray(rawJournal) && rawJournal.length > 0
+        ? rawJournal[0]
+        : typeof rawJournal === 'string'
+          ? rawJournal
+          : 'Journal não especificado'
 
     // Build URL
     const url = doi ? `https://doi.org/${doi}` : item.URL || item.link?.[0]?.URL || '#'
@@ -292,7 +298,7 @@ export class CrossrefProvider implements SearchProvider {
       verified: true,
       validationSource: 'Crossref API',
       openAccess: openAccess,
-      publicationType: this.mapPublicationType(item.type),
+      publicationType: this.mapPublicationType(item.type ?? 'other'),
     }
   }
 

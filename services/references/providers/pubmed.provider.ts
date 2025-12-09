@@ -393,8 +393,9 @@ export class PubMedProvider implements SearchProvider {
         return null
       }
 
-      // Extract PMID
-      const pmid = medlineCitation.PMID?.[0]?._ || medlineCitation.PMID?.[0]
+      // Extract PMID - handle union type properly
+      const pmidNode = medlineCitation.PMID?.[0]
+      const pmid = typeof pmidNode === 'string' ? pmidNode : pmidNode?._
 
       // Extract title
       const title = article.ArticleTitle?.[0] || 'Title not available'
@@ -420,8 +421,9 @@ export class PubMedProvider implements SearchProvider {
       // Extract keywords (MeSH terms)
       const keywords = this.extractMeshTerms(medlineCitation.MeshHeadingList?.[0]?.MeshHeading)
 
-      // Extract additional metadata
-      const issn = article.Journal?.[0]?.ISSN?.[0]?._ || article.Journal?.[0]?.ISSN?.[0]
+      // Extract additional metadata - handle union type properly
+      const issnNode = article.Journal?.[0]?.ISSN?.[0]
+      const issn = typeof issnNode === 'string' ? issnNode : issnNode?._
       const volume = article.Journal?.[0]?.JournalIssue?.[0]?.Volume?.[0]
       const issue = article.Journal?.[0]?.JournalIssue?.[0]?.Issue?.[0]
       const pages = article.Pagination?.[0]?.MedlinePgn?.[0]
@@ -552,7 +554,7 @@ export class PubMedProvider implements SearchProvider {
 
     for (const id of articleIds) {
       if (id.$?.IdType === 'doi') {
-        return id._ || id
+        return id._
       }
     }
 
@@ -569,9 +571,13 @@ export class PubMedProvider implements SearchProvider {
 
     const terms = meshHeadings
       .map((heading) => {
-        return heading.DescriptorName?.[0]?._ || heading.DescriptorName?.[0]
+        const node = heading.DescriptorName?.[0]
+        if (!node) {
+          return undefined
+        }
+        return typeof node === 'string' ? node : node._
       })
-      .filter(Boolean)
+      .filter((t): t is string => Boolean(t))
 
     return terms.length > 0 ? terms : undefined
   }
@@ -586,7 +592,7 @@ export class PubMedProvider implements SearchProvider {
       return 'other'
     }
 
-    const types = pubTypes.map((t) => (t._ || t || '').toLowerCase())
+    const types = pubTypes.map((t) => (t._ ?? '').toLowerCase())
 
     if (types.some((t) => t.includes('meta-analysis'))) {
       return 'meta-analysis'

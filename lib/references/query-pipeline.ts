@@ -400,7 +400,7 @@ function findWordTranslations(tokens: string[]): string[] {
     }
   }
 
-  return [...new Set(translations)] // Remove duplicates
+  return Array.from(new Set(translations)) // Remove duplicates
 }
 
 /**
@@ -419,7 +419,7 @@ export function processQuery(rawQuery: string): ProcessedQuery {
   const tokenTranslations = findWordTranslations(tokens)
 
   // Combine all English keywords (deduplicated)
-  const allEnglishKeywords = [...new Set([...phraseTranslations, ...tokenTranslations])]
+  const allEnglishKeywords = Array.from(new Set([...phraseTranslations, ...tokenTranslations]))
 
   return {
     originalPt: trimmedQuery,
@@ -507,7 +507,7 @@ export function getSuggestedTerms(processed: ProcessedQuery): string[] {
     }
   }
 
-  return [...new Set(suggestions)].slice(0, 6)
+  return Array.from(new Set(suggestions)).slice(0, 6)
 }
 
 /**
