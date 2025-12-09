@@ -249,8 +249,8 @@ export async function POST(request: NextRequest) {
 
     // Validate that the uploaded data matches the selected species
     console.log('🔍 [DEBUG] Step 4.5: Validating species data match')
-    const firstRow = parsed.data[0] as Record<string, unknown>
-    const csvColumns = Object.keys(firstRow)
+    const sampleRow = parsed.data[0] as Record<string, unknown>
+    const csvColumns = Object.keys(sampleRow)
     const speciesValidation = validateSpeciesData(csvColumns, species)
 
     if (!speciesValidation.isValid) {
