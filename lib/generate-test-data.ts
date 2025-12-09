@@ -26,6 +26,7 @@ export type Species =
 export interface TestDataConfig {
   rows: number
   species: Species
+  subtype?: string
   includeNumeric: boolean
   includeCategorical: boolean
   includeMissing: boolean
@@ -172,70 +173,79 @@ export function generateTestData(
 function generateBovinoData(config: TestDataConfig): Record<string, unknown>[] {
   const data: Record<string, unknown>[] = []
   const missingProb = config.includeMissing ? 0.05 : 0
+  const isDairy = config.subtype === 'dairy'
 
   for (let i = 1; i <= config.rows; i++) {
-    const sexo = randomChoice(SEXO)
-    const raca = randomChoice(BOVINO_RACAS)
-    const categoria = randomChoice(BOVINO_CATEGORIAS)
-
-    let pesoNasc, pesoDesmame, pesoAtual
-
-    if (categoria === 'Bezerro') {
-      pesoNasc = randomBetween(28, 38, 1)
-      pesoDesmame = randomBetween(160, 200, 1)
-      pesoAtual = randomBetween(200, 280, 1)
-    } else if (categoria === 'Recria') {
-      pesoNasc = randomBetween(28, 38, 1)
-      pesoDesmame = randomBetween(180, 220, 1)
-      pesoAtual = randomBetween(280, 380, 1)
-    } else if (categoria === 'Terminação') {
-      pesoNasc = randomBetween(30, 40, 1)
-      pesoDesmame = randomBetween(190, 230, 1)
-      pesoAtual = randomBetween(450, 550, 1)
-    } else {
-      pesoNasc = randomBetween(30, 38, 1)
-      pesoDesmame = randomBetween(180, 220, 1)
-      pesoAtual = sexo === 'Macho' ? randomBetween(700, 900, 1) : randomBetween(450, 550, 1)
-    }
-
-    let idadeMeses: number
-    if (categoria === 'Bezerro') {
-      idadeMeses = randomBetween(3, 8, 0)
-    } else if (categoria === 'Recria') {
-      idadeMeses = randomBetween(8, 18, 0)
-    } else if (categoria === 'Terminação') {
-      idadeMeses = randomBetween(18, 30, 0)
-    } else {
-      idadeMeses = randomBetween(30, 72, 0)
-    }
-
     const row: Record<string, unknown> = {
-      ID: `BOV${String(i).padStart(5, '0')}`,
+      id: `BOV${String(i).padStart(5, '0')}`,
     }
 
-    if (config.includeCategorical) {
-      row.RACA = possiblyNull(raca, missingProb)
-      row.SEXO = possiblyNull(sexo, missingProb)
-      row.CATEGORIA = possiblyNull(categoria, missingProb)
-    }
+    if (isDairy) {
+      const baseDate = new Date(2025, 0, 1)
+      const randomDays = Math.floor(getRandom() * 365)
+      const date = new Date(baseDate.getTime() + randomDays * 24 * 60 * 60 * 1000)
+      row.date = date.toISOString().split('T')[0]
 
-    if (config.includeNumeric) {
-      row.peso_nascimento = possiblyNull(pesoNasc, missingProb)
-      row.peso_desmame = possiblyNull(pesoDesmame, missingProb)
-      row.peso_atual = possiblyNull(pesoAtual, missingProb)
-      row.idade_meses = possiblyNull(idadeMeses, missingProb)
-      row.gpd = possiblyNull(randomBetween(0.8, 1.4, 3), missingProb)
-      row.conversao_alimentar = possiblyNull(randomBetween(5.5, 8.5, 2), missingProb)
-      row.consumo_ms = possiblyNull(randomBetween(8, 14, 1), missingProb)
-      row.altura_cernelha = possiblyNull(randomBetween(120, 150, 1), missingProb)
-      row.perimetro_toracico = possiblyNull(randomBetween(160, 220, 1), missingProb)
-      row.escore_corporal = possiblyNull(randomBetween(3, 4, 1), missingProb)
-      row.producao_leite =
-        categoria === 'Leiteira' ? possiblyNull(randomBetween(25, 40, 1), missingProb) : null
-      row.gordura_leite =
-        categoria === 'Leiteira' ? possiblyNull(randomBetween(3.2, 4.5, 2), missingProb) : null
-      row.proteina_leite =
-        categoria === 'Leiteira' ? possiblyNull(randomBetween(3.0, 3.8, 2), missingProb) : null
+      if (config.includeNumeric) {
+        row.producao_leite = possiblyNull(randomBetween(25, 40, 1), missingProb)
+        row.gordura_leite = possiblyNull(randomBetween(3.5, 4.0, 2), missingProb)
+        row.proteina_leite = possiblyNull(randomBetween(3.0, 3.4, 2), missingProb)
+        row.celulas_somaticas = possiblyNull(randomBetween(50000, 200000, 0), missingProb)
+      }
+    } else {
+      const sexo = randomChoice(SEXO)
+      const raca = randomChoice(BOVINO_RACAS)
+      const categoria = randomChoice(BOVINO_CATEGORIAS)
+
+      let pesoNasc, pesoDesmame, pesoAtual
+
+      if (categoria === 'Bezerro') {
+        pesoNasc = randomBetween(28, 38, 1)
+        pesoDesmame = randomBetween(160, 200, 1)
+        pesoAtual = randomBetween(200, 280, 1)
+      } else if (categoria === 'Recria') {
+        pesoNasc = randomBetween(28, 38, 1)
+        pesoDesmame = randomBetween(180, 220, 1)
+        pesoAtual = randomBetween(280, 380, 1)
+      } else if (categoria === 'Terminação') {
+        pesoNasc = randomBetween(30, 40, 1)
+        pesoDesmame = randomBetween(190, 230, 1)
+        pesoAtual = randomBetween(450, 550, 1)
+      } else {
+        pesoNasc = randomBetween(30, 38, 1)
+        pesoDesmame = randomBetween(180, 220, 1)
+        pesoAtual = sexo === 'Macho' ? randomBetween(700, 900, 1) : randomBetween(450, 550, 1)
+      }
+
+      let idadeMeses: number
+      if (categoria === 'Bezerro') {
+        idadeMeses = randomBetween(3, 8, 0)
+      } else if (categoria === 'Recria') {
+        idadeMeses = randomBetween(8, 18, 0)
+      } else if (categoria === 'Terminação') {
+        idadeMeses = randomBetween(18, 30, 0)
+      } else {
+        idadeMeses = randomBetween(30, 72, 0)
+      }
+
+      if (config.includeCategorical) {
+        row.RACA = possiblyNull(raca, missingProb)
+        row.SEXO = possiblyNull(sexo, missingProb)
+        row.CATEGORIA = possiblyNull(categoria, missingProb)
+      }
+
+      if (config.includeNumeric) {
+        row.peso_vivo = possiblyNull(pesoAtual, missingProb)
+        row.gpd = possiblyNull(randomBetween(0.8, 1.4, 3), missingProb)
+        row.escore_corporal = possiblyNull(randomBetween(3, 4, 1), missingProb)
+        row.peso_nascimento = possiblyNull(pesoNasc, missingProb)
+        row.peso_desmame = possiblyNull(pesoDesmame, missingProb)
+        row.idade_meses = possiblyNull(idadeMeses, missingProb)
+        row.conversao_alimentar = possiblyNull(randomBetween(5.5, 8.5, 2), missingProb)
+        row.consumo_ms = possiblyNull(randomBetween(8, 14, 1), missingProb)
+        row.altura_cernelha = possiblyNull(randomBetween(120, 150, 1), missingProb)
+        row.perimetro_toracico = possiblyNull(randomBetween(160, 220, 1), missingProb)
+      }
     }
 
     data.push(row)
@@ -755,10 +765,15 @@ export function downloadCSV(filename: string, csvContent: string): void {
 /**
  * Função principal para gerar e baixar dados de teste
  */
-export function generateAndDownloadTestData(rows: number = 100, species: Species = 'bovino'): void {
+export function generateAndDownloadTestData(
+  rows: number = 100,
+  species: Species = 'bovino',
+  subtype?: string
+): void {
   const data = generateTestData({
     rows,
     species,
+    subtype,
     includeNumeric: true,
     includeCategorical: true,
     includeMissing: true,
@@ -780,7 +795,8 @@ export function generateAndDownloadTestData(rows: number = 100, species: Species
       abelhas: 'abelhas',
     }[normalizedSpecies] ?? normalizedSpecies
 
-  const filename = `dados_teste_${speciesLabel}_${rows}_registros_${new Date().toISOString().split('T')[0]}.csv`
+  const subtypeLabel = subtype ? `_${subtype}` : ''
+  const filename = `dados_teste_${speciesLabel}${subtypeLabel}_${rows}_registros_${new Date().toISOString().split('T')[0]}.csv`
 
   downloadCSV(filename, csv)
 }
