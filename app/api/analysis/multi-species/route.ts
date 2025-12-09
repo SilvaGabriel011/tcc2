@@ -34,6 +34,7 @@ import {
 } from '@/lib/analysis-errors'
 import { setProgress } from '@/lib/progress/server'
 import { invalidateCacheTag, invalidateCache } from '@/lib/multi-level-cache'
+import { validateSpeciesData } from '@/lib/species-validation'
 
 export const maxDuration = 60
 
@@ -245,6 +246,49 @@ export async function POST(request: NextRequest) {
       )
       return NextResponse.json({ error: 'Arquivo vazio ou sem dados válidos' }, { status: 400 })
     }
+
+    // Validate that the uploaded data matches the selected species
+    console.log('🔍 [DEBUG] Step 4.5: Validating species data match')
+    const sampleRow = parsed.data[0] as Record<string, unknown>
+    const csvColumns = Object.keys(sampleRow)
+    const speciesValidation = validateSpeciesData(csvColumns, species)
+
+    if (!speciesValidation.isValid) {
+      console.warn(
+        `[${correlationId}] 🚫 Species mismatch detected:`,
+        speciesValidation.errorMessage
+      )
+      await setProgress(
+        analysisId,
+        {
+          step: 'VALIDATE',
+          percent: 25,
+          message: 'Seleção de cultura errada',
+          status: 'error',
+          error: {
+            message: speciesValidation.errorMessage || 'Seleção de cultura errada',
+            details: `Espécie selecionada: ${speciesValidation.selectedSpecies}, Espécie detectada: ${speciesValidation.detectedSpecies}`,
+          },
+        },
+        true
+      )
+      return NextResponse.json(
+        {
+          error: speciesValidation.errorMessage || 'Seleção de cultura errada',
+          code: 'SPECIES_MISMATCH',
+          selectedSpecies: speciesValidation.selectedSpecies,
+          detectedSpecies: speciesValidation.detectedSpecies,
+          matchScore: speciesValidation.matchScore,
+          detectedMatchScore: speciesValidation.detectedMatchScore,
+          correlationId,
+        },
+        { status: 400 }
+      )
+    }
+    console.log('✅ [DEBUG] Species validation passed:', {
+      selectedSpecies: speciesValidation.selectedSpecies,
+      matchScore: speciesValidation.matchScore,
+    })
 
     console.log('🔍 [DEBUG] Step 5: Calculating statistics')
     await setProgress(analysisId, {
