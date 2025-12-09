@@ -258,7 +258,7 @@ export function SpeciesUploadForm({
 
   const handleDownloadExample = () => {
     try {
-      generateAndDownloadTestData(10, species)
+      generateAndDownloadTestData(10, species, subtype)
       toast.success(`CSV de exemplo de ${getSpeciesName()} baixado com sucesso!`)
     } catch (error) {
       console.error('Erro ao gerar CSV de exemplo:', error)
