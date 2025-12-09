@@ -201,33 +201,29 @@ export function EnhancedScatterPlot({
       {/* Statistics summary */}
       <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
-          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              N
-            </div>
+          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase truncate">N</div>
             <div className="text-xl font-bold text-gray-900 dark:text-gray-100">{data.length}</div>
           </div>
-          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase truncate">
               Correlação
             </div>
             <div className="text-xl font-bold" style={{ color }}>
               {correlation.toFixed(3)}
             </div>
           </div>
-          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              R²
-            </div>
+          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase truncate">R²</div>
             <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
               {(rSquared * 100).toFixed(1)}%
             </div>
           </div>
-          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="text-xs text-gray-500 dark:text-gray-400 uppercase truncate">
               Equação
             </div>
-            <div className="text-sm font-mono text-gray-900 dark:text-gray-100 mt-1 break-words">
+            <div className="text-sm font-mono text-gray-900 dark:text-gray-100 mt-1 break-all">
               y = {slope.toFixed(3)}x + {intercept.toFixed(3)}
             </div>
           </div>
