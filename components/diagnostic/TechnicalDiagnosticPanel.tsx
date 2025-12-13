@@ -21,6 +21,7 @@ import {
   X,
 } from 'lucide-react'
 import { getPriorityConfig } from '@/types/priority'
+import { DiagnosticAudioPlayer } from './DiagnosticAudioPlayer'
 
 // Type for raw diagnostico from API (with optional fields)
 interface RawDiagnostico {
@@ -51,6 +52,7 @@ interface TechnicalDiagnosticPanelProps {
   diagnostico: RawDiagnostico | null
   loading: boolean
   error?: string | null
+  analysisId?: string
   onPrint?: () => void
   onClose?: () => void
   onRetry?: () => void
@@ -60,6 +62,7 @@ export function TechnicalDiagnosticPanel({
   diagnostico,
   loading,
   error,
+  analysisId,
   onPrint,
   onClose,
   onRetry,
@@ -120,6 +123,8 @@ export function TechnicalDiagnosticPanel({
               Gerado em: {new Date(diagnostico.geradoEm).toLocaleString('pt-BR')}
             </span>
           )}
+          {/* Audio Player for listening to the diagnostic */}
+          {analysisId && <DiagnosticAudioPlayer analysisId={analysisId} />}
           {onPrint && (
             <button
               onClick={onPrint}
